@@ -1,0 +1,225 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load finance_extras %}
+{% load humanize %}
+
+{% block title %}Reporte Anual{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Encabezado -->
+    <div class="flex justify-between items-center">
+        <h2 class="text-2xl text-white font-medium">Reporte Anual {{ year }}</h2>
+        <div class="flex space-x-3">
+            <a href="{% url 'finance:monthly_report' %}" 
+               class="glass-btn px-4 py-2 text-white hover:text-forge-bright">
+                <i class="fas fa-calendar mr-1"></i>
+                Reporte Mensual
+            </a>
+            <a href="{% url 'finance:cash_flow_report' %}" 
+               class="glass-btn px-4 py-2 text-white hover:text-forge-bright">
+                <i class="fas fa-exchange-alt mr-1"></i>
+                Flujo de Caja
+            </a>
+            <a href="{% url 'finance:dashboard' %}" 
+               class="glass-btn px-4 py-2 text-white hover:text-forge-bright">
+                <i class="fas fa-chart-line mr-1"></i>
+                Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Selector de Año -->
+    <div class="glass-panel p-6">
+        <form method="get" class="flex flex-wrap gap-4 items-end">
+            <div>
+                <label class="block text-forge-bright text-sm font-medium mb-2">Año</label>
+                <select name="year" class="win98-input w-40" onchange="this.form.submit()">
+                    {% for y in year|add:"-5"|rjust:"4"|make_list|join:""|add:year|add:"5"|split %}
+                    <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </form>
+    </div>
+
+    <!-- Resumen Anual -->
+    <div class="glass-panel p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-white font-medium text-lg">Resumen del Año</h3>
+            <div class="text-2xl font-bold text-white">
+                Total: ${{ total_year|floatformat:0|intcomma }}
+            </div>
+        </div>
+
+        <!-- Gráfico -->
+        <div class="h-80 mb-8">
+            <canvas id="annualChart"></canvas>
+        </div>
+
+        <!-- Tabla de Meses -->
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-forge-light border-opacity-10">
+                        <th class="p-4 text-left text-white font-medium">Mes</th>
+                        <th class="p-4 text-right text-white font-medium">Monto</th>
+                        <th class="p-4 text-center text-white font-medium">Tendencia</th>
+                        <th class="p-4 text-center text-white font-medium">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for month in monthly_totals %}
+                    <tr class="border-b border-forge-light border-opacity-5">
+                        <td class="p-4 text-white">
+                            {{ month.month|month_name }}
+                        </td>
+                        <td class="p-4 text-right text-white">
+                            ${{ month.total|floatformat:0|intcomma }}
+                        </td>
+                        <td class="p-4 text-center">
+                            {% with prev=forloop.counter0|add:"-1"|lookup:monthly_totals %}
+                            {% if prev %}
+                                {% with change=month.total|subtract:prev.total %}
+                                <span class="glass-btn px-3 py-1 text-sm 
+                                    {% if change > 0 %}text-green-400
+                                    {% elif change < 0 %}text-red-400
+                                    {% else %}text-white{% endif %}">
+                                    {% if change > 0 %}↑{% elif change < 0 %}↓{% else %}={% endif %}
+                                    {{ change|abs_value|percentage:prev.total }}%
+                                </span>
+                                {% endwith %}
+                            {% else %}
+                            -
+                            {% endif %}
+                            {% endwith %}
+                        </td>
+                        <td class="p-4 text-center">
+                            <a href="{% url 'finance:monthly_report' %}?start_date={{ year }}-{{ month.month }}-01&end_date={{ year }}-{{ month.month }}-31" 
+                               class="glass-btn px-4 py-1.5 text-white hover:text-forge-bright">
+                                Ver Detalles
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="p-4 text-white text-center opacity-60">
+                            No hay datos registrados para este año
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Estadísticas Anuales -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="glass-panel p-6">
+            <h4 class="text-forge-bright text-sm font-medium mb-2">Promedio Mensual</h4>
+            <p class="text-white text-2xl font-bold">
+                ${{ total_year|divide:12|floatformat:0|intcomma }}
+            </p>
+        </div>
+        <div class="glass-panel p-6">
+            <h4 class="text-forge-bright text-sm font-medium mb-2">Mejor Mes</h4>
+            <p class="text-white text-2xl font-bold">
+                {% with best_month=monthly_totals|dictsort:"total"|last %}
+                {{ best_month.month|month_name }}
+                {% endwith %}
+            </p>
+        </div>
+        <div class="glass-panel p-6">
+            <h4 class="text-forge-bright text-sm font-medium mb-2">Meses con Datos</h4>
+            <p class="text-white text-2xl font-bold">
+                {{ monthly_totals|length }}/12
+            </p>
+        </div>
+        <div class="glass-panel p-6">
+            <h4 class="text-forge-bright text-sm font-medium mb-2">Tendencia</h4>
+            <p class="text-white text-2xl font-bold">
+                {% with first=monthly_totals|first last=monthly_totals|last %}
+                {% if first and last %}
+                    {% with change=last.total|subtract:first.total %}
+                    <span class="{% if change > 0 %}text-green-400{% elif change < 0 %}text-red-400{% endif %}">
+                        {% if change > 0 %}↑{% elif change < 0 %}↓{% else %}={% endif %}
+                        {{ change|abs_value|percentage:first.total }}%
+                    </span>
+                    {% endwith %}
+                {% else %}
+                -
+                {% endif %}
+                {% endwith %}
+            </p>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('annualChart').getContext('2d');
+    const monthNames = [
+        {% for month in monthly_totals %}
+        '{{ month.month|month_name }}',
+        {% endfor %}
+    ];
+    const monthlyData = [
+        {% for month in monthly_totals %}
+        {{ month.total }},
+        {% endfor %}
+    ];
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: monthNames,
+            datasets: [{
+                label: 'Ingresos Mensuales',
+                data: monthlyData,
+                borderColor: '#64C5E8',
+                backgroundColor: 'rgba(100, 197, 232, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    labels: {
+                        color: 'white'
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        color: 'white',
+                        callback: function(value) {
+                            return '$' + value.toLocaleString();
+                        }
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                },
+                x: {
+                    ticks: {
+                        color: 'white'
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
+
+{% endblock %}

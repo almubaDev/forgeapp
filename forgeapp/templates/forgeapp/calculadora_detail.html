@@ -1,0 +1,273 @@
+<!-- templates/forgeapp/calculadora_detail.html -->
+{% extends 'base.html' %}
+{% load static %}
+{% load forgeapp_extras %}
+
+{% block title %}{{ calculadora.nombre }} - Calculadora{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Encabezado -->
+    <div class="flex justify-between items-center">
+        <div class="flex items-center space-x-4">
+            <h2 class="text-2xl text-white font-medium">{{ calculadora.nombre }}</h2>
+            <a href="{% url 'forgeapp:client_detail' calculadora.client.pk %}" 
+               class="glass-btn px-3 py-1.5 text-sm hover:text-forge-bright">
+                Cliente: {{ calculadora.client.name }}
+            </a>
+            {% if calculadora.application %}
+            <a href="{% url 'forgeapp:application_detail' calculadora.application.pk %}" 
+               class="glass-btn px-3 py-1.5 text-sm hover:text-forge-bright">
+                App: {{ calculadora.application.name }}
+            </a>
+            {% endif %}
+        </div>
+        <div class="flex space-x-3">
+            <a href="{% url 'forgeapp:calculadora_update' calculadora.pk %}" 
+               class="glass-btn px-6 py-2.5 text-white hover:text-forge-bright">
+                Editar
+            </a>
+            <a href="{% url 'forgeapp:calculadora_pdf' calculadora.pk %}" 
+               class="glass-btn px-6 py-2.5 text-white hover:text-forge-bright"
+               target="_blank">
+                Generar PDF
+            </a>
+            <button onclick="confirmDelete()" 
+                    class="glass-btn px-6 py-2.5 text-red-400 hover:text-red-300 bg-red-900 bg-opacity-20">
+                Eliminar
+            </button>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Panel de Items -->
+        <div class="lg:col-span-2">
+            <div class="glass-panel p-6">
+                <h3 class="text-white font-medium text-lg mb-6">Items</h3>
+                
+                <!-- Formulario de nuevo item -->
+                <form method="post" class="mb-8 space-y-4">
+                    {% csrf_token %}
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            {{ item_form.descripcion }}
+                        </div>
+                        <div>
+                            {{ item_form.cantidad }}
+                        </div>
+                        <div>
+                            {{ item_form.precio_unitario }}
+                        </div>
+                    </div>
+                    <div class="flex justify-end">
+                        <button type="submit" 
+                                class="glass-btn px-6 py-2.5 text-white hover:text-forge-bright">
+                            Agregar Item
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Lista de items -->
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="border-b border-forge-light border-opacity-10">
+                                <th class="p-4 text-left text-white font-medium">Descripción</th>
+                                <th class="p-4 text-right text-white font-medium">Cantidad</th>
+                                <th class="p-4 text-right text-white font-medium">Precio Unit.</th>
+                                <th class="p-4 text-right text-white font-medium">Subtotal</th>
+                                <th class="p-4 text-center text-white font-medium">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in items %}
+                            <tr class="border-b border-forge-light border-opacity-5">
+                                <td class="p-4 text-white">{{ item.descripcion }}</td>
+                                <td class="p-4 text-white text-right">{{ item.cantidad }}</td>
+                                <td class="p-4 text-white text-right">${{ item.precio_unitario|formato_cl:calculadora.client }}</td>
+                                <td class="p-4 text-white text-right">${{ item.subtotal|formato_cl:calculadora.client }}</td>
+                                <td class="p-4 text-center">
+                                    <button onclick="confirmDeleteItem('{{ item.pk }}')"
+                                            class="glass-btn px-4 py-1.5 text-red-400 hover:text-red-300 bg-red-900 bg-opacity-20">
+                                        Eliminar
+                                    </button>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="p-4 text-white text-center opacity-60">
+                                    No hay items agregados
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel de Totales -->
+        <div class="glass-panel p-6">
+            <h3 class="text-white font-medium text-lg mb-6">Resumen</h3>
+            <div class="space-y-6">
+                <!-- Subtotal de Items -->
+                <div class="glass-panel p-4 mb-4">
+                    <label class="block text-forge-bright text-sm font-medium mb-2">{{ calculadora|verbose_name:'subtotal' }}</label>
+                    <div class="text-white text-2xl font-bold">${{ calculadora.subtotal|formato_cl:calculadora.client }}</div>
+                </div>
+
+                <!-- Cálculo con Margen -->
+                <div class="glass-panel p-4 mb-4">
+                    <div class="mb-4">
+                        <label class="block text-forge-bright text-sm font-medium mb-2">
+                            Margen de Ganancia ({{ calculadora.margen }}%)
+                        </label>
+                        <div class="text-white text-lg">
+                            + ${{ calculadora.subtotal|mul:calculadora.margen|div:100|formato_cl:calculadora.client }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Opciones de Pago -->
+                <div class="glass-panel p-4 mb-4">
+                    <h4 class="text-forge-bright font-medium mb-4">Formas de Pago</h4>
+                    
+                    <!-- Pago Mensual -->
+                    <div class="mb-4">
+                        <label class="block text-forge-bright text-sm font-medium mb-2">
+                            12 Cuotas de:
+                        </label>
+                        <div class="text-white text-2xl">${{ calculadora.cuota_mensual|formato_cl:calculadora.client }}</div>
+                        <div class="text-forge-bright text-sm mt-1">
+                            Total: ${{ calculadora.cuota_mensual|mul:12|formato_cl:calculadora.client }}
+                        </div>
+                    </div>
+
+                    <!-- Pago Anual -->
+                    <div class="pt-4 border-t border-forge-light border-opacity-10">
+                        <label class="block text-forge-bright text-sm font-medium mb-2">
+                            Pago Anual Anticipado
+                            {% if calculadora.descuento > 0 %}
+                            <span class="text-sm opacity-70">({{ calculadora.descuento }}% descuento)</span>
+                            {% endif %}
+                        </label>
+                        <div class="text-white text-3xl font-bold">${{ calculadora.total_anual|formato_cl:calculadora.client }}</div>
+                    </div>
+                </div>
+
+                <!-- Botón para generar suscripciones -->
+                <div class="mt-6">
+                    <button onclick="showGenerateSubscriptionsModal()" 
+                            class="glass-btn w-full px-6 py-3 text-white hover:text-forge-bright">
+                        Generar Suscripciones
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmación de eliminación de calculadora -->
+<div id="deleteModal" class="hidden fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center">
+    <div class="glass-panel p-6 max-w-md">
+        <h3 class="text-white font-medium text-lg mb-4">Confirmar Eliminación</h3>
+        <p class="text-white opacity-80 mb-6">¿Estás seguro de que deseas eliminar esta calculadora? Esta acción no se puede deshacer.</p>
+        <form action="{% url 'forgeapp:calculadora_delete' calculadora.pk %}" method="post" 
+              class="flex justify-end space-x-4">
+            {% csrf_token %}
+            <button type="button" onclick="closeDeleteModal()" 
+                    class="glass-btn px-6 py-2 text-white hover:text-forge-bright opacity-80 hover:opacity-100">
+                Cancelar
+            </button>
+            <button type="submit" 
+                    class="glass-btn px-6 py-2 text-red-400 hover:text-red-300 bg-red-900 bg-opacity-20">
+                Eliminar
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Modal de confirmación de eliminación de item -->
+<div id="deleteItemModal" class="hidden fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center">
+    <div class="glass-panel p-6 max-w-md">
+        <h3 class="text-white font-medium text-lg mb-4">Confirmar Eliminación de Item</h3>
+        <p class="text-white opacity-80 mb-6">¿Estás seguro de que deseas eliminar este item?</p>
+        <form id="deleteItemForm" method="post" class="flex justify-end space-x-4">
+            {% csrf_token %}
+            <button type="button" onclick="closeDeleteItemModal()" 
+                    class="glass-btn px-6 py-2 text-white hover:text-forge-bright opacity-80 hover:opacity-100">
+                Cancelar
+            </button>
+            <button type="submit" 
+                    class="glass-btn px-6 py-2 text-red-400 hover:text-red-300 bg-red-900 bg-opacity-20">
+                Eliminar
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Modal para generar suscripciones -->
+<div id="generateSubscriptionsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center">
+    <div class="glass-panel p-6 max-w-md">
+        <h3 class="text-white font-medium text-lg mb-4">Generar Suscripciones</h3>
+        <form action="{% url 'forgeapp:generar_suscripciones' calculadora.pk %}" method="post" class="space-y-4">
+            {% csrf_token %}
+            <div>
+                <label class="block text-forge-bright text-sm font-medium mb-2">
+                    Fecha de Inicio
+                </label>
+                <input type="date" name="start_date" required
+                       class="w-full bg-opacity-30 focus:bg-opacity-40 backdrop-blur-md">
+            </div>
+            <div class="flex items-center space-x-2">
+                <input type="checkbox" name="auto_renewal" id="auto_renewal"
+                       class="bg-opacity-30 focus:bg-opacity-40 backdrop-blur-md">
+                <label for="auto_renewal" class="text-white">
+                    Habilitar Autorenovación
+                </label>
+            </div>
+            <div class="flex justify-end space-x-4 mt-6">
+                <button type="button" onclick="closeGenerateSubscriptionsModal()" 
+                        class="glass-btn px-6 py-2 text-white hover:text-forge-bright opacity-80 hover:opacity-100">
+                    Cancelar
+                </button>
+                <button type="submit" 
+                        class="glass-btn px-6 py-2 text-forge-bright hover:text-white bg-forge-primary bg-opacity-20">
+                    Generar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showGenerateSubscriptionsModal() {
+    document.getElementById('generateSubscriptionsModal').classList.remove('hidden');
+}
+
+function closeGenerateSubscriptionsModal() {
+    document.getElementById('generateSubscriptionsModal').classList.add('hidden');
+}
+</script>
+<script>
+function confirmDelete() {
+    document.getElementById('deleteModal').classList.remove('hidden');
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.add('hidden');
+}
+
+function confirmDeleteItem(itemId) {
+    document.getElementById('deleteItemModal').classList.remove('hidden');
+    document.getElementById('deleteItemForm').action = `/items/${itemId}/delete/`;
+}
+
+function closeDeleteItemModal() {
+    document.getElementById('deleteItemModal').classList.add('hidden');
+}
+</script>
+{% endblock %}

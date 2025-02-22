@@ -1,0 +1,229 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ForgeApp - Desarrollo Web Profesional para tu Negocio</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <link rel="stylesheet" href="{% static "css/landing.css" %}">
+    <link rel="shortcut icon" href="{% static "img/favicon.ico" %}" type="image/x-icon">
+</head>
+<body>
+    <!-- Navegación -->
+    <nav class="navbar glass-effect">
+        <div class='brandnav'>
+            <h3>ForgeApp</h3>
+        </div>    
+        <div class="nav-links">
+            <a href="#inicio">Inicio</a>
+            <a href="#servicios">Servicios</a>
+            <a href="#soporte">Soporte</a>
+            <a href="#proceso">Proceso</a>
+            <a href="#contacto" class="cta-button">Contactar</a>
+        </div>
+        <button class="mobile-menu-button">☰</button>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="inicio" class="hero">
+        <div id="particles-js"></div>
+        <div class="circuit-lines"></div>
+        <div class="hero-content">
+            <div class="logo-container">
+                <img src="{% static "img/logo.png" %}" alt="ForgeApp Logo" class="hero-logo">
+            </div>
+            
+            <div>
+                <h1>Lleva tu idea al Mundo Digital</h1>
+                <p>Facilitamos el desarrollo tecnológico para emprendedores y PYMES mediante soluciones web profesionales.</p>
+                <p class="hero-description">Planes de suscripción personalizados que se adaptan a tu presupuesto.</p>
+                <a href="#contacto" class="cta-button glow-effect">Haz realidad tu Proyecto con ForgeApp</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Servicios -->
+    <section id="servicios" class="services">
+        <div class="circuit-lines"></div>
+        <h2>Nuestros Servicios</h2>
+        <div class="cards-container">
+            <div class="card glass-effect">
+                <h3>Desarrollo Web</h3>
+                <p>Creamos páginas web corporativas y landing pages optimizadas que destacan tu marca.</p>
+                <ul class="features-list">
+                    <li>Diseño personalizado y responsive.</li>
+                    <li>Optimización SEO completa.</li>
+                    <li>Integración con redes sociales.</li>
+                </ul>
+            </div>
+            <div class="card glass-effect">
+                <h3>E-commerce</h3>
+                <p>Implementamos tiendas online completas que impulsan tus ventas digitales.</p>
+                <ul class="features-list">
+                    <li>Gestión integral de productos.</li>
+                    <li>Sistema de pagos seguro.</li>
+                    <li>Panel de administración intuitivo.</li>
+                </ul>
+            </div>
+            <div class="card glass-effect">
+                <h3>Sistemas de Gestión</h3>
+                <p>Desarrollamos plataformas personalizadas que automatizan tus procesos empresariales.</p>
+                <ul class="features-list">
+                    <li>Control avanzado de usuarios.</li>
+                    <li>Automatización de procesos clave.</li>
+                    <li>Reportes y análisis detallados.</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Niveles de Soporte -->
+    <section id="soporte" class="support">
+        <div class="circuit-lines"></div>
+        <h2>Niveles de Soporte</h2>
+        <div class="cards-container">
+            <div class="card glass-effect">
+                <div class="card-header basic">
+                    <h3>Soporte Básico</h3>
+                    <p>Incluido en tu suscripción.</p>
+                </div>
+                <ul>
+                    <li>Soporte técnico permanente.</li>
+                    <li>Capacitación inicial completa.</li>
+                    <li>Mantenimiento básico mensual.</li>
+                </ul>
+            </div>
+            <div class="card glass-effect">
+                <div class="card-header premium">
+                    <h3>Servicios Adicionales</h3>
+                    <p>Complementa tu suscripción según tus necesidades.</p>
+                </div>
+                <ul>
+                    <li>Ampliación de usuarios.</li>
+                    <li>Nuevas funcionalidades.</li>
+                    <li>Mayor potencia de servidores.</li>
+                    <li>Gestión de dominios personalizados.</li>
+                    <li>Administración delegada completa.</li>
+                </ul>
+            </div>
+            <div class="card glass-effect">
+                <div class="card-header enterprise">
+                    <h3>Servicios Extra</h3>
+                    <p>Servicios especializados independientes.</p>
+                </div>
+                <ul>
+                    <li>Capacitaciones específicas avanzadas.</li>
+                    <li>Asesoría contable especializada.</li>
+                    <li>Consultoría tributaria profesional.</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Proceso -->
+    <section id="proceso" class="process">
+        <div class="circuit-lines"></div>
+        <h2>Nuestro Proceso</h2>
+        <div class="cards-container">
+            <div class="card glass-effect">
+                <div class="step-number">1</div>
+                <h3>Consulta Inicial</h3>
+                <p>Comparte tu visión y requerimientos específicos. Analizamos tus necesidades para ofrecer la mejor solución.</p>
+            </div>
+            <div class="card glass-effect">
+                <div class="step-number">2</div>
+                <h3>Propuesta Detallada</h3>
+                <p>Recibirás un informe completo con los costos de suscripción y un plan de implementación personalizado.</p>
+            </div>
+            <div class="card glass-effect">
+                <div class="step-number">3</div>
+                <h3>Desarrollo Ágil</h3>
+                <p>Implementamos tu proyecto en 3 semanas o menos, manteniéndote informado en cada etapa del proceso.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Proyecto Destacado -->
+    <section id="proyecto" class="project">
+        <div class="circuit-lines"></div>
+        <h2>Proyecto Destacado</h2>
+        <div class="project-container glass-effect">
+            <h3>Sistema de Gestión para Consultoras</h3>
+            <div class="video-container">
+                <iframe 
+                    width="560" 
+                    height="315" 
+                    src="https://www.youtube.com/embed/VIDEO_ID" 
+                    frameborder="0" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                    allowfullscreen>
+                </iframe>
+            </div>
+            <div class="project-description">
+                <h4>Características Principales</h4>
+                <div class="tags-container">
+                    <span class="tag">Sistema avanzado de usuarios y roles <sup>x</sup></span>
+                    <span class="tag">Gestión integral de tareas <sup>x</sup></span>
+                    <span class="tag">Calendario de eventos <sup>x</sup></span>
+                    <span class="tag">Control de actividades <sup>x</sup></span>
+                    <span class="tag">Reportes en tiempo real <sup>x</sup></span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contacto -->
+    <section id="contacto" class="contact">
+        <div class="circuit-lines"></div>
+        <h2>Comienza tu Proyecto</h2>
+        <div class="form-container glass-effect">
+            <form id="contact-form" action="{% url 'forgeapp:contact_form' %}" method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    <input type="text" name="name" id="nombre" placeholder="Nombre completo" required>
+                </div>
+                <div class="form-group">
+                    <input type="email" name="email" id="email" placeholder="Correo electrónico" required>
+                </div>
+                <div class="form-group">
+                    <input type="tel" name="phone" id="telefono" placeholder="Teléfono de contacto (opcional)">
+                </div>
+                <div class="form-group">
+                    <textarea 
+                        name="message" 
+                        id="mensaje" 
+                        placeholder="Cuéntanos sobre tu proyecto y necesidades específicas" 
+                        required
+                    ></textarea>
+                </div>
+                <button type="submit" class="cta-button">Enviar Mensaje</button>
+            </form>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="glass-effect">
+        <div class="footer-content">
+            <div class="footer-logo">
+                <img src="logo.png" alt="ForgeApp Logo">
+            </div>
+            <div class="footer-links">
+                <a href="#inicio">Inicio</a>
+                <a href="#servicios">Servicios</a>
+                <a href="#soporte">Soporte</a>
+                <a href="#contacto">Contacto</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2025 ForgeApp. Transformando negocios digitalmente.</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script src="{% static "js/landing.js" %}"></script>
+</body>
+</html>

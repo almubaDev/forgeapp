@@ -1,0 +1,92 @@
+<!-- forgeapp/templates/forgeapp/client_list.html -->
+{% extends 'base.html' %}
+
+{% block title %}Clientes - ForgeApp{% endblock %}
+
+{% block window_title %}Listado de Clientes{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <div class="flex justify-between items-center">
+        <h2 class="text-2xl text-white font-medium">Clientes</h2>
+        <a href="{% url 'forgeapp:client_create' %}" 
+           class="glass-btn px-6 py-2.5 text-white hover:text-forge-bright">
+            Nuevo Cliente
+        </a>
+    </div>
+
+    <div class="glass-panel p-6">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-forge-light border-opacity-10">
+                        <th class="p-4 text-left text-white font-medium">Nombre</th>
+                        <th class="p-4 text-left text-white font-medium">Email</th>
+                        <th class="p-4 text-left text-white font-medium">Teléfono</th>
+                        <th class="p-4 text-left text-white font-medium">Empresa</th>
+                        <th class="p-4 text-left text-white font-medium">Estado</th>
+                        <th class="p-4 text-left text-white font-medium">Suscripciones</th>
+                        <th class="p-4 text-left text-white font-medium">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for client in clients %}
+                    <tr class="border-b border-forge-light border-opacity-5 hover:bg-forge-primary hover:bg-opacity-5 transition-colors">
+                        <td class="p-4 text-white">
+                            <a href="{% url 'forgeapp:client_detail' client.pk %}" 
+                               class="hover:text-forge-bright transition-colors">
+                                {{ client.name }}
+                            </a>
+                        </td>
+                        <td class="p-4 text-white">{{ client.email }}</td>
+                        <td class="p-4 text-white">
+                            {% if client.phone %}
+                                {{ client.phone }}
+                            {% else %}
+                                <span class="text-forge-light opacity-60">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="p-4 text-white">
+                            {% if client.company %}
+                                {{ client.company }}
+                            {% else %}
+                                <span class="text-forge-light opacity-60">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="p-4">
+                            <span class="glass-btn px-3 py-1 text-sm
+                                {% if client.status == 'active' %}text-green-400 bg-green-900 bg-opacity-20
+                                {% elif client.status == 'pending' %}text-yellow-400 bg-yellow-900 bg-opacity-20
+                                {% else %}text-red-400 bg-red-900 bg-opacity-20{% endif %}">
+                                {{ client.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="p-4">
+                            <span class="px-3 py-1 rounded-full bg-forge-primary bg-opacity-20 backdrop-blur-sm text-white">
+                                {{ client.total_subscriptions }}
+                            </span>
+                        </td>
+                        <td class="p-4">
+                            <div class="flex space-x-3">
+                                <a href="{% url 'forgeapp:client_update' client.pk %}" 
+                                   class="glass-btn px-4 py-1.5 text-white hover:text-forge-bright">
+                                    Editar
+                                </a>
+                                <a href="{% url 'forgeapp:subscription_create' %}?client={{ client.pk }}" 
+                                   class="glass-btn px-4 py-1.5 text-white hover:text-forge-bright">
+                                    Nueva Suscripción
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="p-4 text-white text-center opacity-60">No hay clientes registrados</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

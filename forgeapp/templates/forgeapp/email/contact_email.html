@@ -1,0 +1,86 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #00B4D8;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+        }
+        .content {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 0 0 5px 5px;
+        }
+        .field {
+            margin-bottom: 15px;
+        }
+        .field-label {
+            font-weight: bold;
+            color: #00B4D8;
+        }
+        .message {
+            background-color: white;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+        }
+        .logoemail {
+            height:45px;
+            width:45px;
+        }
+        .footer {
+            margin-top: 20px;
+            text-align: center;
+            color: #666;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <img src="https://res.cloudinary.com/do89fyolr/image/upload/v1740102351/logo_rplk5z.png" alt="forgeapp logo" class='logoemail'>
+        <h3 style="color: white; font-size: 20px;">
+            ForgeApp Contacto
+        </h3>
+    </div>
+    <div class="content">
+        <div class="field">
+            <span class="field-label">Nombre:</span>
+            <p>{{ nombre }}</p>
+        </div>
+        <div class="field">
+            <span class="field-label">Email:</span>
+            <p>{{ email }}</p>
+        </div>
+        {% if telefono %}
+        <div class="field">
+            <span class="field-label">Teléfono:</span>
+            <p>{{ telefono }}</p>
+        </div>
+        {% endif %}
+        <div class="field">
+            <span class="field-label">Mensaje:</span>
+            <div class="message">
+                {{ mensaje }}
+            </div>
+        </div>
+    </div>
+    <div class="footer">
+        <p>Este mensaje fue enviado desde el formulario de contacto de ForgeApp</p>
+    </div>
+</body>
+</html>

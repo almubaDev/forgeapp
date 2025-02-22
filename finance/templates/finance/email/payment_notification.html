@@ -1,0 +1,55 @@
+{% extends 'base_email.html' %}
+
+{% block content %}
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <div style="text-align: center; margin-bottom: 30px;">
+        <img src="{{ request.scheme }}://{{ request.get_host }}{% static 'img/logo.png' %}" alt="ForgeApp" style="max-width: 150px;">
+    </div>
+
+    <div style="background-color: #1B3A5D; border-radius: 10px; padding: 30px; color: white;">
+        <h2 style="color: #64C5E8; margin-bottom: 20px;">Pago Pendiente</h2>
+        
+        <p style="margin-bottom: 20px;">Estimado(a) {{ client.name }},</p>
+        
+        <p style="margin-bottom: 20px;">
+            Le informamos que tiene un pago pendiente para la siguiente suscripción:
+        </p>
+
+        <div style="background-color: rgba(100, 197, 232, 0.1); border-radius: 5px; padding: 20px; margin-bottom: 20px;">
+            <p style="margin: 5px 0;"><strong>Aplicación:</strong> {{ application.name }}</p>
+            <p style="margin: 5px 0;"><strong>Monto:</strong> ${{ payment.amount|floatformat:0|intcomma }}</p>
+            <p style="margin: 5px 0;"><strong>Fecha de Vencimiento:</strong> {{ payment.due_date|date:"d/m/Y" }}</p>
+        </div>
+
+        <p style="margin-bottom: 20px;">
+            Por favor, realice el pago antes de la fecha de vencimiento para mantener activo su servicio.
+        </p>
+
+        {% if payment.payment_method %}
+        <div style="background-color: rgba(100, 197, 232, 0.1); border-radius: 5px; padding: 20px; margin-bottom: 20px;">
+            <h3 style="color: #64C5E8; margin-bottom: 10px;">Método de Pago</h3>
+            <p style="margin: 5px 0;">{{ payment.payment_method.name }}</p>
+            {% if payment.payment_method.config.instructions %}
+            <p style="margin: 5px 0;">{{ payment.payment_method.config.instructions }}</p>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <div style="text-align: center; margin-top: 30px;">
+            <a href="{{ request.scheme }}://{{ request.get_host }}{% url 'finance:payment_detail' payment.pk %}" 
+               style="background-color: #64C5E8; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                Ver Detalles del Pago
+            </a>
+        </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 30px; color: #666;">
+        <p style="margin-bottom: 10px;">
+            Si tiene alguna pregunta, no dude en contactarnos.
+        </p>
+        <p style="font-size: 12px;">
+            Este es un correo automático, por favor no responda a este mensaje.
+        </p>
+    </div>
+</div>
+{% endblock %}

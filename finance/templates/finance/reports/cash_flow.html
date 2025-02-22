@@ -1,0 +1,240 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load finance_extras %}
+{% load humanize %}
+
+{% block title %}Flujo de Caja{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Encabezado -->
+    <div class="flex justify-between items-center">
+        <h2 class="text-2xl text-white font-medium">Flujo de Caja</h2>
+        <div class="flex space-x-3">
+            <a href="{% url 'finance:monthly_report' %}" 
+               class="glass-btn px-4 py-2 text-white hover:text-forge-bright">
+                <i class="fas fa-calendar mr-1"></i>
+                Reporte Mensual
+            </a>
+            <a href="{% url 'finance:annual_report' %}" 
+               class="glass-btn px-4 py-2 text-white hover:text-forge-bright">
+                <i class="fas fa-calendar-alt mr-1"></i>
+                Reporte Anual
+            </a>
+            <a href="{% url 'finance:dashboard' %}" 
+               class="glass-btn px-4 py-2 text-white hover:text-forge-bright">
+                <i class="fas fa-chart-line mr-1"></i>
+                Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="glass-panel p-6">
+        <form method="get" class="flex flex-wrap gap-4 items-end">
+            <div>
+                <label class="block text-forge-bright text-sm font-medium mb-2">Fecha Inicio</label>
+                {{ form.start_date }}
+            </div>
+            <div>
+                <label class="block text-forge-bright text-sm font-medium mb-2">Fecha Fin</label>
+                {{ form.end_date }}
+            </div>
+            <div>
+                <button type="submit" class="glass-btn px-6 py-2 text-white hover:text-forge-bright">
+                    <i class="fas fa-search mr-1"></i>
+                    Filtrar
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Resumen -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Ingresos -->
+        <div class="glass-panel p-6">
+            <h3 class="text-forge-bright text-sm font-medium mb-2">Ingresos</h3>
+            <p class="text-green-400 text-2xl font-bold">${{ income|floatformat:0|intcomma }}</p>
+        </div>
+
+        <!-- Egresos -->
+        <div class="glass-panel p-6">
+            <h3 class="text-forge-bright text-sm font-medium mb-2">Egresos</h3>
+            <p class="text-red-400 text-2xl font-bold">${{ expenses|floatformat:0|intcomma }}</p>
+        </div>
+
+        <!-- Balance -->
+        <div class="glass-panel p-6">
+            <h3 class="text-forge-bright text-sm font-medium mb-2">Balance</h3>
+            <p class="text-2xl font-bold {% if balance >= 0 %}text-green-400{% else %}text-red-400{% endif %}">
+                ${{ balance|floatformat:0|intcomma }}
+            </p>
+        </div>
+    </div>
+
+    <!-- Gráfico -->
+    <div class="glass-panel p-6">
+        <h3 class="text-white font-medium text-lg mb-4">Flujo de Caja</h3>
+        <div class="h-80">
+            <canvas id="cashFlowChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Lista de Transacciones -->
+    <div class="glass-panel p-6">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-forge-light border-opacity-10">
+                        <th class="p-4 text-left text-white font-medium">Fecha</th>
+                        <th class="p-4 text-left text-white font-medium">Tipo</th>
+                        <th class="p-4 text-left text-white font-medium">Categoría</th>
+                        <th class="p-4 text-left text-white font-medium">Descripción</th>
+                        <th class="p-4 text-right text-white font-medium">Monto</th>
+                        <th class="p-4 text-center text-white font-medium">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for transaction in transactions %}
+                    <tr class="border-b border-forge-light border-opacity-5">
+                        <td class="p-4 text-white">
+                            {{ transaction.date|date:"d/m/Y" }}
+                        </td>
+                        <td class="p-4">
+                            <span class="glass-btn px-3 py-1 text-sm 
+                                {% if transaction.type == 'income' %}text-green-400
+                                {% else %}text-red-400{% endif %}">
+                                {{ transaction.get_type_display }}
+                            </span>
+                        </td>
+                        <td class="p-4 text-white">
+                            {{ transaction.category }}
+                        </td>
+                        <td class="p-4 text-white">
+                            {{ transaction.description|truncatechars:50 }}
+                            {% if transaction.payment %}
+                            <a href="{% url 'finance:payment_detail' transaction.payment.pk %}" 
+                               class="text-forge-bright hover:text-white ml-2">
+                                <i class="fas fa-link"></i>
+                            </a>
+                            {% endif %}
+                        </td>
+                        <td class="p-4 text-right">
+                            <span class="{% if transaction.type == 'income' %}text-green-400{% else %}text-red-400{% endif %}">
+                                ${{ transaction.amount|floatformat:0|intcomma }}
+                            </span>
+                        </td>
+                        <td class="p-4 text-center">
+                            <a href="{% url 'finance:transaction_detail' transaction.pk %}" 
+                               class="glass-btn px-4 py-1.5 text-white hover:text-forge-bright">
+                                Ver
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="p-4 text-white text-center opacity-60">
+                            No hay transacciones registradas en este período
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('cashFlowChart').getContext('2d');
+    const transactions = [
+        {% for transaction in transactions %}
+        {
+            date: '{{ transaction.date|date:"Y-m-d" }}',
+            type: '{{ transaction.type }}',
+            amount: {{ transaction.amount }},
+        },
+        {% endfor %}
+    ];
+
+    // Agrupar transacciones por fecha
+    const groupedData = transactions.reduce((acc, curr) => {
+        const date = curr.date;
+        if (!acc[date]) {
+            acc[date] = { income: 0, expense: 0 };
+        }
+        if (curr.type === 'income') {
+            acc[date].income += curr.amount;
+        } else {
+            acc[date].expense += curr.amount;
+        }
+        return acc;
+    }, {});
+
+    // Preparar datos para el gráfico
+    const dates = Object.keys(groupedData).sort();
+    const incomeData = dates.map(date => groupedData[date].income);
+    const expenseData = dates.map(date => groupedData[date].expense);
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: dates.map(date => new Date(date).toLocaleDateString()),
+            datasets: [
+                {
+                    label: 'Ingresos',
+                    data: incomeData,
+                    backgroundColor: 'rgba(72, 187, 120, 0.2)',
+                    borderColor: 'rgb(72, 187, 120)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Egresos',
+                    data: expenseData,
+                    backgroundColor: 'rgba(245, 101, 101, 0.2)',
+                    borderColor: 'rgb(245, 101, 101)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    labels: {
+                        color: 'white'
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        color: 'white',
+                        callback: function(value) {
+                            return '$' + value.toLocaleString();
+                        }
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                },
+                x: {
+                    ticks: {
+                        color: 'white'
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
+
+{% endblock %}

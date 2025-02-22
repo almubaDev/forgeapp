@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+{% load finance_extras %}
+
+{% block title %}Resumen Anual de Transacciones{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Encabezado -->
+    <div class="flex justify-between items-center">
+        <h2 class="text-2xl text-white font-medium">Resumen Anual {{ year }}</h2>
+        <div class="flex space-x-3">
+            <a href="{% url 'finance:transaction_list' %}" 
+               class="glass-btn px-4 py-2 text-white hover:text-forge-bright">
+                Volver a Transacciones
+            </a>
+        </div>
+    </div>
+
+    <!-- Totales Anuales -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Ingresos -->
+        <div class="glass-panel p-6">
+            <h3 class="text-forge-bright text-sm font-medium mb-2">Total Ingresos</h3>
+            <p class="text-green-400 text-2xl font-bold">
+                ${{ total_income|floatformat:0|intcomma }}
+            </p>
+        </div>
+
+        <!-- Gastos -->
+        <div class="glass-panel p-6">
+            <h3 class="text-forge-bright text-sm font-medium mb-2">Total Gastos</h3>
+            <p class="text-red-400 text-2xl font-bold">
+                ${{ total_expenses|floatformat:0|intcomma }}
+            </p>
+        </div>
+
+        <!-- Balance -->
+        <div class="glass-panel p-6">
+            <h3 class="text-forge-bright text-sm font-medium mb-2">Balance Anual</h3>
+            <p class="{% if total_balance >= 0 %}text-green-400{% else %}text-red-400{% endif %} text-2xl font-bold">
+                ${{ total_balance|floatformat:0|intcomma }}
+            </p>
+        </div>
+    </div>
+
+    <!-- Selector de Año -->
+    <div class="glass-panel p-6">
+        <form method="get" class="flex justify-center space-x-4">
+            <select name="year" class="glass-btn px-4 py-2 text-white bg-transparent">
+                {% with start_year=year|add:"-2" %}
+                    {% for y in "12345"|make_list %}
+                        {% with current_year=forloop.counter0|add:start_year %}
+                            <option value="{{ current_year }}" {% if current_year == year %}selected{% endif %}>
+                                {{ current_year }}
+                            </option>
+                        {% endwith %}
+                    {% endfor %}
+                {% endwith %}
+            </select>
+            <button type="submit" class="glass-btn px-4 py-2 text-white hover:text-forge-bright">
+                Ver Año
+            </button>
+        </form>
+    </div>
+
+    <!-- Resumen Mensual -->
+    <div class="glass-panel p-6">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-forge-light border-opacity-10">
+                        <th class="p-4 text-left text-white font-medium">Mes</th>
+                        <th class="p-4 text-right text-white font-medium">Ingresos</th>
+                        <th class="p-4 text-right text-white font-medium">Gastos</th>
+                        <th class="p-4 text-right text-white font-medium">Balance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for month in monthly_data %}
+                    <tr class="border-b border-forge-light border-opacity-5">
+                        <td class="p-4 text-white">
+                            {{ month.month|month_name_es }}
+                        </td>
+                        <td class="p-4 text-right">
+                            <span class="text-green-400">
+                                ${{ month.income|floatformat:0|intcomma }}
+                            </span>
+                        </td>
+                        <td class="p-4 text-right">
+                            <span class="text-red-400">
+                                ${{ month.expenses|floatformat:0|intcomma }}
+                            </span>
+                        </td>
+                        <td class="p-4 text-right">
+                            <span class="{% if month.balance >= 0 %}text-green-400{% else %}text-red-400{% endif %}">
+                                ${{ month.balance|floatformat:0|intcomma }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

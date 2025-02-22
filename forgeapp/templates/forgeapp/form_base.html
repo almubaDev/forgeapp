@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="glass-panel p-8">
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+            
+            {% for field in form %}
+            <div class="space-y-3">
+                <label class="block text-white text-sm font-medium">{{ field.label }}</label>
+                {% if field.errors %}
+                    {% for error in field.errors %}
+                        <p class="text-red-400 text-sm bg-red-900 bg-opacity-10 backdrop-blur-sm p-3 rounded-lg border border-red-500 border-opacity-20">{{ error }}</p>
+                    {% endfor %}
+                {% endif %}
+                {{ field }}
+                {% if field.help_text %}
+                    <p class="text-forge-bright text-sm opacity-70">{{ field.help_text }}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+            <div class="flex justify-end space-x-4 pt-8">
+                <a href="{{ cancel_url }}" 
+                   class="glass-btn px-6 py-2.5 text-white hover:text-forge-bright opacity-80 hover:opacity-100">
+                    Cancelar
+                </a>
+                <button type="submit" 
+                        class="glass-btn px-6 py-2.5 text-white hover:text-forge-bright">
+                    {% if form.instance.pk %}
+                        Guardar Cambios
+                    {% else %}
+                        Crear
+                    {% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

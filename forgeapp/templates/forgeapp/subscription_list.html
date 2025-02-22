@@ -1,0 +1,92 @@
+<!-- templates/forgeapp/subscription_list.html -->
+{% extends 'base.html' %}
+{% load static %}
+{% load forgeapp_extras %}
+
+{% block title %}Suscripciones{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Encabezado -->
+    <div class="flex justify-between items-center">
+        <h2 class="text-2xl text-white font-medium">Suscripciones</h2>
+        <a href="{% url 'forgeapp:subscription_create' %}" 
+           class="glass-btn px-6 py-2.5 text-white hover:text-forge-bright">
+            Nueva Suscripción
+        </a>
+    </div>
+
+    <!-- Lista de suscripciones -->
+    <div class="glass-panel p-6">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-forge-light border-opacity-10">
+                        <th class="p-4 text-left text-white font-medium">Cliente</th>
+                        <th class="p-4 text-left text-white font-medium">Aplicación</th>
+                        <th class="p-4 text-center text-white font-medium">Estado</th>
+                        <th class="p-4 text-center text-white font-medium">Tipo</th>
+                        <th class="p-4 text-right text-white font-medium">Precio</th>
+                        <th class="p-4 text-center text-white font-medium">Renovación</th>
+                        <th class="p-4 text-center text-white font-medium">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for subscription in subscriptions %}
+                    <tr class="border-b border-forge-light border-opacity-5">
+                        <td class="p-4">
+                            <a href="{% url 'forgeapp:client_detail' subscription.client.pk %}" 
+                               class="text-white hover:text-forge-bright">
+                                {{ subscription.client.name }}
+                            </a>
+                        </td>
+                        <td class="p-4">
+                            <a href="{% url 'forgeapp:application_detail' subscription.application.pk %}" 
+                               class="text-white hover:text-forge-bright">
+                                {{ subscription.application.name }}
+                            </a>
+                        </td>
+                        <td class="p-4 text-center">
+                            <span class="glass-btn px-3 py-1 text-sm 
+                                {% if subscription.status == 'active' %}text-green-400
+                                {% elif subscription.status == 'pending' %}text-yellow-400
+                                {% elif subscription.status == 'cancelled' %}text-red-400
+                                {% else %}text-gray-400{% endif %}">
+                                {{ subscription.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="p-4 text-center text-white">
+                            {% if subscription.payment_type == 'monthly' %}
+                                Mensual
+                            {% else %}
+                                Anual
+                            {% endif %}
+                        </td>
+                        <td class="p-4 text-right text-white">${{ subscription.price|formato_cl:subscription.client }}</td>
+                        <td class="p-4 text-center">
+                            {% if subscription.auto_renewal %}
+                            <span class="text-green-400">Auto</span>
+                            {% else %}
+                            <span class="text-red-400">Manual</span>
+                            {% endif %}
+                        </td>
+                        <td class="p-4 text-center">
+                            <a href="{% url 'forgeapp:subscription_detail' subscription.pk %}" 
+                               class="glass-btn px-4 py-1.5 text-white hover:text-forge-bright">
+                                Ver
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="p-4 text-white text-center opacity-60">
+                            No hay suscripciones registradas
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

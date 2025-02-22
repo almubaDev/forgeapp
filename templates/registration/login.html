@@ -1,0 +1,47 @@
+<!-- templates/registration/login.html -->
+{% extends 'base.html' %}
+
+{% block title %}Iniciar Sesión - ForgeApp{% endblock %}
+
+{% block window_title %}Iniciar Sesión{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto">
+    <div class="glass-panel p-8">
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+            
+            {% if form.errors %}
+            <div class="bg-red-900 bg-opacity-10 backdrop-blur-sm p-4 rounded-lg border border-red-500 border-opacity-20 mb-6">
+                <p class="text-red-400">Tu usuario o contraseña son incorrectos. Por favor intenta nuevamente.</p>
+            </div>
+            {% endif %}
+
+            <div class="space-y-6">
+                <div class="space-y-2">
+                    <label class="block text-white text-sm font-medium">Usuario</label>
+                    <input type="text" name="username" 
+                           class="w-full bg-opacity-30 focus:bg-opacity-40 backdrop-blur-md" 
+                           required 
+                           autocomplete="username">
+                </div>
+
+                <div class="space-y-2">
+                    <label class="block text-white text-sm font-medium">Contraseña</label>
+                    <input type="password" name="password" 
+                           class="w-full bg-opacity-30 focus:bg-opacity-40 backdrop-blur-md" 
+                           required 
+                           autocomplete="current-password">
+                </div>
+            </div>
+
+            <div class="flex justify-end pt-6">
+                <button type="submit" 
+                        class="glass-btn px-6 py-2.5 text-white hover:text-forge-bright">
+                    Iniciar Sesión
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,217 @@
+<!-- templates/forgeapp/application_detail.html -->
+{% extends 'base.html' %}
+{% load static %}
+{% load forgeapp_extras %}
+
+{% block title %}{{ application.name }}{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Encabezado -->
+    <div class="flex justify-between items-center">
+        <div class="flex items-center space-x-4">
+            <h2 class="text-2xl text-white font-medium">{{ application.name }}</h2>
+            {% if application.owner %}
+            <a href="{% url 'forgeapp:client_detail' application.owner.pk %}" 
+               class="glass-btn px-3 py-1.5 text-sm hover:text-forge-bright">
+                Propietario: {{ application.owner.name }}
+            </a>
+            {% endif %}
+        </div>
+        <div class="flex space-x-3">
+            <a href="{% url 'forgeapp:application_update' application.pk %}" 
+               class="glass-btn px-6 py-2.5 text-white hover:text-forge-bright">
+                Editar
+            </a>
+            <button onclick="confirmDelete()" 
+                    class="glass-btn px-6 py-2.5 text-red-400 hover:text-red-300 bg-red-900 bg-opacity-20">
+                Eliminar
+            </button>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Detalles de la Aplicación -->
+        <div class="lg:col-span-2">
+            <div class="glass-panel p-6">
+                <h3 class="text-white font-medium text-lg mb-6">Detalles</h3>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-forge-bright text-sm font-medium mb-2">Descripción</label>
+                        <div class="text-white whitespace-pre-wrap h-48 overflow-y-auto glass-panel p-4">{{ application.description|linebreaks }}</div>
+                    </div>
+
+                    <div>
+                        <label class="block text-forge-bright text-sm font-medium mb-2">URL del Proyecto</label>
+                        <a href="{{ application.url }}" target="_blank" 
+                           class="text-white hover:text-forge-bright">
+                            {{ application.url }}
+                        </a>
+                    </div>
+
+                    {% if application.documentation_url %}
+                    <div>
+                        <label class="block text-forge-bright text-sm font-medium mb-2">Documentación</label>
+                        <a href="{{ application.documentation_url }}" target="_blank" 
+                           class="text-white hover:text-forge-bright">
+                            {{ application.documentation_url }}
+                        </a>
+                    </div>
+                    {% endif %}
+
+                    {% if application.git_repository %}
+                    <div>
+                        <label class="block text-forge-bright text-sm font-medium mb-2">Repositorio Git</label>
+                        <a href="{{ application.git_repository }}" target="_blank" 
+                           class="text-white hover:text-forge-bright">
+                            {{ application.git_repository }}
+                        </a>
+                    </div>
+                    {% endif %}
+
+                    <!-- Acceso a Configuraciones -->
+                    <div class="flex justify-end">
+                        <a href="{% url 'forgeapp:application_configs' application.pk %}" 
+                           class="glass-btn px-4 py-2 text-forge-bright hover:text-white flex items-center space-x-2">
+                            <i class="fas fa-cog text-lg"></i>
+                            <span>Configuraciones</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estadísticas -->
+        <div class="glass-panel p-6">
+            <h3 class="text-white font-medium text-lg mb-6">Estadísticas</h3>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-forge-bright text-sm font-medium mb-2">Suscripciones Totales</label>
+                    <div class="text-white text-2xl font-bold">{{ application.total_subscriptions }}</div>
+                </div>
+
+                <div>
+                    <label class="block text-forge-bright text-sm font-medium mb-2">Suscripciones Activas</label>
+                    <div class="text-white text-2xl font-bold">{{ application.active_subscriptions }}</div>
+                </div>
+
+                {% if application.total_revenue %}
+                <div>
+                    <label class="block text-forge-bright text-sm font-medium mb-2">Ingresos Mensuales</label>
+                    <div class="text-white text-2xl font-bold">${{ application.total_revenue|formato_cl:application.owner }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Suscripciones -->
+    <div class="glass-panel p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-white font-medium text-lg">Suscripciones</h3>
+            <a href="{% url 'forgeapp:subscription_create' %}?application={{ application.pk }}" 
+               class="glass-btn px-6 py-2.5 text-white hover:text-forge-bright">
+                Nueva Suscripción
+            </a>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-forge-light border-opacity-10">
+                        <th class="p-4 text-left text-white font-medium">Cliente</th>
+                        <th class="p-4 text-center text-white font-medium">Estado</th>
+                        <th class="p-4 text-center text-white font-medium">Tipo</th>
+                        <th class="p-4 text-right text-white font-medium">Precio</th>
+                        <th class="p-4 text-center text-white font-medium">Renovación</th>
+                        <th class="p-4 text-center text-white font-medium">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for subscription in subscriptions %}
+                    <tr class="border-b border-forge-light border-opacity-5">
+                        <td class="p-4">
+                            <a href="{% url 'forgeapp:client_detail' subscription.client.pk %}" 
+                               class="text-white hover:text-forge-bright">
+                                {{ subscription.client.name }}
+                            </a>
+                        </td>
+                        <td class="p-4 text-center">
+                            <span class="glass-btn px-3 py-1 text-sm 
+                                {% if subscription.status == 'active' %}text-green-400
+                                {% elif subscription.status == 'pending' %}text-yellow-400
+                                {% elif subscription.status == 'cancelled' %}text-red-400
+                                {% else %}text-gray-400{% endif %}">
+                                {{ subscription.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="p-4 text-center text-white">
+                            {% if subscription.payment_type == 'monthly' %}
+                                12 cuotas mensuales
+                            {% else %}
+                                Pago anual
+                            {% endif %}
+                        </td>
+                        <td class="p-4 text-right text-white">${{ subscription.price|formato_cl:subscription.client }}</td>
+                        <td class="p-4 text-center">
+                            {% if subscription.auto_renewal %}
+                            <span class="text-green-400">Auto</span>
+                            {% else %}
+                            <span class="text-red-400">Manual</span>
+                            {% endif %}
+                        </td>
+                        <td class="p-4 text-center">
+                            <a href="{% url 'forgeapp:subscription_detail' subscription.pk %}" 
+                               class="glass-btn px-4 py-1.5 text-white hover:text-forge-bright">
+                                Ver
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="p-4 text-white text-center opacity-60">
+                            No hay suscripciones registradas
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmación de eliminación -->
+<div id="deleteModal" class="hidden fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center">
+    <div class="glass-panel p-6 max-w-md">
+        <h3 class="text-white font-medium text-lg mb-4">Confirmar Eliminación</h3>
+        <p class="text-white opacity-80 mb-6">¿Estás seguro de que deseas eliminar esta aplicación? Esta acción no se puede deshacer.</p>
+        <form action="{% url 'forgeapp:application_delete' application.pk %}" method="post" 
+              class="flex justify-end space-x-4">
+            {% csrf_token %}
+            <button type="button" onclick="closeDeleteModal()" 
+                    class="glass-btn px-6 py-2 text-white hover:text-forge-bright opacity-80 hover:opacity-100">
+                Cancelar
+            </button>
+            <button type="submit" 
+                    class="glass-btn px-6 py-2 text-red-400 hover:text-red-300 bg-red-900 bg-opacity-20">
+                Eliminar
+            </button>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmDelete() {
+    document.getElementById('deleteModal').classList.remove('hidden');
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.add('hidden');
+}
+</script>
+{% endblock %}

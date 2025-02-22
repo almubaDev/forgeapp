@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Transacciones{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Encabezado -->
+    <div class="flex justify-between items-center">
+        <h2 class="text-2xl text-white font-medium">Transacciones</h2>
+        <div class="flex space-x-3">
+            <a href="{% url 'finance:transaction_summary' %}" 
+               class="glass-btn px-4 py-2 text-white hover:text-forge-bright">
+                Ver Resumen Anual
+            </a>
+            <a href="{% url 'finance:transaction_create' %}" 
+               class="glass-btn px-4 py-2 text-white hover:text-forge-bright">
+                Nueva Transacción
+            </a>
+        </div>
+    </div>
+
+    <!-- Totales -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Ingresos -->
+        <div class="glass-panel p-6">
+            <h3 class="text-forge-bright text-sm font-medium mb-2">Total Ingresos</h3>
+            <p class="text-green-400 text-2xl font-bold">
+                ${{ total_income|floatformat:0|intcomma }}
+            </p>
+        </div>
+
+        <!-- Gastos -->
+        <div class="glass-panel p-6">
+            <h3 class="text-forge-bright text-sm font-medium mb-2">Total Gastos</h3>
+            <p class="text-red-400 text-2xl font-bold">
+                ${{ total_expenses|floatformat:0|intcomma }}
+            </p>
+        </div>
+
+        <!-- Margen -->
+        <div class="glass-panel p-6">
+            <h3 class="text-forge-bright text-sm font-medium mb-2">Margen</h3>
+            <p class="{% if margin >= 0 %}text-green-400{% else %}text-red-400{% endif %} text-2xl font-bold">
+                ${{ margin|floatformat:0|intcomma }}
+            </p>
+            {% if total_income > 0 %}
+            <p class="text-forge-light text-sm mt-2">
+                {{ margin_percentage|floatformat:1 }}% de ingresos
+            </p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="glass-panel p-6">
+        <form method="get" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+                <label class="block text-forge-bright text-sm font-medium mb-2">Tipo</label>
+                {{ form.type }}
+            </div>
+            <div>
+                <label class="block text-forge-bright text-sm font-medium mb-2">Categoría</label>
+                {{ form.category }}
+            </div>
+            <div>
+                <label class="block text-forge-bright text-sm font-medium mb-2">Fecha Inicio</label>
+                {{ form.start_date }}
+            </div>
+            <div>
+                <label class="block text-forge-bright text-sm font-medium mb-2">Fecha Fin</label>
+                {{ form.end_date }}
+            </div>
+            <div class="md:col-span-4 flex justify-end">
+                <button type="submit" class="glass-btn px-4 py-2 text-white hover:text-forge-bright">
+                    Filtrar
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Lista de Transacciones -->
+    <div class="glass-panel p-6">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-forge-light border-opacity-10">
+                        <th class="p-4 text-left text-white font-medium">Fecha</th>
+                        <th class="p-4 text-left text-white font-medium">Tipo</th>
+                        <th class="p-4 text-left text-white font-medium">Categoría</th>
+                        <th class="p-4 text-left text-white font-medium">Descripción</th>
+                        <th class="p-4 text-right text-white font-medium">Monto</th>
+                        <th class="p-4 text-center text-white font-medium">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for transaction in transactions %}
+                    <tr class="border-b border-forge-light border-opacity-5">
+                        <td class="p-4 text-white">
+                            {{ transaction.date|date:"d/m/Y" }}
+                        </td>
+                        <td class="p-4">
+                            <span class="glass-btn px-3 py-1 text-sm 
+                                {% if transaction.type == 'income' %}text-green-400
+                                {% else %}text-red-400{% endif %}">
+                                {{ transaction.get_type_display }}
+                            </span>
+                        </td>
+                        <td class="p-4 text-white">
+                            {{ transaction.category }}
+                        </td>
+                        <td class="p-4 text-white">
+                            {{ transaction.description }}
+                        </td>
+                        <td class="p-4 text-right text-white">
+                            ${{ transaction.amount|floatformat:0|intcomma }}
+                        </td>
+                        <td class="p-4 text-center">
+                            <a href="{% url 'finance:transaction_detail' transaction.pk %}" 
+                               class="glass-btn px-4 py-1.5 text-white hover:text-forge-bright">
+                                Ver
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="p-4 text-white text-center opacity-60">
+                            No hay transacciones registradas
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

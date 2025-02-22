@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Eliminar Transacción{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Encabezado -->
+    <div class="flex justify-between items-center">
+        <h2 class="text-2xl text-white font-medium">Eliminar Transacción</h2>
+        <div class="flex space-x-3">
+            <a href="{% url 'finance:transaction_detail' transaction.pk %}" 
+               class="glass-btn px-4 py-2 text-white hover:text-forge-bright">
+                <i class="fas fa-arrow-left mr-1"></i>
+                Volver
+            </a>
+        </div>
+    </div>
+
+    <!-- Confirmación -->
+    <div class="glass-panel p-6">
+        <div class="space-y-6">
+            <p class="text-white text-lg">
+                ¿Estás seguro de que deseas eliminar esta transacción?
+            </p>
+
+            <!-- Detalles de la transacción -->
+            <div class="glass-panel p-4 space-y-4">
+                <div>
+                    <label class="block text-forge-bright text-sm font-medium mb-1">Tipo</label>
+                    <div class="text-white">{{ transaction.get_type_display }}</div>
+                </div>
+
+                <div>
+                    <label class="block text-forge-bright text-sm font-medium mb-1">Categoría</label>
+                    <div class="text-white">{{ transaction.category }}</div>
+                </div>
+
+                <div>
+                    <label class="block text-forge-bright text-sm font-medium mb-1">Descripción</label>
+                    <div class="text-white">{{ transaction.description }}</div>
+                </div>
+
+                <div>
+                    <label class="block text-forge-bright text-sm font-medium mb-1">Monto</label>
+                    <div class="text-white">${{ transaction.amount|floatformat:2 }}</div>
+                </div>
+
+                <div>
+                    <label class="block text-forge-bright text-sm font-medium mb-1">Fecha</label>
+                    <div class="text-white">{{ transaction.date|date:"d/m/Y" }}</div>
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-4 mt-6">
+                <a href="{% url 'finance:transaction_detail' transaction.pk %}" 
+                   class="glass-btn px-6 py-2 text-white hover:text-forge-bright opacity-80 hover:opacity-100">
+                    Cancelar
+                </a>
+                <form method="post" class="inline">
+                    {% csrf_token %}
+                    <button type="submit" 
+                            class="glass-btn px-6 py-2 text-red-400 hover:text-red-300 bg-red-900 bg-opacity-20">
+                        <i class="fas fa-trash-alt mr-1"></i>
+                        Eliminar
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

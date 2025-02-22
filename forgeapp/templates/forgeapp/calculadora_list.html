@@ -1,0 +1,125 @@
+<!-- templates/forgeapp/calculadora_list.html -->
+{% extends 'base.html' %}
+{% load forgeapp_extras %}
+
+{% block title %}Calculadoras - ForgeApp{% endblock %}
+
+{% block window_title %}Listado de Calculadoras{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <div class="flex justify-between items-center">
+        <h2 class="text-2xl text-white font-medium">Calculadoras</h2>
+        <a href="{% url 'forgeapp:calculadora_create' %}" 
+           class="glass-btn px-6 py-2.5 text-white hover:text-forge-bright">
+            Nueva Calculadora
+        </a>
+    </div>
+
+    <div class="glass-panel p-6">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-forge-light border-opacity-10">
+                        <th class="p-4 text-left text-white font-medium">Nombre</th>
+                        <th class="p-4 text-left text-white font-medium">Cliente</th>
+                        <th class="p-4 text-left text-white font-medium">Aplicación</th>
+                        <th class="p-4 text-left text-white font-medium">Total Anual</th>
+                        <th class="p-4 text-left text-white font-medium">Cuota Mensual</th>
+                        <th class="p-4 text-left text-white font-medium">Fecha</th>
+                        <th class="p-4 text-left text-white font-medium">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for calc in calculadoras %}
+                    <tr class="border-b border-forge-light border-opacity-5 hover:bg-forge-primary hover:bg-opacity-5 transition-colors">
+                        <td class="p-4 text-white">
+                            <a href="{% url 'forgeapp:calculadora_detail' calc.pk %}" 
+                               class="hover:text-forge-bright transition-colors">
+                                {{ calc.nombre }}
+                            </a>
+                        </td>
+                        <td class="p-4 text-white">
+                            <a href="{% url 'forgeapp:client_detail' calc.client.pk %}" 
+                               class="hover:text-forge-bright transition-colors">
+                                {{ calc.client.name }}
+                            </a>
+                        </td>
+                        <td class="p-4 text-white">
+                            {% if calc.application %}
+                            <a href="{% url 'forgeapp:application_detail' calc.application.pk %}" 
+                               class="hover:text-forge-bright transition-colors">
+                                {{ calc.application.name }}
+                            </a>
+                            {% else %}
+                            <span class="opacity-50">Sin aplicación</span>
+                            {% endif %}
+                        </td>
+                        <td class="p-4">
+                            <span class="px-3 py-1 rounded-full bg-forge-primary bg-opacity-20 backdrop-blur-sm text-white">
+                                ${{ calc.total_anual|formato_cl:calc.client }}
+                            </span>
+                        </td>
+                        <td class="p-4">
+                            <span class="px-3 py-1 rounded-full bg-forge-primary bg-opacity-20 backdrop-blur-sm text-white">
+                                ${{ calc.cuota_mensual|formato_cl:calc.client }}
+                            </span>
+                        </td>
+                        <td class="p-4 text-white">{{ calc.created_at|date:"d/m/Y" }}</td>
+                        <td class="p-4">
+                            <div class="flex space-x-3">
+                                <a href="{% url 'forgeapp:calculadora_update' calc.pk %}" 
+                                   class="glass-btn px-4 py-1.5 text-white hover:text-forge-bright">
+                                    Editar
+                                </a>
+                                <button onclick="confirmDelete('{{ calc.pk }}')" 
+                                        class="glass-btn px-4 py-1.5 text-red-400 hover:text-red-300 bg-red-900 bg-opacity-20">
+                                    Eliminar
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="p-4 text-white text-center opacity-60">No hay calculadoras registradas</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmación de eliminación -->
+<div id="deleteModal" class="hidden fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center">
+    <div class="glass-panel p-6 max-w-md">
+        <h3 class="text-white font-medium text-lg mb-4">Confirmar Eliminación</h3>
+        <p class="text-white opacity-80 mb-6">¿Estás seguro de que deseas eliminar esta calculadora? Esta acción no se puede deshacer.</p>
+        <form id="deleteForm" method="post" class="flex justify-end space-x-4">
+            {% csrf_token %}
+            <button type="button" onclick="closeDeleteModal()" 
+                    class="glass-btn px-6 py-2 text-white hover:text-forge-bright opacity-80 hover:opacity-100">
+                Cancelar
+            </button>
+            <button type="submit" 
+                    class="glass-btn px-6 py-2 text-red-400 hover:text-red-300 bg-red-900 bg-opacity-20">
+                Eliminar
+            </button>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmDelete(calculadoraId) {
+    document.getElementById('deleteModal').classList.remove('hidden');
+    document.getElementById('deleteForm').action = `/calculadoras/${calculadoraId}/delete/`;
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.add('hidden');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Detalle de Transacción{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Encabezado -->
+    <div class="flex justify-between items-center">
+        <div class="flex items-center space-x-4">
+            <h2 class="text-2xl text-white font-medium">Detalle de Transacción</h2>
+            <span class="glass-btn px-3 py-1.5 text-sm 
+                {% if transaction.type == 'income' %}text-green-400
+                {% else %}text-red-400{% endif %}">
+                {{ transaction.get_type_display }}
+            </span>
+        </div>
+        <div class="flex space-x-3">
+            <a href="{% url 'finance:transaction_list' %}" 
+               class="glass-btn px-4 py-2 text-white hover:text-forge-bright">
+                Volver
+            </a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Detalles de la Transacción -->
+        <div class="lg:col-span-2">
+            <div class="glass-panel p-6">
+                <h3 class="text-white font-medium text-lg mb-6">Detalles</h3>
+                
+                <div class="space-y-4">
+                    <!-- Monto -->
+                    <div>
+                        <label class="block text-forge-bright text-sm font-medium mb-2">Monto</label>
+                        <div class="text-2xl font-bold {% if transaction.type == 'income' %}text-green-400{% else %}text-red-400{% endif %}">
+                            ${{ transaction.amount|floatformat:0|intcomma }}
+                        </div>
+                    </div>
+
+                    <!-- Categoría -->
+                    <div>
+                        <label class="block text-forge-bright text-sm font-medium mb-2">Categoría</label>
+                        <div class="text-white">{{ transaction.category }}</div>
+                    </div>
+
+                    <!-- Descripción -->
+                    <div>
+                        <label class="block text-forge-bright text-sm font-medium mb-2">Descripción</label>
+                        <div class="text-white whitespace-pre-wrap">{{ transaction.description }}</div>
+                    </div>
+
+                    <!-- Fecha -->
+                    <div>
+                        <label class="block text-forge-bright text-sm font-medium mb-2">Fecha</label>
+                        <div class="text-white">{{ transaction.date|date:"d/m/Y" }}</div>
+                    </div>
+
+                    <!-- Pago Relacionado -->
+                    {% if transaction.payment %}
+                    <div>
+                        <label class="block text-forge-bright text-sm font-medium mb-2">Pago Relacionado</label>
+                        <div class="glass-panel p-4">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <p class="text-white">
+                                        Cliente: {{ transaction.payment.subscription.client.name }}
+                                    </p>
+                                    <p class="text-forge-light text-sm">
+                                        Aplicación: {{ transaction.payment.subscription.application.name }}
+                                    </p>
+                                </div>
+                                <a href="{% url 'finance:payment_detail' transaction.payment.pk %}" 
+                                   class="glass-btn px-4 py-2 text-white hover:text-forge-bright">
+                                    Ver Pago
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Notas -->
+                    {% if transaction.notes %}
+                    <div>
+                        <label class="block text-forge-bright text-sm font-medium mb-2">Notas</label>
+                        <div class="text-white whitespace-pre-wrap">{{ transaction.notes }}</div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Fechas del Sistema -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-forge-light border-opacity-10">
+                        <div>
+                            <label class="block text-forge-bright text-sm font-medium mb-2">Fecha de Creación</label>
+                            <div class="text-forge-light">{{ transaction.created_at|date:"d/m/Y H:i" }}</div>
+                        </div>
+                        <div>
+                            <label class="block text-forge-bright text-sm font-medium mb-2">Última Actualización</label>
+                            <div class="text-forge-light">{{ transaction.updated_at|date:"d/m/Y H:i" }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Acciones -->
+        <div class="space-y-6">
+            <div class="glass-panel p-6">
+                <h3 class="text-white font-medium text-lg mb-4">Acciones</h3>
+                <div class="space-y-4">
+                    <a href="{% url 'finance:transaction_update' transaction.pk %}" 
+                       class="glass-btn px-6 py-2.5 w-full text-center text-white hover:text-forge-bright block">
+                        <i class="fas fa-edit mr-1"></i>
+                        Editar Transacción
+                    </a>
+                    <form action="{% url 'finance:transaction_delete' transaction.pk %}" 
+                          method="post"
+                          onsubmit="return confirm('¿Estás seguro de que deseas eliminar esta transacción?');">
+                        {% csrf_token %}
+                        <button type="submit" 
+                                class="glass-btn px-6 py-2.5 w-full text-red-400 hover:text-red-300">
+                            <i class="fas fa-trash-alt mr-1"></i>
+                            Eliminar Transacción
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

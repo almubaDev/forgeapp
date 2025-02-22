@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Pagos{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Encabezado -->
+    <div class="flex justify-between items-center">
+        <h2 class="text-2xl text-white font-medium">Pagos</h2>
+        <div class="flex space-x-3">
+            <a href="{% url 'finance:dashboard' %}" 
+               class="glass-btn px-4 py-2 text-white hover:text-forge-bright">
+                <i class="fas fa-chart-line mr-1"></i>
+                Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="glass-panel p-6">
+        <form method="get" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+                <label class="block text-forge-bright text-sm font-medium mb-2">Estado</label>
+                {{ form.status }}
+            </div>
+            <div>
+                <label class="block text-forge-bright text-sm font-medium mb-2">Método de Pago</label>
+                {{ form.payment_method }}
+            </div>
+            <div>
+                <label class="block text-forge-bright text-sm font-medium mb-2">Fecha Inicio</label>
+                {{ form.start_date }}
+            </div>
+            <div>
+                <label class="block text-forge-bright text-sm font-medium mb-2">Fecha Fin</label>
+                {{ form.end_date }}
+            </div>
+            <div class="lg:col-span-4 flex justify-end">
+                <button type="submit" class="glass-btn px-6 py-2 text-white hover:text-forge-bright">
+                    <i class="fas fa-search mr-1"></i>
+                    Filtrar
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Lista de Pagos -->
+    <div class="glass-panel p-6">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-forge-light border-opacity-10">
+                        <th class="p-4 text-left text-white font-medium">Cliente</th>
+                        <th class="p-4 text-left text-white font-medium">Aplicación</th>
+                        <th class="p-4 text-center text-white font-medium">Estado</th>
+                        <th class="p-4 text-center text-white font-medium">Vencimiento</th>
+                        <th class="p-4 text-right text-white font-medium">Monto</th>
+                        <th class="p-4 text-center text-white font-medium">Método</th>
+                        <th class="p-4 text-center text-white font-medium">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for payment in payments %}
+                    <tr class="border-b border-forge-light border-opacity-5">
+                        <td class="p-4">
+                            <a href="{% url 'forgeapp:client_detail' payment.subscription.client.pk %}" 
+                               class="text-white hover:text-forge-bright">
+                                {{ payment.subscription.client.name }}
+                            </a>
+                        </td>
+                        <td class="p-4 text-white">
+                            {{ payment.subscription.application.name }}
+                        </td>
+                        <td class="p-4 text-center">
+                            <span class="glass-btn px-3 py-1 text-sm 
+                                {% if payment.status == 'completed' %}text-green-400
+                                {% elif payment.status == 'pending' %}text-yellow-400
+                                {% elif payment.status == 'failed' %}text-red-400
+                                {% else %}text-gray-400{% endif %}">
+                                {{ payment.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="p-4 text-center text-white">
+                            {{ payment.due_date|date:"d/m/Y" }}
+                        </td>
+                        <td class="p-4 text-right text-white">
+                            ${{ payment.amount|floatformat:0|intcomma }}
+                        </td>
+                        <td class="p-4 text-center text-white">
+                            {% if payment.payment_method %}
+                            {{ payment.payment_method.name }}
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td class="p-4 text-center">
+                            <a href="{% url 'finance:payment_detail' payment.pk %}" 
+                               class="glass-btn px-4 py-1.5 text-white hover:text-forge-bright">
+                                Ver
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="p-4 text-white text-center opacity-60">
+                            No hay pagos registrados
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,18 @@
+<!-- templates/forgeapp/application_form.html -->
+{% extends 'forgeapp/form_base.html' %}
+
+{% block title %}
+    {% if form.instance.pk %}
+        Editar Aplicación - {{ form.instance.name }}
+    {% else %}
+        Nueva Aplicación
+    {% endif %}
+{% endblock %}
+
+{% block window_title %}
+    {% if form.instance.pk %}
+        Editar Aplicación
+    {% else %}
+        Nueva Aplicación
+    {% endif %}
+{% endblock %}

@@ -1,0 +1,18 @@
+<!-- templates/forgeapp/calculadora_form.html -->
+{% extends 'forgeapp/form_base.html' %}
+
+{% block title %}
+    {% if form.instance.pk %}
+        Editar Calculadora - {{ form.instance.nombre }}
+    {% else %}
+        Nueva Calculadora
+    {% endif %}
+{% endblock %}
+
+{% block window_title %}
+    {% if form.instance.pk %}
+        Editar Calculadora
+    {% else %}
+        Nueva Calculadora
+    {% endif %}
+{% endblock %}

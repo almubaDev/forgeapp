@@ -1,0 +1,38 @@
+<!-- checkout_counters/templates/checkout_counters/payment_detail.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h3>Detalle del Pago</h3>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Descripción:</strong> {{ payment.description }}</p>
+                    <p><strong>Monto:</strong> ${{ payment.amount }}</p>
+                    <p><strong>Estado:</strong> {{ payment.get_status_display }}</p>
+                    <p><strong>Referencia:</strong> {{ payment.reference_id }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Creado:</strong> {{ payment.created_at|date:"d/m/Y H:i" }}</p>
+                    <p><strong>Actualizado:</strong> {{ payment.updated_at|date:"d/m/Y H:i" }}</p>
+                    <p><strong>Expira:</strong> {{ payment.expires_at|date:"d/m/Y H:i" }}</p>
+                    {% if payment.payer_email %}
+                    <p><strong>Email del pagador:</strong> {{ payment.payer_email }}</p>
+                    {% endif %}
+                    {% if payment.payer_name %}
+                    <p><strong>Nombre del pagador:</strong> {{ payment.payer_name }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="mt-3">
+                <a href="{{ payment.payment_link }}" target="_blank" class="btn btn-success">Ver Link de Pago</a>
+                <a href="{% url 'checkout_counters:payment_update' payment.pk %}" class="btn btn-primary">Editar</a>
+                <a href="{% url 'checkout_counters:payment_list' %}" class="btn btn-secondary">Volver a la Lista</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        @page {
+            size: letter;
+            margin: 2.5cm;
+            @frame header {
+                -pdf-frame-content: headerContent;
+                top: 0.5cm;
+                margin-left: 2.5cm;
+                margin-right: 2.5cm;
+                height: 3cm;
+            }
+            @frame footer {
+                -pdf-frame-content: footerContent;
+                bottom: 0cm;
+                margin-left: 2.5cm;
+                margin-right: 2.5cm;
+                height: 1cm;
+            }
+        }
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            color: #333333;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #64C5E8;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .logo {
+            max-width: 200px;
+            margin-bottom: 10px;
+        }
+        .title {
+            color: #1B3A5D;
+            font-size: 24px;
+            margin: 20px 0;
+        }
+        .details {
+            margin: 20px 0;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .details-row {
+            margin: 10px 0;
+        }
+        .label {
+            font-weight: bold;
+            color: #1B3A5D;
+            width: 150px;
+            display: inline-block;
+        }
+        .value {
+            color: #333;
+        }
+        .subscription-details {
+            margin: 30px 0;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+        .footer {
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+            margin-top: 30px;
+        }
+        .watermark {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            font-size: 72px;
+            color: rgba(100, 197, 232, 0.1);
+            z-index: -1;
+        }
+    </style>
+</head>
+<body>
+    <div id="headerContent">
+        <div class="header">
+            <img src="{{ logo_path }}" class="logo" alt="ForgeApp">
+            <h1 class="title">Comprobante de Pago</h1>
+        </div>
+    </div>
+
+    <div class="details">
+        <div class="details-row">
+            <span class="label">Comprobante N°:</span>
+            <span class="value">{{ receipt.receipt_number }}</span>
+        </div>
+        <div class="details-row">
+            <span class="label">Fecha de Pago:</span>
+            <span class="value">{{ payment.payment_date|date:"d/m/Y H:i" }}</span>
+        </div>
+        <div class="details-row">
+            <span class="label">Cliente:</span>
+            <span class="value">{{ payment.subscription.client.name }}</span>
+        </div>
+        <div class="details-row">
+            <span class="label">RUT:</span>
+            <span class="value">{{ payment.subscription.client.rut }}</span>
+        </div>
+        {% if payment.subscription.client.company %}
+        <div class="details-row">
+            <span class="label">Empresa:</span>
+            <span class="value">{{ payment.subscription.client.company }}</span>
+        </div>
+        {% if payment.subscription.client.company_rut %}
+        <div class="details-row">
+            <span class="label">RUT Empresa:</span>
+            <span class="value">{{ payment.subscription.client.company_rut }}</span>
+        </div>
+        {% endif %}
+        {% endif %}
+    </div>
+
+    <div class="subscription-details">
+        <h3 style="color: #1B3A5D; margin-bottom: 15px;">Detalles del Servicio</h3>
+        <div class="details-row">
+            <span class="label">Aplicación:</span>
+            <span class="value">{{ payment.subscription.application.name }}</span>
+        </div>
+        <div class="details-row">
+            <span class="label">Período:</span>
+            <span class="value">{{ payment.subscription.start_date|date:"d/m/Y" }} - {{ payment.subscription.end_date|date:"d/m/Y" }}</span>
+        </div>
+        <div class="details-row">
+            <span class="label">Tipo de Pago:</span>
+            <span class="value">{{ payment.subscription.get_payment_type_display }}</span>
+        </div>
+        <div class="details-row">
+            <span class="label">Método de Pago:</span>
+            <span class="value">{{ payment.payment_method.name }}</span>
+        </div>
+        <div class="details-row">
+            <span class="label">Monto:</span>
+            <span class="value">${{ payment.amount|floatformat:0|intcomma }}</span>
+        </div>
+        {% if payment.transaction_id %}
+        <div class="details-row">
+            <span class="label">ID Transacción:</span>
+            <span class="value">{{ payment.transaction_id }}</span>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="watermark">PAGADO</div>
+
+    <div id="footerContent" class="footer">
+        <p>
+            ForgeApp © {% now "Y" %} | www.forgeapp.net<br>
+            Este documento es un comprobante de pago electrónico
+        </p>
+    </div>
+</body>
+</html>

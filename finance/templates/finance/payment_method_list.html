@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Métodos de Pago{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Encabezado -->
+    <div class="flex justify-between items-center">
+        <h2 class="text-2xl text-white font-medium">Métodos de Pago</h2>
+        <div class="flex space-x-3">
+            <a href="{% url 'finance:payment_method_create' %}" 
+               class="glass-btn px-4 py-2 text-white hover:text-forge-bright">
+                <i class="fas fa-plus mr-1"></i>
+                Nuevo Método
+            </a>
+            <a href="{% url 'finance:dashboard' %}" 
+               class="glass-btn px-4 py-2 text-white hover:text-forge-bright">
+                <i class="fas fa-chart-line mr-1"></i>
+                Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Lista de Métodos de Pago -->
+    <div class="glass-panel p-6">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-forge-light border-opacity-10">
+                        <th class="p-4 text-left text-white font-medium">Nombre</th>
+                        <th class="p-4 text-center text-white font-medium">Tipo</th>
+                        <th class="p-4 text-center text-white font-medium">Estado</th>
+                        <th class="p-4 text-center text-white font-medium">Fecha de Creación</th>
+                        <th class="p-4 text-center text-white font-medium">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for method in payment_methods %}
+                    <tr class="border-b border-forge-light border-opacity-5">
+                        <td class="p-4 text-white">
+                            {{ method.name }}
+                        </td>
+                        <td class="p-4 text-center">
+                            <span class="glass-btn px-3 py-1 text-sm text-white">
+                                {{ method.get_type_display }}
+                            </span>
+                        </td>
+                        <td class="p-4 text-center">
+                            <span class="glass-btn px-3 py-1 text-sm 
+                                {% if method.is_active %}text-green-400{% else %}text-red-400{% endif %}">
+                                {{ method.is_active|yesno:"Activo,Inactivo" }}
+                            </span>
+                        </td>
+                        <td class="p-4 text-center text-white">
+                            {{ method.created_at|date:"d/m/Y" }}
+                        </td>
+                        <td class="p-4 text-center">
+                            <div class="flex justify-center space-x-2">
+                                <a href="{% url 'finance:payment_method_update' method.pk %}" 
+                                   class="glass-btn px-3 py-1.5 text-white hover:text-forge-bright">
+                                    Editar
+                                </a>
+                                <form action="{% url 'finance:payment_method_delete' method.pk %}" 
+                                      method="post" 
+                                      onsubmit="return confirm('¿Estás seguro de que deseas eliminar este método de pago?');"
+                                      class="inline">
+                                    {% csrf_token %}
+                                    <button type="submit" 
+                                            class="glass-btn px-3 py-1.5 text-red-400 hover:text-red-300">
+                                        Eliminar
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="p-4 text-white text-center opacity-60">
+                            No hay métodos de pago registrados
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Información Adicional -->
+    <div class="glass-panel p-6">
+        <h3 class="text-white font-medium text-lg mb-4">Información sobre Métodos de Pago</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="space-y-2">
+                <h4 class="text-forge-bright font-medium">Métodos Manuales</h4>
+                <p class="text-white opacity-80">
+                    Para pagos que requieren verificación manual, como transferencias bancarias o depósitos.
+                </p>
+            </div>
+            <div class="space-y-2">
+                <h4 class="text-forge-bright font-medium">Métodos Automáticos</h4>
+                <p class="text-white opacity-80">
+                    Para pagos procesados automáticamente a través de pasarelas de pago integradas.
+                </p>
+            </div>
+            <div class="space-y-2">
+                <h4 class="text-forge-bright font-medium">Configuración</h4>
+                <p class="text-white opacity-80">
+                    Cada método puede tener su propia configuración específica y requisitos de procesamiento.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

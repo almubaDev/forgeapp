@@ -1,0 +1,238 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+{% load finance_extras %}
+
+{% block title %}Dashboard Financiero{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Encabezado -->
+    <div class="flex justify-between items-center">
+        <h2 class="text-2xl text-white font-medium">Dashboard Financiero</h2>
+        <div class="flex space-x-3">
+            <a href="{% url 'finance:payment_list' %}" 
+               class="glass-btn px-4 py-2 text-white hover:text-forge-bright">
+                Ver Pagos
+            </a>
+            <a href="{% url 'finance:transaction_list' %}" 
+               class="glass-btn px-4 py-2 text-white hover:text-forge-bright">
+                Ver Transacciones
+            </a>
+        </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Suscripciones -->
+        <div class="glass-panel p-6">
+            <h3 class="text-forge-bright text-sm font-medium mb-2">Suscripciones</h3>
+            <p class="text-white text-2xl font-bold">{{ active_subscriptions }}/{{ total_subscriptions }}</p>
+            <p class="text-forge-light text-sm mt-2">Activas/Total</p>
+        </div>
+
+        <!-- MRR -->
+        <div class="glass-panel p-6">
+            <h3 class="text-forge-bright text-sm font-medium mb-2">MRR</h3>
+            <p class="text-white text-2xl font-bold">${{ mrr|floatformat:0|intcomma }}</p>
+            <p class="text-forge-light text-sm mt-2">
+                {% if mrr_change > 0 %}
+                <span class="text-green-400">↑ {{ mrr_change }}%</span>
+                {% else %}
+                <span class="text-red-400">↓ {{ mrr_change|abs_value }}%</span>
+                {% endif %}
+                vs mes anterior
+            </p>
+        </div>
+
+        <!-- Clientes Activos -->
+        <div class="glass-panel p-6">
+            <h3 class="text-forge-bright text-sm font-medium mb-2">Clientes Activos</h3>
+            <p class="text-white text-2xl font-bold">{{ active_clients }}</p>
+            <p class="text-forge-light text-sm mt-2">
+                {% if new_clients > 0 %}+{{ new_clients }}{% endif %} 
+                este mes
+            </p>
+        </div>
+
+        <!-- Valor Promedio por Cliente -->
+        <div class="glass-panel p-6">
+            <h3 class="text-forge-bright text-sm font-medium mb-2">Valor Promedio</h3>
+            <p class="text-white text-2xl font-bold">${{ avg_client_value|floatformat:0|intcomma }}</p>
+            <p class="text-forge-light text-sm mt-2">Por cliente</p>
+        </div>
+    </div>
+
+    <!-- Gráficos -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Ingresos Mensuales -->
+        <div class="glass-panel p-6">
+            <h3 class="text-white font-medium mb-4">Ingresos Mensuales</h3>
+            <div style="height: 120px;">
+                <canvas id="monthlyRevenueChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Distribución de Pagos -->
+        <div class="glass-panel p-6">
+            <h3 class="text-white font-medium mb-4">Distribución de Pagos</h3>
+            <div style="height: 120px;">
+                <canvas id="paymentDistributionChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Suscripciones sin Pago -->
+    <div class="glass-panel p-6">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-white font-medium">Suscripciones sin Pago del Mes</h3>
+            <span class="glass-btn px-3 py-1.5 text-sm text-forge-bright">
+                {{ pending_payments.count }} pendientes
+            </span>
+        </div>
+        
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-forge-light border-opacity-10">
+                        <th class="p-4 text-left text-white font-medium">Cliente</th>
+                        <th class="p-4 text-left text-white font-medium">Aplicación</th>
+                        <th class="p-4 text-center text-white font-medium">Tipo</th>
+                        <th class="p-4 text-right text-white font-medium">Monto</th>
+                        <th class="p-4 text-center text-white font-medium">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for subscription in pending_payments %}
+                    <tr class="border-b border-forge-light border-opacity-5">
+                        <td class="p-4">
+                            <a href="{% url 'forgeapp:client_detail' subscription.client.pk %}" 
+                               class="text-white hover:text-forge-bright">
+                                {{ subscription.client.name }}
+                            </a>
+                        </td>
+                        <td class="p-4 text-white">
+                            {{ subscription.application.name }}
+                        </td>
+                        <td class="p-4 text-center">
+                            <span class="glass-btn px-3 py-1 text-sm text-yellow-400">
+                                {{ subscription.get_payment_type_display }}
+                            </span>
+                        </td>
+                        <td class="p-4 text-right text-white">
+                            ${{ subscription.price|floatformat:0|intcomma }}
+                        </td>
+                        <td class="p-4 text-center">
+                            <a href="{% url 'forgeapp:subscription_detail' subscription.pk %}" 
+                               class="glass-btn px-4 py-1.5 text-white hover:text-forge-bright">
+                                Ver
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="p-4 text-white text-center opacity-60">
+                            No hay suscripciones pendientes de pago
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Configuración común para los gráficos
+const chartConfig = {
+    maintainAspectRatio: false,
+    responsive: true,
+    plugins: {
+        legend: {
+            labels: {
+                color: 'white',
+                font: {
+                    size: 11
+                }
+            }
+        }
+    },
+    scales: {
+        y: {
+            ticks: {
+                color: 'white',
+                font: {
+                    size: 10
+                }
+            },
+            grid: {
+                color: 'rgba(255, 255, 255, 0.1)'
+            }
+        },
+        x: {
+            ticks: {
+                color: 'white',
+                font: {
+                    size: 10
+                }
+            },
+            grid: {
+                color: 'rgba(255, 255, 255, 0.1)'
+            }
+        }
+    }
+};
+
+// Gráfico de Ingresos Mensuales
+const monthlyRevenueCtx = document.getElementById('monthlyRevenueChart').getContext('2d');
+new Chart(monthlyRevenueCtx, {
+    type: 'line',
+    data: {
+        labels: {{ monthly_labels|safe }},
+        datasets: [{
+            label: 'Ingresos',
+            data: {{ monthly_data|safe }},
+            borderColor: '#64C5E8',
+            backgroundColor: 'rgba(100, 197, 232, 0.1)',
+            fill: true,
+            tension: 0.4
+        }]
+    },
+    options: chartConfig
+});
+
+// Gráfico de Distribución de Pagos
+const paymentDistributionCtx = document.getElementById('paymentDistributionChart').getContext('2d');
+new Chart(paymentDistributionCtx, {
+    type: 'doughnut',
+    data: {
+        labels: ['Mensuales', 'Anuales'],
+        datasets: [{
+            data: {{ payment_distribution|safe }},
+            backgroundColor: [
+                '#64C5E8',  // Azul claro
+                '#FF6B6B'   // Rojo coral
+            ]
+        }]
+    },
+    options: {
+        maintainAspectRatio: false,
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'right',
+                labels: {
+                    color: 'white',
+                    font: {
+                        size: 11
+                    }
+                }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

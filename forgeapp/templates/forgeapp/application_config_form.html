@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    {% if form.instance.pk %}
+        Editar Configuración
+    {% else %}
+        Nueva Configuración
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Encabezado -->
+    <div class="flex justify-between items-center">
+        <div class="flex items-center space-x-4">
+            <h2 class="text-2xl text-white font-medium">
+                {% if form.instance.pk %}
+                    Editar Configuración
+                {% else %}
+                    Nueva Configuración
+                {% endif %}
+            </h2>
+            <span class="glass-btn px-3 py-1.5 text-sm text-forge-bright">
+                {{ application.name }}
+            </span>
+        </div>
+        <a href="{% url 'forgeapp:application_configs' application.pk %}" 
+           class="glass-btn px-6 py-2.5 text-white hover:text-forge-bright">
+            Volver
+        </a>
+    </div>
+
+    <!-- Formulario -->
+    <div class="glass-panel p-6">
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+            
+            <!-- Clave -->
+            <div>
+                <label for="{{ form.key.id_for_label }}" class="block text-forge-bright text-sm font-medium mb-2">
+                    Clave
+                </label>
+                {{ form.key }}
+                {% if form.key.errors %}
+                <p class="text-red-400 text-sm mt-1">{{ form.key.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Tipo de Campo -->
+            <div>
+                <label for="{{ form.field_type.id_for_label }}" class="block text-forge-bright text-sm font-medium mb-2">
+                    Tipo de Campo
+                </label>
+                {{ form.field_type }}
+                {% if form.field_type.errors %}
+                <p class="text-red-400 text-sm mt-1">{{ form.field_type.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Valor -->
+            <div>
+                <label for="{{ form.value.id_for_label }}" class="block text-forge-bright text-sm font-medium mb-2">
+                    Valor
+                </label>
+                {{ form.value }}
+                {% if form.value.errors %}
+                <p class="text-red-400 text-sm mt-1">{{ form.value.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Descripción -->
+            <div>
+                <label for="{{ form.description.id_for_label }}" class="block text-forge-bright text-sm font-medium mb-2">
+                    Descripción
+                </label>
+                {{ form.description }}
+                {% if form.description.errors %}
+                <p class="text-red-400 text-sm mt-1">{{ form.description.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Botones -->
+            <div class="flex justify-end space-x-4 pt-4">
+                <a href="{% url 'forgeapp:application_configs' application.pk %}" 
+                   class="glass-btn px-6 py-2.5 text-white hover:text-forge-bright opacity-80 hover:opacity-100">
+                    Cancelar
+                </a>
+                <button type="submit" class="glass-btn px-6 py-2.5 text-white hover:text-forge-bright">
+                    {% if form.instance.pk %}
+                        Guardar Cambios
+                    {% else %}
+                        Crear Configuración
+                    {% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

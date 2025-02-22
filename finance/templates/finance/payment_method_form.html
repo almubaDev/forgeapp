@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    {% if payment_method %}
+        Editar Método de Pago
+    {% else %}
+        Nuevo Método de Pago
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Encabezado -->
+    <div class="flex justify-between items-center">
+        <h2 class="text-2xl text-white font-medium">
+            {% if payment_method %}
+                Editar Método de Pago
+            {% else %}
+                Nuevo Método de Pago
+            {% endif %}
+        </h2>
+        <div class="flex space-x-3">
+            <a href="{% url 'finance:payment_method_list' %}" 
+               class="glass-btn px-4 py-2 text-white hover:text-forge-bright">
+                Volver
+            </a>
+        </div>
+    </div>
+
+    <!-- Formulario -->
+    <div class="glass-panel p-6">
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+            
+            <!-- Nombre -->
+            <div>
+                <label for="{{ form.name.id_for_label }}" class="block text-forge-bright text-sm font-medium mb-2">
+                    Nombre
+                </label>
+                {{ form.name }}
+                {% if form.name.errors %}
+                <p class="text-red-400 text-sm mt-1">{{ form.name.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Tipo -->
+            <div>
+                <label for="{{ form.type.id_for_label }}" class="block text-forge-bright text-sm font-medium mb-2">
+                    Tipo
+                </label>
+                {{ form.type }}
+                {% if form.type.errors %}
+                <p class="text-red-400 text-sm mt-1">{{ form.type.errors.0 }}</p>
+                {% endif %}
+                <p class="text-forge-light text-sm mt-1">
+                    Selecciona si el método requiere verificación manual o es procesado automáticamente.
+                </p>
+            </div>
+
+            <!-- Estado -->
+            <div>
+                <label class="flex items-center space-x-3">
+                    {{ form.is_active }}
+                    <span class="text-forge-bright text-sm font-medium">Activo</span>
+                </label>
+                {% if form.is_active.errors %}
+                <p class="text-red-400 text-sm mt-1">{{ form.is_active.errors.0 }}</p>
+                {% endif %}
+                <p class="text-forge-light text-sm mt-1">
+                    Desactiva temporalmente este método de pago sin eliminarlo.
+                </p>
+            </div>
+
+            <!-- Configuración -->
+            <div>
+                <label for="{{ form.config.id_for_label }}" class="block text-forge-bright text-sm font-medium mb-2">
+                    Configuración (JSON)
+                </label>
+                {{ form.config }}
+                {% if form.config.errors %}
+                <p class="text-red-400 text-sm mt-1">{{ form.config.errors.0 }}</p>
+                {% endif %}
+                <p class="text-forge-light text-sm mt-1">
+                    Configura parámetros adicionales en formato JSON. Por ejemplo:
+                </p>
+                <pre class="text-forge-light text-sm mt-2 p-3 bg-forge-dark bg-opacity-30 rounded">
+{
+    "instructions": "Realiza la transferencia a la siguiente cuenta...",
+    "bank_name": "Banco Example",
+    "account_number": "1234567890",
+    "account_type": "Corriente"
+}</pre>
+            </div>
+
+            <!-- Botones -->
+            <div class="flex justify-end space-x-4 pt-4">
+                <a href="{% url 'finance:payment_method_list' %}" 
+                   class="glass-btn px-6 py-2.5 text-white hover:text-forge-bright opacity-80 hover:opacity-100">
+                    Cancelar
+                </a>
+                <button type="submit" class="glass-btn px-6 py-2.5 text-white hover:text-forge-bright">
+                    {% if payment_method %}
+                        Guardar Cambios
+                    {% else %}
+                        Crear Método de Pago
+                    {% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Información Adicional -->
+    <div class="glass-panel p-6">
+        <h3 class="text-white font-medium text-lg mb-4">Información Importante</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-2">
+                <h4 class="text-forge-bright font-medium">Métodos Manuales</h4>
+                <ul class="text-white opacity-80 list-disc list-inside space-y-1">
+                    <li>Transferencias bancarias</li>
+                    <li>Depósitos directos</li>
+                    <li>Requieren verificación manual</li>
+                    <li>Incluir instrucciones detalladas</li>
+                </ul>
+            </div>
+            <div class="space-y-2">
+                <h4 class="text-forge-bright font-medium">Métodos Automáticos</h4>
+                <ul class="text-white opacity-80 list-disc list-inside space-y-1">
+                    <li>Pasarelas de pago integradas</li>
+                    <li>Procesamiento automático</li>
+                    <li>Requieren configuración API</li>
+                    <li>Verificación instantánea</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Formatear el JSON al cargar la página
+    const configTextarea = document.getElementById('{{ form.config.id_for_label }}');
+    try {
+        const config = JSON.parse(configTextarea.value || '{}');
+        configTextarea.value = JSON.stringify(config, null, 2);
+    } catch (e) {
+        // Si no es JSON válido, dejarlo como está
+    }
+
+    // Validar y formatear JSON al enviar el formulario
+    document.querySelector('form').addEventListener('submit', function(e) {
+        try {
+            const config = JSON.parse(configTextarea.value || '{}');
+            configTextarea.value = JSON.stringify(config);
+        } catch (e) {
+            e.preventDefault();
+            alert('La configuración debe ser un JSON válido');
+        }
+    });
+});
+</script>
+{% endblock %}
+
+{% endblock %}

@@ -1,0 +1,131 @@
+<!-- templates/forgeapp/application_list.html -->
+{% extends 'base.html' %}
+
+{% block title %}Aplicaciones - ForgeApp{% endblock %}
+
+{% block window_title %}Listado de Aplicaciones{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <div class="flex justify-between items-center">
+        <h2 class="text-2xl text-white font-medium">Aplicaciones</h2>
+        <a href="{% url 'forgeapp:application_create' %}" 
+           class="glass-btn px-6 py-2.5 text-white hover:text-forge-bright">
+            Nueva Aplicación
+        </a>
+    </div>
+
+    <div class="glass-panel p-6">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-forge-light border-opacity-10">
+                        <th class="p-4 text-left text-white font-medium">Nombre</th>
+                        <th class="p-4 text-left text-white font-medium">Propietario</th>
+                        <th class="p-4 text-left text-white font-medium">URL</th>
+                        <th class="p-4 text-left text-white font-medium">Documentación</th>
+                        <th class="p-4 text-left text-white font-medium">Suscripciones</th>
+                        <th class="p-4 text-left text-white font-medium">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for app in applications %}
+                    <tr class="border-b border-forge-light border-opacity-5 hover:bg-forge-primary hover:bg-opacity-5 transition-colors">
+                        <td class="p-4 text-white">
+                            <a href="{% url 'forgeapp:application_detail' app.pk %}" 
+                               class="hover:text-forge-bright transition-colors">
+                                {{ app.name }}
+                            </a>
+                        </td>
+                        <td class="p-4 text-white">
+                            {% if app.owner %}
+                                <a href="{% url 'forgeapp:client_detail' app.owner.pk %}" 
+                                   class="hover:text-forge-bright transition-colors">
+                                    {{ app.owner.name }}
+                                </a>
+                            {% else %}
+                                <span class="text-forge-light opacity-60">No asignado</span>
+                            {% endif %}
+                        </td>
+                        <td class="p-4">
+                            {% if app.url %}
+                                <a href="{{ app.url }}" target="_blank" 
+                                   class="text-forge-bright hover:text-forge-light transition-colors">
+                                    Ver proyecto
+                                </a>
+                            {% else %}
+                                <span class="text-forge-light opacity-60">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="p-4">
+                            {% if app.documentation_url %}
+                                <a href="{{ app.documentation_url }}" target="_blank" 
+                                   class="text-forge-bright hover:text-forge-light transition-colors">
+                                    Ver docs
+                                </a>
+                            {% else %}
+                                <span class="text-forge-light opacity-60">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="p-4 text-white">
+                            <span class="px-3 py-1 rounded-full bg-forge-primary bg-opacity-20 backdrop-blur-sm">
+                                {{ app.active_subscriptions }}/{{ app.total_subscriptions }}
+                            </span>
+                        </td>
+                        <td class="p-4">
+                            <div class="flex space-x-3">
+                                <a href="{% url 'forgeapp:application_update' app.pk %}" 
+                                   class="glass-btn px-4 py-1.5 text-white hover:text-forge-bright">
+                                    Editar
+                                </a>
+                                <button onclick="confirmDelete('{% url 'forgeapp:application_delete' app.pk %}')" 
+                                        class="glass-btn px-4 py-1.5 text-red-400 hover:text-red-300 bg-red-900 bg-opacity-20">
+                                    Eliminar
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="p-4 text-white text-center opacity-60">No hay aplicaciones registradas</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmación de eliminación -->
+<div id="deleteModal" class="hidden fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center">
+    <div class="glass-panel p-6 max-w-md">
+        <h3 class="text-white font-medium text-lg mb-4">Confirmar Eliminación</h3>
+        <p class="text-white opacity-80 mb-6">¿Estás seguro de que deseas eliminar esta aplicación? Esta acción no se puede deshacer.</p>
+        <form id="deleteForm" method="post" class="flex justify-end space-x-4">
+            {% csrf_token %}
+            <button type="button" onclick="closeDeleteModal()" 
+                    class="glass-btn px-6 py-2 text-white hover:text-forge-bright opacity-80 hover:opacity-100">
+                Cancelar
+            </button>
+            <button type="submit" 
+                    class="glass-btn px-6 py-2 text-red-400 hover:text-red-300 bg-red-900 bg-opacity-20">
+                Eliminar
+            </button>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmDelete(url) {
+    document.getElementById('deleteModal').classList.remove('hidden');
+    document.getElementById('deleteForm').action = url;
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.add('hidden');
+}
+</script>
+{% endblock %}

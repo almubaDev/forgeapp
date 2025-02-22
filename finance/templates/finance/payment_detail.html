@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Detalle de Pago{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Encabezado -->
+    <div class="flex justify-between items-center">
+        <div class="flex items-center space-x-4">
+            <h2 class="text-2xl text-white font-medium">Detalle de Pago</h2>
+            <span class="glass-btn px-3 py-1.5 text-sm 
+                {% if payment.status == 'completed' %}text-green-400
+                {% elif payment.status == 'pending' %}text-yellow-400
+                {% elif payment.status == 'failed' %}text-red-400
+                {% else %}text-gray-400{% endif %}">
+                {{ payment.get_status_display }}
+            </span>
+        </div>
+        <div class="flex space-x-3">
+            <a href="{% url 'finance:payment_list' %}" 
+               class="glass-btn px-4 py-2 text-white hover:text-forge-bright">
+                Volver
+            </a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Detalles del Pago -->
+        <div class="lg:col-span-2">
+            <div class="glass-panel p-6">
+                <h3 class="text-white font-medium text-lg mb-6">Detalles</h3>
+                
+                <div class="space-y-4">
+                    <!-- Cliente -->
+                    <div>
+                        <label class="block text-forge-bright text-sm font-medium mb-2">Cliente</label>
+                        <div class="flex items-center space-x-2">
+                            <a href="{% url 'forgeapp:client_detail' payment.subscription.client.pk %}" 
+                               class="text-white hover:text-forge-bright">
+                                {{ payment.subscription.client.name }}
+                            </a>
+                            <span class="text-forge-light">|</span>
+                            <span class="text-forge-light">{{ payment.subscription.client.email }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Aplicación -->
+                    <div>
+                        <label class="block text-forge-bright text-sm font-medium mb-2">Aplicación</label>
+                        <a href="{% url 'forgeapp:application_detail' payment.subscription.application.pk %}" 
+                           class="text-white hover:text-forge-bright">
+                            {{ payment.subscription.application.name }}
+                        </a>
+                    </div>
+
+                    <!-- Monto -->
+                    <div>
+                        <label class="block text-forge-bright text-sm font-medium mb-2">Monto</label>
+                        <div class="text-white text-2xl font-bold">${{ payment.amount|floatformat:0|intcomma }}</div>
+                    </div>
+
+                    <!-- Fechas -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-forge-bright text-sm font-medium mb-2">Fecha de Vencimiento</label>
+                            <div class="text-white">{{ payment.due_date|date:"d/m/Y" }}</div>
+                        </div>
+                        {% if payment.payment_date %}
+                        <div>
+                            <label class="block text-forge-bright text-sm font-medium mb-2">Fecha de Pago</label>
+                            <div class="text-white">{{ payment.payment_date|date:"d/m/Y H:i" }}</div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Método de Pago -->
+                    {% if payment.payment_method %}
+                    <div>
+                        <label class="block text-forge-bright text-sm font-medium mb-2">Método de Pago</label>
+                        <div class="text-white">{{ payment.payment_method.name }}</div>
+                    </div>
+                    {% endif %}
+
+                    <!-- ID de Transacción -->
+                    {% if payment.transaction_id %}
+                    <div>
+                        <label class="block text-forge-bright text-sm font-medium mb-2">ID de Transacción</label>
+                        <div class="text-white">{{ payment.transaction_id }}</div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Notas -->
+                    {% if payment.notes %}
+                    <div>
+                        <label class="block text-forge-bright text-sm font-medium mb-2">Notas</label>
+                        <div class="text-white whitespace-pre-wrap">{{ payment.notes }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Acciones -->
+        <div class="space-y-6">
+            <!-- Marcar como Completado -->
+            {% if payment.status == 'pending' %}
+            <div class="glass-panel p-6">
+                <h3 class="text-white font-medium text-lg mb-4">Marcar como Completado</h3>
+                <form action="{% url 'finance:payment_mark_completed' payment.pk %}" method="post">
+                    {% csrf_token %}
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-forge-bright text-sm font-medium mb-2">ID de Transacción</label>
+                            <input type="text" name="transaction_id" class="w-full" placeholder="Opcional">
+                        </div>
+                        <button type="submit" class="glass-btn px-6 py-2.5 w-full text-white hover:text-forge-bright">
+                            <i class="fas fa-check mr-1"></i>
+                            Marcar como Completado
+                        </button>
+                    </div>
+                </form>
+            </div>
+            {% endif %}
+
+            <!-- Comprobante -->
+            {% if payment.status == 'completed' %}
+            <div class="glass-panel p-6">
+                <h3 class="text-white font-medium text-lg mb-4">Comprobante</h3>
+                {% if payment.receipt %}
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-forge-bright text-sm font-medium mb-2">Número</label>
+                        <div class="text-white">{{ payment.receipt.receipt_number }}</div>
+                    </div>
+                    <div class="flex space-x-2">
+                        <a href="{% url 'finance:receipt_download' payment.receipt.pk %}" 
+                           class="glass-btn px-4 py-2 flex-1 text-center text-white hover:text-forge-bright">
+                            <i class="fas fa-download mr-1"></i>
+                            Descargar
+                        </a>
+                        {% if not payment.receipt.sent_to_client %}
+                        <form action="{% url 'finance:receipt_send' payment.receipt.pk %}" method="post" class="flex-1">
+                            {% csrf_token %}
+                            <button type="submit" class="glass-btn px-4 py-2 w-full text-white hover:text-forge-bright">
+                                <i class="fas fa-envelope mr-1"></i>
+                                Enviar
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <form action="{% url 'finance:payment_generate_receipt' payment.pk %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="glass-btn px-6 py-2.5 w-full text-white hover:text-forge-bright">
+                        <i class="fas fa-file-alt mr-1"></i>
+                        Generar Comprobante
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

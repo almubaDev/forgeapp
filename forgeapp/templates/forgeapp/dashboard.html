@@ -1,0 +1,138 @@
+<!-- forgeapp/templates/forgeapp/dashboard.html -->
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - ForgeApp{% endblock %}
+
+{% block window_title %}Panel de Control{% endblock %}
+
+{% block content %}
+<div class="space-y-10">
+    <!-- Tarjetas de Estadísticas -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <!-- Tarjeta de Clientes -->
+        <div class="glass-panel p-6 hover:scale-105 transition-all duration-300 group">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-white font-medium text-lg">Clientes</h3>
+                <span class="text-4xl text-forge-bright font-bold group-hover:scale-110 transition-transform">{{ total_clients }}</span>
+            </div>
+            <a href="{% url 'forgeapp:client_list' %}" 
+               class="glass-btn py-2.5 w-full text-center text-white hover:text-forge-bright flex items-center justify-center space-x-2 mt-2">
+                <span>Ver Clientes</span>
+            </a>
+        </div>
+
+        <!-- Tarjeta de Suscripciones -->
+        <div class="glass-panel p-6 hover:scale-105 transition-all duration-300 group">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-white font-medium text-lg">Suscripciones Activas</h3>
+                <span class="text-4xl text-forge-bright font-bold group-hover:scale-110 transition-transform">{{ active_subscriptions }}</span>
+            </div>
+            <a href="{% url 'forgeapp:subscription_list' %}" 
+               class="glass-btn py-2.5 w-full text-center text-white hover:text-forge-bright flex items-center justify-center space-x-2 mt-2">
+                <span>Ver Suscripciones</span>
+            </a>
+        </div>
+
+        <!-- Tarjeta de Aplicaciones -->
+        <div class="glass-panel p-6 hover:scale-105 transition-all duration-300 group">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-white font-medium text-lg">Aplicaciones</h3>
+                <span class="text-4xl text-forge-bright font-bold group-hover:scale-110 transition-transform">{{ total_applications }}</span>
+            </div>
+            <a href="{% url 'forgeapp:application_list' %}" 
+               class="glass-btn py-2.5 w-full text-center text-white hover:text-forge-bright flex items-center justify-center space-x-2 mt-2">
+                <span>Ver Aplicaciones</span>
+            </a>
+        </div>
+
+    </div>
+
+    <!-- Acciones Rápidas -->
+    <div class="glass-panel p-6">
+        <h3 class="text-white font-medium text-lg mb-6">Acciones Rápidas</h3>
+        <div class="flex flex-wrap gap-4">
+            <a href="{% url 'forgeapp:client_create' %}" 
+               class="glass-btn px-6 py-2.5 text-white hover:text-forge-bright">
+                Nuevo Cliente
+            </a>
+            <a href="{% url 'forgeapp:subscription_create' %}" 
+               class="glass-btn px-6 py-2.5 text-white hover:text-forge-bright">
+                Nueva Suscripción
+            </a>
+            <a href="{% url 'forgeapp:application_create' %}" 
+               class="glass-btn px-6 py-2.5 text-white hover:text-forge-bright">
+                Nueva Aplicación
+            </a>
+            <a href="{% url 'forgeapp:calculadora_create' %}" 
+                class="glass-btn px-6 py-2.5 text-white hover:text-forge-bright">
+                Nueva Calculadora
+            </a>
+        </div>
+    </div>
+
+    <!-- Tablas de Información -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Clientes Recientes -->
+        <div class="glass-panel p-6">
+            <h3 class="text-white font-medium text-lg mb-6">Clientes Recientes</h3>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b border-forge-light border-opacity-10">
+                            <th class="p-4 text-left text-white font-medium">Cliente</th>
+                            <th class="p-4 text-left text-white font-medium">Email</th>
+                            <th class="p-4 text-left text-white font-medium">Estado</th>
+                            <th class="p-4 text-left text-white font-medium">Fecha</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for client in recent_clients %}
+                        <tr class="border-b border-forge-light border-opacity-5 hover:bg-forge-primary hover:bg-opacity-5 transition-colors">
+                            <td class="p-4 text-white">{{ client.name }}</td>
+                            <td class="p-4 text-white">{{ client.email }}</td>
+                            <td class="p-4 text-white">{{ client.get_status_display }}</td>
+                            <td class="p-4 text-white">{{ client.created_at|date:"d/m/Y" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="p-4 text-white text-center">No hay clientes registrados</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Suscripciones Recientes -->
+        <div class="glass-panel p-6">
+            <h3 class="text-white font-medium text-lg mb-6">Suscripciones Recientes</h3>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b border-forge-light border-opacity-10">
+                            <th class="p-4 text-left text-white font-medium">Cliente</th>
+                            <th class="p-4 text-left text-white font-medium">Aplicación</th>
+                            <th class="p-4 text-left text-white font-medium">Estado</th>
+                            <th class="p-4 text-left text-white font-medium">Precio</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for subscription in recent_subscriptions %}
+                        <tr class="border-b border-forge-light border-opacity-5 hover:bg-forge-primary hover:bg-opacity-5 transition-colors">
+                            <td class="p-4 text-white">{{ subscription.client.name }}</td>
+                            <td class="p-4 text-white">{{ subscription.application.name }}</td>
+                            <td class="p-4 text-white">{{ subscription.get_status_display }}</td>
+                            <td class="p-4 text-white">${{ subscription.price }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="p-4 text-white text-center">No hay suscripciones registradas</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

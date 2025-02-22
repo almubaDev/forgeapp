@@ -1,0 +1,248 @@
+<!-- templates/forgeapp/client_detail.html -->
+{% extends 'base.html' %}
+{% load forgeapp_extras %}
+
+{% block title %}{{ client.name }} - Detalles{% endblock %}
+
+{% block window_title %}Cliente: {{ client.name }}{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <div class="flex justify-between items-center">
+        <div class="flex items-center space-x-4">
+            <h2 class="text-2xl text-white font-medium">{{ client.name }}</h2>
+            <span class="glass-btn px-3 py-1.5 text-sm
+                {% if client.status == 'active' %}text-green-400 bg-green-900 bg-opacity-20
+                {% elif client.status == 'pending' %}text-yellow-400 bg-yellow-900 bg-opacity-20
+                {% else %}text-red-400 bg-red-900 bg-opacity-20{% endif %}">
+                {{ client.get_status_display }}
+            </span>
+        </div>
+        <div class="flex space-x-3">
+            <a href="{% url 'forgeapp:client_update' client.pk %}" 
+               class="glass-btn px-6 py-2.5 text-white hover:text-forge-bright">
+                Editar
+            </a>
+            <button onclick="confirmDelete()" 
+                    class="glass-btn px-6 py-2.5 text-red-400 hover:text-red-300 bg-red-900 bg-opacity-20">
+                Eliminar
+            </button>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- Información del Cliente -->
+        <div class="glass-panel p-6">
+            <h3 class="text-white font-medium text-lg mb-6">Información de Contacto</h3>
+            <dl class="space-y-4">
+                <div>
+                    <dt class="text-forge-bright text-sm font-medium mb-1">RUT</dt>
+                    <dd class="text-white opacity-90">{{ client.rut }}</dd>
+                </div>
+                
+                <div>
+                    <dt class="text-forge-bright text-sm font-medium mb-1">Email</dt>
+                    <dd class="text-white opacity-90">{{ client.email }}</dd>
+                </div>
+                
+                <div>
+                    <dt class="text-forge-bright text-sm font-medium mb-1">Teléfono</dt>
+                    <dd class="text-white opacity-90">
+                        {% if client.phone %}
+                            {{ client.phone }}
+                        {% else %}
+                            <span class="text-forge-light opacity-60">No especificado</span>
+                        {% endif %}
+                    </dd>
+                </div>
+                
+                <div>
+                    <dt class="text-forge-bright text-sm font-medium mb-1">Empresa</dt>
+                    <dd class="text-white opacity-90">
+                        {% if client.company %}
+                            {{ client.company }}
+                            {% if client.company_rut %}
+                                <span class="text-forge-light opacity-60">(RUT: {{ client.company_rut }})</span>
+                            {% endif %}
+                        {% else %}
+                            <span class="text-forge-light opacity-60">No especificada</span>
+                        {% endif %}
+                    </dd>
+                </div>
+
+                <div>
+                    <dt class="text-forge-bright text-sm font-medium mb-1">Cargo</dt>
+                    <dd class="text-white opacity-90">
+                        {% if client.position %}
+                            {{ client.position }}
+                        {% else %}
+                            <span class="text-forge-light opacity-60">No especificado</span>
+                        {% endif %}
+                    </dd>
+                </div>
+                
+                {% if client.notes %}
+                <div>
+                    <dt class="text-forge-bright text-sm font-medium mb-1">Notas</dt>
+                    <dd class="text-white opacity-90 whitespace-pre-line">{{ client.notes }}</dd>
+                </div>
+                {% endif %}
+                
+                <div>
+                    <dt class="text-forge-bright text-sm font-medium mb-1">Fecha de Registro</dt>
+                    <dd class="text-white opacity-90">{{ client.created_at|date:"d/m/Y" }}</dd>
+                </div>
+            </dl>
+        </div>
+
+        <!-- Resumen de Suscripciones -->
+        <div class="glass-panel p-6">
+            <h3 class="text-white font-medium text-lg mb-6">Resumen de Suscripciones</h3>
+            <dl class="space-y-4 mb-6">
+                <div>
+                    <dt class="text-forge-bright text-sm font-medium mb-1">Suscripciones Activas</dt>
+                    <dd class="text-white text-2xl font-bold">
+                        {{ client.active_subscriptions }}/{{ client.total_subscriptions }}
+                    </dd>
+                </div>
+                
+                <div>
+                    <dt class="text-forge-bright text-sm font-medium mb-1">Valor Total Mensual</dt>
+                    <dd class="text-white text-2xl font-bold">${{ client.total_value|default:"0"|formato_cl:client }}</dd>
+                </div>
+            </dl>
+            <div>
+                <a href="{% url 'forgeapp:subscription_create' %}?client={{ client.pk }}" 
+                   class="glass-btn px-6 py-2.5 text-white hover:text-forge-bright w-full flex items-center justify-center">
+                    Nueva Suscripción
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Suscripciones -->
+    <div class="glass-panel p-6">
+        <h3 class="text-white font-medium text-lg mb-6">Suscripciones</h3>
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-forge-light border-opacity-10">
+                        <th class="p-4 text-left text-white font-medium">Aplicación</th>
+                        <th class="p-4 text-left text-white font-medium">Estado</th>
+                        <th class="p-4 text-left text-white font-medium">Precio</th>
+                        <th class="p-4 text-left text-white font-medium">Inicio</th>
+                        <th class="p-4 text-left text-white font-medium">Fin</th>
+                        <th class="p-4 text-left text-white font-medium">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for subscription in subscriptions %}
+                    <tr class="border-b border-forge-light border-opacity-5 hover:bg-forge-primary hover:bg-opacity-5 transition-colors">
+                        <td class="p-4 text-white">
+                            <a href="{% url 'forgeapp:application_detail' subscription.application.pk %}" 
+                               class="hover:text-forge-bright transition-colors">
+                                {{ subscription.application.name }}
+                            </a>
+                        </td>
+                        <td class="p-4">
+                            <span class="glass-btn px-3 py-1 text-sm
+                                {% if subscription.status == 'active' %}text-green-400 bg-green-900 bg-opacity-20
+                                {% elif subscription.status == 'pending' %}text-yellow-400 bg-yellow-900 bg-opacity-20
+                                {% else %}text-red-400 bg-red-900 bg-opacity-20{% endif %}">
+                                {{ subscription.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="p-4">
+                            <span class="px-3 py-1 rounded-full bg-forge-primary bg-opacity-20 backdrop-blur-sm text-white">
+                                ${{ subscription.price|formato_cl:subscription.client }}
+                            </span>
+                        </td>
+                        <td class="p-4 text-white">{{ subscription.start_date|date:"d/m/Y" }}</td>
+                        <td class="p-4 text-white">{{ subscription.end_date|date:"d/m/Y" }}</td>
+                        <td class="p-4">
+                            <div class="flex space-x-3">
+                                <a href="{% url 'forgeapp:subscription_update' subscription.pk %}" 
+                                   class="glass-btn px-4 py-1.5 text-white hover:text-forge-bright">
+                                    Editar
+                                </a>
+                                <button onclick="confirmDeleteSubscription('{{ subscription.pk }}')" 
+                                        class="glass-btn px-4 py-1.5 text-red-400 hover:text-red-300 bg-red-900 bg-opacity-20">
+                                    Eliminar
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="p-4 text-white text-center opacity-60">No hay suscripciones registradas</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmación de eliminación de cliente -->
+<div id="deleteModal" class="hidden fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center">
+    <div class="glass-panel p-6 max-w-md">
+        <h3 class="text-white font-medium text-lg mb-4">Confirmar Eliminación</h3>
+        <p class="text-white opacity-80 mb-6">¿Estás seguro de que deseas eliminar este cliente? Esta acción no se puede deshacer.</p>
+        <form action="{% url 'forgeapp:client_delete' client.pk %}" method="post" 
+              class="flex justify-end space-x-4">
+            {% csrf_token %}
+            <button type="button" onclick="closeDeleteModal()" 
+                    class="glass-btn px-6 py-2 text-white hover:text-forge-bright opacity-80 hover:opacity-100">
+                Cancelar
+            </button>
+            <button type="submit" 
+                    class="glass-btn px-6 py-2 text-red-400 hover:text-red-300 bg-red-900 bg-opacity-20">
+                Eliminar
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Modal de confirmación de eliminación de suscripción -->
+<div id="deleteSubscriptionModal" class="hidden fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center">
+    <div class="glass-panel p-6 max-w-md">
+        <h3 class="text-white font-medium text-lg mb-4">Confirmar Eliminación de Suscripción</h3>
+        <p class="text-white opacity-80 mb-6">¿Estás seguro de que deseas eliminar esta suscripción? Esta acción no se puede deshacer.</p>
+        <form id="deleteSubscriptionForm" method="post" class="flex justify-end space-x-4">
+            {% csrf_token %}
+            <button type="button" onclick="closeDeleteSubscriptionModal()" 
+                    class="glass-btn px-6 py-2 text-white hover:text-forge-bright opacity-80 hover:opacity-100">
+                Cancelar
+            </button>
+            <button type="submit" 
+                    class="glass-btn px-6 py-2 text-red-400 hover:text-red-300 bg-red-900 bg-opacity-20">
+                Eliminar
+            </button>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmDelete() {
+    document.getElementById('deleteModal').classList.remove('hidden');
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.add('hidden');
+}
+
+function confirmDeleteSubscription(subscriptionId) {
+    const modal = document.getElementById('deleteSubscriptionModal');
+    const form = document.getElementById('deleteSubscriptionForm');
+    form.action = `/subscriptions/${subscriptionId}/delete/`;
+    modal.classList.remove('hidden');
+}
+
+function closeDeleteSubscriptionModal() {
+    document.getElementById('deleteSubscriptionModal').classList.add('hidden');
+}
+</script>
+{% endblock %}

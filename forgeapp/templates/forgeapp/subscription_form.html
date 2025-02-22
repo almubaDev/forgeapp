@@ -1,0 +1,18 @@
+<!-- templates/forgeapp/subscription_form.html -->
+{% extends 'forgeapp/form_base.html' %}
+
+{% block title %}
+    {% if form.instance.pk %}
+        Editar Suscripción
+    {% else %}
+        Nueva Suscripción
+    {% endif %}
+{% endblock %}
+
+{% block window_title %}
+    {% if form.instance.pk %}
+        Editar Suscripción
+    {% else %}
+        Nueva Suscripción
+    {% endif %}
+{% endblock %}

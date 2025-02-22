@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ action }} Transacción{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Encabezado -->
+    <div class="flex justify-between items-center">
+        <h2 class="text-2xl text-white font-medium">{{ action }} Transacción</h2>
+        <div class="flex space-x-3">
+            <a href="{% url 'finance:transaction_list' %}" 
+               class="glass-btn px-4 py-2 text-white hover:text-forge-bright">
+                <i class="fas fa-arrow-left mr-1"></i>
+                Volver
+            </a>
+        </div>
+    </div>
+
+    <!-- Formulario -->
+    <div class="glass-panel p-6">
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+            
+            <!-- Tipo -->
+            <div>
+                <label class="block text-forge-bright text-sm font-medium mb-2">Tipo</label>
+                <select name="type" class="w-full" required>
+                    <option value="income" {% if transaction.type == 'income' %}selected{% endif %}>Ingreso</option>
+                    <option value="expense" {% if transaction.type == 'expense' %}selected{% endif %}>Egreso</option>
+                </select>
+            </div>
+
+            <!-- Categoría -->
+            <div>
+                <label class="block text-forge-bright text-sm font-medium mb-2">Categoría</label>
+                <input type="text" name="category" value="{{ transaction.category|default:'' }}" 
+                       class="w-full" required>
+            </div>
+
+            <!-- Descripción -->
+            <div>
+                <label class="block text-forge-bright text-sm font-medium mb-2">Descripción</label>
+                <textarea name="description" class="w-full" rows="3" required>{{ transaction.description|default:'' }}</textarea>
+            </div>
+
+            <!-- Monto -->
+            <div>
+                <label class="block text-forge-bright text-sm font-medium mb-2">Monto</label>
+                <input type="number" name="amount" value="{{ transaction.amount|default:'' }}" 
+                       class="w-full" step="0.01" required>
+            </div>
+
+            <!-- Fecha -->
+            <div>
+                <label class="block text-forge-bright text-sm font-medium mb-2">Fecha</label>
+                <input type="date" name="date" value="{{ transaction.date|date:'Y-m-d'|default:'' }}" 
+                       class="w-full" required>
+            </div>
+
+            <!-- Notas -->
+            <div>
+                <label class="block text-forge-bright text-sm font-medium mb-2">Notas</label>
+                <textarea name="notes" class="w-full" rows="3">{{ transaction.notes|default:'' }}</textarea>
+            </div>
+
+            <!-- Botones -->
+            <div class="flex justify-end space-x-4">
+                <a href="{% url 'finance:transaction_list' %}" 
+                   class="glass-btn px-6 py-2 text-white hover:text-forge-bright opacity-80 hover:opacity-100">
+                    Cancelar
+                </a>
+                <button type="submit" class="glass-btn px-6 py-2 text-green-400 hover:text-green-300 bg-green-900 bg-opacity-20">
+                    {{ action }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

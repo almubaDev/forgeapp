@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+{% load forgeapp_extras %}
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Propuesta de Costo por servicios ForgeApp</title>
+    <style>
+        @page {
+            size: letter;
+            margin: 2.5cm;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            color: #ffffff;
+            background-color: #1a1c24;
+            line-height: 1.5;
+        }
+        .header {
+            margin-bottom: 2em;
+        }
+        .logo {
+            width: 200px;
+            margin-bottom: 1em;
+        }
+        .title {
+            color: #7c3aed;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 1em;
+        }
+        .glass-panel {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        th {
+            color: #7c3aed;
+            font-weight: bold;
+        }
+        .summary {
+            margin-top: 2em;
+        }
+        .summary-item {
+            margin-bottom: 1em;
+        }
+        .summary-label {
+            color: #7c3aed;
+            font-size: 0.9em;
+            margin-bottom: 0.5em;
+        }
+        .summary-value {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        .payment-options {
+            margin-top: 2em;
+        }
+        .payment-title {
+            color: #7c3aed;
+            font-weight: bold;
+            margin-bottom: 1em;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <img src="file://{{ logo_path }}" class="logo" alt="ForgeApp Logo">
+        <h1 class="title">Propuesta de Costo por servicios ForgeApp</h1>
+        <div class="glass-panel">
+            <p>Cliente: {{ calculadora.client.name }}</p>
+            {% if calculadora.application %}
+            <p>Aplicación: {{ calculadora.application.name }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="glass-panel">
+        <table>
+            <thead>
+                <tr>
+                    <th>Descripción</th>
+                    <th style="text-align: right">Cantidad</th>
+                    <th style="text-align: right">Precio Unit.</th>
+                    <th style="text-align: right">Subtotal</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td>{{ item.descripcion }}</td>
+                    <td style="text-align: right">{{ item.cantidad }}</td>
+                    <td style="text-align: right">${{ item.precio_unitario|formato_cl:item.calculadora.client }}</td>
+                    <td style="text-align: right">${{ item.subtotal|formato_cl:item.calculadora.client }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="summary">
+        <div class="glass-panel">
+            <div class="summary-item">
+                <div class="summary-label">Subtotal</div>
+                <div class="summary-value">${{ calculadora.subtotal|formato_cl:calculadora.client }}</div>
+            </div>
+
+            <div class="summary-item">
+                <div class="summary-label">
+                    Logística de desarrollo ({{ calculadora.margen }}%)
+                </div>
+                <div class="summary-value">
+                    ${{ calculadora.subtotal|mul:calculadora.margen|div:100|formato_cl:calculadora.client }}
+                </div>
+            </div>
+        </div>
+
+        <div class="payment-options glass-panel">
+            <h3 class="payment-title">Formas de Pago</h3>
+            
+            <div class="summary-item">
+                <div class="summary-label">12 Cuotas mensuales de:</div>
+                <div class="summary-value">${{ calculadora.cuota_mensual|formato_cl:calculadora.client }}</div>
+                <div style="color: #7c3aed; font-size: 0.9em">
+                    Total: ${{ calculadora.cuota_mensual|mul:12|formato_cl:calculadora.client }}
+                </div>
+            </div>
+
+            <div class="summary-item">
+                <div class="summary-label">
+                    Pago Anual Anticipado
+                    {% if calculadora.descuento > 0 %}
+                    <span style="opacity: 0.7">({{ calculadora.descuento }}% descuento)</span>
+                    {% endif %}
+                </div>
+                <div class="summary-value">${{ calculadora.total_anual|formato_cl:calculadora.client }}</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
