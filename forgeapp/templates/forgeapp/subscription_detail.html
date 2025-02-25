@@ -43,16 +43,28 @@
                 <div>
                     <label class="block text-forge-bright text-sm font-medium mb-2">Estado</label>
                     <div class="flex items-center space-x-4">
-                        {% if subscription.status == 'active' %}
+                        {% if subscription.status == 'inactive' %}
+                            <span class="px-3 py-1.5 bg-gray-900 bg-opacity-20 text-gray-400 rounded-lg font-medium">
+                                {{ subscription.get_status_display }}
+                            </span>
+                            <form action="{% url 'forgeapp:subscription_activate' subscription.pk %}" method="post" class="inline">
+                                {% csrf_token %}
+                                <button type="submit" class="glass-btn px-4 py-1.5 text-green-400 hover:text-green-300 bg-green-900 bg-opacity-20">
+                                    Activar
+                                </button>
+                            </form>
+                        {% elif subscription.status == 'active' %}
                             <span class="px-3 py-1.5 bg-green-900 bg-opacity-20 text-green-400 rounded-lg font-medium">
                                 {{ subscription.get_status_display }}
                             </span>
-                            <form action="{% url 'forgeapp:subscription_suspend' subscription.pk %}" method="post" class="inline">
-                                {% csrf_token %}
-                                <button type="submit" class="glass-btn px-4 py-1.5 text-yellow-400 hover:text-yellow-300 bg-yellow-900 bg-opacity-20">
-                                    Suspender
-                                </button>
-                            </form>
+                            {% if subscription.payment_type == 'annual' %}
+                                <form action="{% url 'forgeapp:subscription_suspend' subscription.pk %}" method="post" class="inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="glass-btn px-4 py-1.5 text-yellow-400 hover:text-yellow-300 bg-yellow-900 bg-opacity-20">
+                                        Suspender
+                                    </button>
+                                </form>
+                            {% endif %}
                             <form action="{% url 'forgeapp:subscription_cancel' subscription.pk %}" method="post" class="inline">
                                 {% csrf_token %}
                                 <button type="submit" class="glass-btn px-4 py-1.5 text-red-400 hover:text-red-300 bg-red-900 bg-opacity-20">
@@ -99,6 +111,11 @@
                 </div>
 
                 <div>
+                    <label class="block text-forge-bright text-sm font-medium mb-2">ID de Referencia</label>
+                    <div class="text-white font-mono">{{ subscription.reference_id }}</div>
+                </div>
+
+                <div>
                     <label class="block text-forge-bright text-sm font-medium mb-2">Tipo de Pago</label>
                     <div class="text-white">
                         {% if subscription.payment_type == 'monthly' %}
@@ -118,6 +135,23 @@
                     <label class="block text-forge-bright text-sm font-medium mb-2">Período</label>
                     <div class="text-white">
                         {{ subscription.start_date|date:"d/m/Y" }} - {{ subscription.end_date|date:"d/m/Y" }}
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-forge-bright text-sm font-medium mb-2">Estado de Pagos</label>
+                    <div class="text-white space-y-2">
+                        {% if subscription.last_payment_date %}
+                            <div>Último pago: {{ subscription.last_payment_date|date:"d/m/Y" }}</div>
+                        {% endif %}
+                        {% if subscription.next_payment_date %}
+                            <div>
+                                Próximo pago: 
+                                <span class="{% if subscription.next_payment_date <= today %}text-yellow-400{% endif %}">
+                                    {{ subscription.next_payment_date|date:"d/m/Y" }}
+                                </span>
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
 

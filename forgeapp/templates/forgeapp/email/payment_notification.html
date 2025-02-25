@@ -1,0 +1,44 @@
+{% extends "base_email.html" %}
+
+{% block content %}
+<div style="padding: 20px; background-color: #f8f9fa; border-radius: 5px;">
+    <h2 style="color: #2B5C8E;">Link de Pago - {{ subscription.reference_id }}</h2>
+    
+    <p>Estimado/a {{ client.name }},</p>
+    
+    <p>Le enviamos el link de pago correspondiente a su suscripción:</p>
+    
+    <div style="margin: 20px 0; padding: 15px; background-color: #ffffff; border-radius: 5px; border: 1px solid #e9ecef;">
+        <p><strong>Detalles de la Suscripción:</strong></p>
+        <ul style="list-style-type: none; padding-left: 0;">
+            <li>Aplicación: {{ subscription.application.name }}</li>
+            <li>Tipo de Pago: {{ subscription.get_payment_type_display }}</li>
+            <li>Monto: ${{ subscription.price|floatformat:0 }}</li>
+            <li>Referencia: {{ subscription.reference_id }}</li>
+        </ul>
+    </div>
+
+    <div style="text-align: center; margin: 30px 0;">
+        <a href="{{ payment_link.payment_link }}" 
+           style="background-color: #2B5C8E; 
+                  color: white; 
+                  padding: 12px 25px; 
+                  text-decoration: none; 
+                  border-radius: 5px;
+                  font-weight: bold;">
+            Realizar Pago
+        </a>
+    </div>
+
+    <p><strong>Importante:</strong></p>
+    <ul>
+        <li>Este link de pago vence el {{ payment_link.expires_at|date:"d/m/Y" }}</li>
+        <li>Una vez realizado el pago, recibirá un comprobante por email</li>
+        <li>Si tiene problemas con el pago, por favor contáctenos</li>
+    </ul>
+
+    <p style="margin-top: 30px;">
+        Gracias por confiar en nosotros.
+    </p>
+</div>
+{% endblock %}

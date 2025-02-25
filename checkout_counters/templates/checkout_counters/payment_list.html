@@ -1,84 +1,105 @@
-<!-- checkout_counters/templates/checkout_counters/payment_list.html -->
 {% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Links de Pago{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Links de Pago</h2>
-        <a href="{% url 'checkout_counters:payment_create' %}" class="btn btn-primary">Nuevo Link</a>
-    </div>
-
-    <div class="row mb-4">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Total Pagado</h5>
-                    <p class="card-text h3">${{ total_amount }}</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Pendiente de Pago</h5>
-                    <p class="card-text h3">${{ pending_amount }}</p>
-                </div>
-            </div>
+<div class="space-y-8">
+    <!-- Encabezado -->
+    <div class="flex justify-between items-center">
+        <h2 class="text-2xl text-white font-medium">Links de Pago</h2>
+        <div class="flex space-x-3">
+            <a href="{% url 'checkout_counters:verify_code_form' %}" 
+               class="glass-btn px-4 py-2 text-white hover:text-forge-bright">
+                Verificar Comprobante
+            </a>
+            <a href="{% url 'checkout_counters:update_pending_payments' %}" 
+               class="glass-btn px-4 py-2 text-white hover:text-forge-bright">
+                Actualizar Pendientes
+            </a>
+            <a href="{% url 'checkout_counters:payment_create' %}" 
+               class="glass-btn px-4 py-2 text-forge-bright hover:text-forge-bright">
+                Nuevo Link de Pago
+            </a>
         </div>
     </div>
 
-    <div class="table-responsive">
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Descripción</th>
-                    <th>Monto</th>
-                    <th>Estado</th>
-                    <th>Creado</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for payment in payments %}
-                <tr>
-                    <td>{{ payment.description }}</td>
-                    <td>${{ payment.amount }}</td>
-                    <td><span class="badge {% if payment.status == 'paid' %}bg-success{% elif payment.status == 'pending' %}bg-warning{% else %}bg-danger{% endif %}">
-                        {{ payment.get_status_display }}
-                    </span></td>
-                    <td>{{ payment.created_at|date:"d/m/Y H:i" }}</td>
-                    <td>
-                        <a href="{{ payment.get_absolute_url }}" class="btn btn-sm btn-info">Ver</a>
-                        <a href="{{ payment.payment_link }}" target="_blank" class="btn btn-sm btn-success">Link de Pago</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <!-- Resumen -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="glass-panel p-6">
+            <h3 class="text-forge-bright text-sm font-medium mb-2">Total Pagado</h3>
+            <p class="text-2xl text-white">${{ total_amount|floatformat:0|intcomma }}</p>
+        </div>
+        <div class="glass-panel p-6">
+            <h3 class="text-forge-bright text-sm font-medium mb-2">Total Pendiente</h3>
+            <p class="text-2xl text-white">${{ pending_amount|floatformat:0|intcomma }}</p>
+        </div>
     </div>
 
-    {% if is_paginated %}
-    <nav aria-label="Page navigation">
-        <ul class="pagination justify-content-center">
-            {% if page_obj.has_previous %}
-            <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
-            </li>
-            {% endif %}
-            
-            {% for num in page_obj.paginator.page_range %}
-            <li class="page-item {% if page_obj.number == num %}active{% endif %}">
-                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
-            </li>
-            {% endfor %}
-            
-            {% if page_obj.has_next %}
-            <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.next_page_number }}">Siguiente</a>
-            </li>
-            {% endif %}
-        </ul>
-    </nav>
-    {% endif %}
+    <!-- Lista de Links -->
+    <div class="glass-panel p-6">
+        <div class="overflow-x-auto">
+            <table class="min-w-full">
+                <thead>
+                    <tr>
+                        <th class="text-left text-forge-bright text-sm font-medium pb-4">Descripción</th>
+                        <th class="text-right text-forge-bright text-sm font-medium pb-4">Monto</th>
+                        <th class="text-center text-forge-bright text-sm font-medium pb-4">Estado</th>
+                        <th class="text-center text-forge-bright text-sm font-medium pb-4">Creado</th>
+                        <th class="text-center text-forge-bright text-sm font-medium pb-4">Expira</th>
+                        <th class="text-right text-forge-bright text-sm font-medium pb-4">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for payment in payments %}
+                    <tr class="border-t border-forge-dark">
+                        <td class="py-4 text-white">
+                            <a href="{% url 'checkout_counters:payment_detail' payment.pk %}" 
+                               class="hover:text-forge-bright">
+                                {{ payment.description }}
+                            </a>
+                        </td>
+                        <td class="py-4 text-right text-white">
+                            ${{ payment.amount|floatformat:0|intcomma }}
+                        </td>
+                        <td class="py-4 text-center">
+                            <span class="glass-btn px-3 py-1 text-sm 
+                                {% if payment.status == 'paid' %}text-green-400
+                                {% elif payment.status == 'pending' %}text-yellow-400
+                                {% else %}text-red-400{% endif %}">
+                                {{ payment.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="py-4 text-center text-white">
+                            {{ payment.created_at|date:"d/m/Y H:i" }}
+                        </td>
+                        <td class="py-4 text-center text-white">
+                            {{ payment.expires_at|date:"d/m/Y H:i" }}
+                        </td>
+                        <td class="py-4 text-right">
+                            <div class="flex justify-end space-x-2">
+                                <a href="{{ payment.payment_link }}" target="_blank"
+                                   class="glass-btn px-3 py-1 text-white hover:text-forge-bright">
+                                    Link
+                                </a>
+                                <a href="{% url 'checkout_counters:payment_delete' payment.pk %}" 
+                                   class="glass-btn px-3 py-1 text-red-400 hover:text-red-300">
+                                    Eliminar
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="py-4 text-center text-white">
+                            No hay links de pago creados
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 {% endblock %}

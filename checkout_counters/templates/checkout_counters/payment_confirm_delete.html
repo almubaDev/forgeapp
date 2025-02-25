@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block title %}Confirmar Eliminación{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <div class="glass-panel p-8">
+        <h2 class="text-2xl text-white font-medium mb-6">Confirmar Eliminación</h2>
+        
+        <div class="mb-8">
+            <p class="text-white mb-4">¿Estás seguro que deseas eliminar el siguiente link de pago?</p>
+            <div class="glass-panel p-4">
+                <p class="text-forge-bright">{{ object.description }}</p>
+                <p class="text-white mt-2">${{ object.amount }}</p>
+                <p class="text-white mt-2">Estado: {{ object.get_status_display }}</p>
+            </div>
+        </div>
+
+        <form method="post" class="flex space-x-4">
+            {% csrf_token %}
+            <button type="submit" class="glass-btn px-4 py-2 text-red-400 hover:text-red-300">
+                Confirmar Eliminación
+            </button>
+            <a href="{{ object.get_absolute_url }}" 
+               class="glass-btn px-4 py-2 text-white hover:text-forge-bright">
+                Cancelar
+            </a>
+        </form>
+    </div>
+</div>
+{% endblock %}

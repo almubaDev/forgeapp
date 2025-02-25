@@ -237,7 +237,7 @@ function closeDeleteModal() {
 function confirmDeleteSubscription(subscriptionId) {
     const modal = document.getElementById('deleteSubscriptionModal');
     const form = document.getElementById('deleteSubscriptionForm');
-    form.action = `/subscriptions/${subscriptionId}/delete/`;
+    form.action = "{% url 'forgeapp:subscription_delete' 0 %}".replace('0', subscriptionId);
     modal.classList.remove('hidden');
 }
 

@@ -22,6 +22,7 @@
             <table class="w-full">
                 <thead>
                     <tr class="border-b border-forge-light border-opacity-10">
+                        <th class="p-4 text-left text-white font-medium">ID</th>
                         <th class="p-4 text-left text-white font-medium">Cliente</th>
                         <th class="p-4 text-left text-white font-medium">Aplicación</th>
                         <th class="p-4 text-center text-white font-medium">Estado</th>
@@ -34,6 +35,9 @@
                 <tbody>
                     {% for subscription in subscriptions %}
                     <tr class="border-b border-forge-light border-opacity-5">
+                        <td class="p-4 text-white">
+                            {{ subscription.reference_id }}
+                        </td>
                         <td class="p-4">
                             <a href="{% url 'forgeapp:client_detail' subscription.client.pk %}" 
                                class="text-white hover:text-forge-bright">

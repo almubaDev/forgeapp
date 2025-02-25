@@ -1,33 +1,50 @@
-<!-- checkout_counters/templates/checkout_counters/payment_form.html -->
 {% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{% if object %}Editar{% else %}Crear{% endif %} Link de Pago{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="card">
-        <div class="card-header">
-            <h3>{% if object %}Editar{% else %}Crear{% endif %} Link de Pago</h3>
+<div class="space-y-8">
+    <!-- Encabezado -->
+    <div class="flex justify-between items-center">
+        <h2 class="text-2xl text-white font-medium">{% if object %}Editar{% else %}Crear{% endif %} Link de Pago</h2>
+        <div class="flex space-x-3">
+            <a href="{% url 'checkout_counters:payment_list' %}" 
+               class="glass-btn px-4 py-2 text-white hover:text-forge-bright">
+                Volver a Links de Pago
+            </a>
         </div>
-        <div class="card-body">
-            <form method="post">
-                {% csrf_token %}
-                {% for field in form %}
-                <div class="mb-3">
-                    <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
-                    {{ field }}
-                    {% if field.help_text %}
-                    <div class="form-text">{{ field.help_text }}</div>
-                    {% endif %}
-                    {% if field.errors %}
-                    <div class="alert alert-danger">
-                        {{ field.errors }}
-                    </div>
-                    {% endif %}
-                </div>
-                {% endfor %}
-                <button type="submit" class="btn btn-primary">Guardar</button>
-                <a href="{% url 'checkout_counters:payment_list' %}" class="btn btn-secondary">Cancelar</a>
-            </form>
-        </div>
+    </div>
+
+    <!-- Formulario -->
+    <div class="glass-panel p-6">
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+            {% for field in form %}
+            <div class="space-y-2">
+                <label for="{{ field.id_for_label }}" class="block text-forge-bright text-sm font-medium">
+                    {{ field.label }}
+                </label>
+                {{ field }}
+                {% if field.help_text %}
+                <p class="text-forge-light text-xs">{{ field.help_text }}</p>
+                {% endif %}
+                {% if field.errors %}
+                <p class="text-red-400 text-sm">{{ field.errors.0 }}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+            <div class="flex justify-end space-x-4">
+                <a href="{% url 'checkout_counters:payment_list' %}" 
+                   class="glass-btn px-4 py-2 text-white hover:text-forge-bright">
+                    Cancelar
+                </a>
+                <button type="submit" class="glass-btn px-4 py-2 text-white hover:text-forge-bright">
+                    Guardar
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 {% endblock %}

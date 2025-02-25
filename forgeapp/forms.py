@@ -38,6 +38,16 @@ class ClientForm(forms.ModelForm):
         }
 
 class SubscriptionForm(forms.ModelForm):
+    price = forms.DecimalField(
+        label='Precio',
+        min_value=1,
+        required=True,
+        widget=forms.NumberInput(attrs={
+            'class': 'win98-input w-full',
+            'step': '0.01'
+        })
+    )
+
     class Meta:
         model = Subscription
         fields = ['client', 'application', 'status', 'payment_type', 'price', 
@@ -47,7 +57,6 @@ class SubscriptionForm(forms.ModelForm):
             'application': forms.Select(attrs={'class': 'win98-input w-full'}),
             'status': forms.Select(attrs={'class': 'win98-input w-full'}),
             'payment_type': forms.Select(attrs={'class': 'win98-input w-full'}),
-            'price': forms.NumberInput(attrs={'class': 'win98-input w-full'}),
             'start_date': forms.DateInput(attrs={'class': 'win98-input w-full', 'type': 'date'}),
             'end_date': forms.DateInput(attrs={'class': 'win98-input w-full', 'type': 'date'}),
             'auto_renewal': forms.CheckboxInput(attrs={'class': 'win98-input'}),
@@ -56,6 +65,7 @@ class SubscriptionForm(forms.ModelForm):
         help_texts = {
             'payment_type': 'Tipo de pago (mensual o anual)',
             'auto_renewal': 'Habilitar renovación automática al vencimiento',
+            'price': 'Precio de la suscripción (debe ser mayor a 0)',
         }
         
 
@@ -142,6 +152,24 @@ class ItemCalculoForm(forms.ModelForm):
     class Meta:
         model = ItemCalculo
         fields = ['descripcion', 'cantidad', 'precio_unitario']
+        widgets = {
+            'descripcion': forms.TextInput(attrs={
+                'class': 'w-full bg-opacity-30 focus:bg-opacity-40 backdrop-blur-md',
+                'placeholder': 'Descripción del item'
+            }),
+            'cantidad': forms.NumberInput(attrs={
+                'class': 'w-full bg-opacity-30 focus:bg-opacity-40 backdrop-blur-md',
+                'step': '0.01',
+                'min': '0',
+                'placeholder': 'Cantidad'
+            }),
+            'precio_unitario': forms.NumberInput(attrs={
+                'class': 'w-full bg-opacity-30 focus:bg-opacity-40 backdrop-blur-md',
+                'step': '0.01',
+                'min': '0',
+                'placeholder': 'Precio por unidad'
+            }),
+        }
 
 class ApplicationConfigForm(forms.ModelForm):
     class Meta:

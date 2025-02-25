@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    Error de Pago
+{% endblock %}
+
+{% block content %}
+<div class="flex flex-col items-center justify-center min-h-[60vh] space-y-8">
+    <!-- Icono y Mensaje -->
+    <div class="text-center space-y-4">
+        <div class="text-red-400 text-6xl mb-4">
+            <i class="fas fa-exclamation-circle"></i>
+        </div>
+        <h2 class="text-2xl font-bold text-white mb-2">Error en el Proceso de Pago</h2>
+        <p class="text-forge-bright">
+            Lo sentimos, hubo un problema al procesar tu pago. Por favor, intenta nuevamente o contacta a soporte si el problema persiste.
+        </p>
+    </div>
+
+    <!-- Botones de Acción -->
+    <div class="flex space-x-4">
+        <a href="/" class="glass-btn px-6 py-2 text-white hover:text-forge-bright">
+            Volver al Inicio
+        </a>
+        <a href="mailto:{{ DEFAULT_FROM_EMAIL }}" class="glass-btn px-6 py-2 text-white hover:text-forge-bright">
+            Contactar Soporte
+        </a>
+    </div>
+</div>
+{% endblock %}

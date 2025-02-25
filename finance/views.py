@@ -75,11 +75,15 @@ def dashboard(request):
     today = timezone.now().date()
     start_of_month = today.replace(day=1)
     
-    # Obtener suscripciones activas sin pago este mes
-    subscriptions_needing_payment = active_subscriptions.exclude(
+    # Obtener suscripciones activas que necesitan pago este mes
+    # Filtramos por suscripciones cuya fecha de próximo pago es hoy o anterior
+    # Y que no tienen pagos completados este mes
+    subscriptions_needing_payment = active_subscriptions.filter(
+        Q(next_payment_date__lte=today) | Q(next_payment_date__isnull=True)
+    ).exclude(
         payments__payment_date__gte=start_of_month,
         payments__status='completed'
-    )
+    ).distinct()
 
     return render(request, 'finance/dashboard.html', {
         'total_subscriptions': total_subscriptions,
@@ -134,17 +138,40 @@ def register_subscription_payment(request, subscription_id):
     """Registra un pago manual para una suscripción"""
     subscription = get_object_or_404(Subscription, pk=subscription_id)
     
-    # Crear el pago
-    payment = Payment.objects.create(
-        subscription=subscription,
-        amount=subscription.price,
-        payment_date=timezone.now(),
-        due_date=subscription.end_date,
-        status='completed',
-        notes='Pago registrado manualmente'
-    )
+    # Verificar si se puede registrar el pago
+    if not subscription.can_register_payment():
+        messages.error(request, 'No se puede registrar el pago en este momento')
+        return redirect('forgeapp:subscription_detail', pk=subscription_id)
+    
+    try:
+        with transaction.atomic():
+            # Crear el pago
+            payment = Payment.objects.create(
+                subscription=subscription,
+                amount=subscription.price,
+                payment_date=timezone.now(),
+                due_date=subscription.end_date,
+                status='completed',
+                notes='Pago registrado manualmente'
+            )
 
-    messages.success(request, 'Pago registrado exitosamente')
+            # Crear la transacción
+            Transaction.objects.create(
+                type='income',
+                category=subscription.reference_id,
+                description=f"Pago de suscripción - Cliente: {subscription.client.name} - App: {subscription.application.name}",
+                amount=subscription.price,
+                date=timezone.now().date(),
+                payment=payment
+            )
+
+            # Actualizar fechas de pago en la suscripción
+            subscription.update_payment_dates()
+
+            messages.success(request, 'Pago registrado exitosamente')
+    except Exception as e:
+        messages.error(request, f'Error al registrar el pago: {str(e)}')
+        
     return redirect('forgeapp:subscription_detail', pk=subscription_id)
 
 @login_required

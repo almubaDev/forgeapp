@@ -129,21 +129,18 @@
             <h3 class="payment-title">Formas de Pago</h3>
             
             <div class="summary-item">
-                <div class="summary-label">12 Cuotas mensuales de:</div>
-                <div class="summary-value">${{ calculadora.cuota_mensual|formato_cl:calculadora.client }}</div>
-                <div style="color: #7c3aed; font-size: 0.9em">
-                    Total: ${{ calculadora.cuota_mensual|mul:12|formato_cl:calculadora.client }}
-                </div>
+                <div class="summary-label">Pago Mensual</div>
+                <div class="summary-value">${{ calculadora.cuota_mensual|formato_cl:calculadora.client }} por mes</div>
             </div>
 
             <div class="summary-item">
-                <div class="summary-label">
-                    Pago Anual Anticipado
-                    {% if calculadora.descuento > 0 %}
-                    <span style="opacity: 0.7">({{ calculadora.descuento }}% descuento)</span>
-                    {% endif %}
+                <div class="summary-label">Pago Anual</div>
+                <div class="summary-value">${{ calculadora.total_anual|formato_cl:calculadora.client }} por año</div>
+                {% if calculadora.descuento > 0 %}
+                <div style="color: #7c3aed; font-size: 0.9em">
+                    Incluye {{ calculadora.descuento }}% de descuento
                 </div>
-                <div class="summary-value">${{ calculadora.total_anual|formato_cl:calculadora.client }}</div>
+                {% endif %}
             </div>
         </div>
     </div>

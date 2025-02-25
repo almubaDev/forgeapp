@@ -17,7 +17,8 @@ SECRET_KEY = env('SECRET_KEY', default='your-secret-key-here')
 
 DEBUG = env.bool('DEBUG', default=True)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']  # Permitir todos los hosts en desarrollo
+BASE_URL = 'http://localhost:8000'  # URL base para desarrollo
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -159,6 +160,16 @@ LOGGING = {
             'filename': os.path.join(BASE_DIR, 'logs', 'finance.log'),
             'formatter': 'verbose',
         },
+        'forgeapp_file': {
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs', 'forgeapp.log'),
+            'formatter': 'verbose',
+        },
+        'checkout_file': {
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs', 'checkout.log'),
+            'formatter': 'verbose',
+        },
     },
     'loggers': {
         'finance': {
@@ -171,9 +182,49 @@ LOGGING = {
             'level': 'INFO',
             'propagate': True,
         },
+        'forgeapp': {
+            'handlers': ['console', 'forgeapp_file'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'checkout_counters': {
+            'handlers': ['console', 'checkout_file'],
+            'level': 'INFO',
+            'propagate': True,
+        },
     },
 }
 
-#Mercado pago
-MP_TEST_USER = env('MERCADO_PAGO_TEST_USER')
-MP_ACCESS_TOKEN = env('MERCADO_PAGO_ACCESS_TOKEN')
+# Mercado Pago Settings
+MP_PUBLIC_KEY = env('MP_PUBLIC_KEY')
+MP_ACCESS_TOKEN = env('MP_ACCESS_TOKEN')
+MP_CLIENT_ID = env('MP_CLIENT_ID')
+MP_CLIENT_SECRET = env('MP_CLIENT_SECRET')
+
+# Site URL for webhooks
+SITE_URL = env('SITE_URL', default='http://localhost:8000')
+MP_WEBHOOK_URL = f"{SITE_URL}/checkout_counters/webhook/mercadopago/"
+
+# Asegurar que la URL del webhook sea accesible desde Internet
+if DEBUG:
+    import socket
+    try:
+        # Intentar obtener la IP pública
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        local_ip = s.getsockname()[0]
+        s.close()
+        # Si estamos en desarrollo, usar ngrok o similar para exponer el webhook
+        if SITE_URL == 'http://localhost:8000':
+            logger.warning(
+                "Usando localhost para webhooks. En desarrollo, considera usar ngrok "
+                "para exponer el webhook a Internet: ngrok http 8000"
+            )
+    except Exception as e:
+        logger.warning(f"No se pudo determinar la IP local: {e}")
+
+# Mercado Pago settings
+MP_WEBHOOK_ENABLED = env.bool('MP_WEBHOOK_ENABLED', default=True)
+
+# Mercado Pago sandbox mode
+MP_SANDBOX_MODE = env.bool('MP_SANDBOX_MODE', default=True)
