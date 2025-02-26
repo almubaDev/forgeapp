@@ -1,0 +1,124 @@
+<!-- forgeapp/templates/forgeapp/client_payment_history.html -->
+{% extends 'base.html' %}
+{% load forgeapp_extras %}
+
+{% block title %}Historial de Pagos - {{ client.name }}{% endblock %}
+
+{% block window_title %}Historial de Pagos - {{ client.name }}{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <div class="flex justify-between items-center">
+        <div class="flex items-center space-x-4">
+            <h2 class="text-2xl text-white font-medium">Historial de Pagos</h2>
+            <a href="{% url 'forgeapp:client_detail' client.pk %}" 
+               class="glass-btn px-3 py-1.5 text-sm hover:text-forge-bright">
+                Cliente: {{ client.name }}
+            </a>
+        </div>
+        <a href="{% url 'forgeapp:client_list' %}" 
+           class="glass-btn px-6 py-2.5 text-white hover:text-forge-bright">
+            Volver a Clientes
+        </a>
+    </div>
+
+    <div class="glass-panel p-6">
+        <h3 class="text-white font-medium text-lg mb-6">Enlaces de Pago</h3>
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-forge-light border-opacity-10">
+                        <th class="p-4 text-left text-white font-medium">Referencia</th>
+                        <th class="p-4 text-left text-white font-medium">Descripción</th>
+                        <th class="p-4 text-left text-white font-medium">Monto</th>
+                        <th class="p-4 text-left text-white font-medium">Estado</th>
+                        <th class="p-4 text-left text-white font-medium">Fecha</th>
+                        <th class="p-4 text-left text-white font-medium">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for payment in payment_links %}
+                    <tr class="border-b border-forge-light border-opacity-5 hover:bg-forge-primary hover:bg-opacity-5 transition-colors">
+                        <td class="p-4 text-white">{{ payment.reference_id }}</td>
+                        <td class="p-4 text-white">{{ payment.description }}</td>
+                        <td class="p-4 text-white">${{ payment.amount|formato_cl:client }}</td>
+                        <td class="p-4">
+                            <span class="glass-btn px-3 py-1 text-sm
+                                {% if payment.status == 'paid' %}text-green-400 bg-green-900 bg-opacity-20
+                                {% elif payment.status == 'pending' %}text-yellow-400 bg-yellow-900 bg-opacity-20
+                                {% else %}text-red-400 bg-red-900 bg-opacity-20{% endif %}">
+                                {{ payment.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="p-4 text-white">{{ payment.created_at|date:"d/m/Y H:i" }}</td>
+                        <td class="p-4">
+                            <div class="flex space-x-3">
+                                <a href="{% url 'checkout_counters:payment_detail' payment.pk %}" 
+                                   class="glass-btn px-4 py-1.5 text-white hover:text-forge-bright">
+                                    Ver Detalles
+                                </a>
+                                {% if payment.is_paid and payment.receipt %}
+                                <a href="{% url 'pdf_generator:generar_pdf_recibo' payment.pk %}" 
+                                   class="glass-btn px-4 py-1.5 text-white hover:text-forge-bright"
+                                   target="_blank">
+                                    Ver Recibo
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="p-4 text-white text-center opacity-60">No hay enlaces de pago registrados</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="glass-panel p-6">
+        <h3 class="text-white font-medium text-lg mb-6">Comprobantes de Pago</h3>
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-forge-light border-opacity-10">
+                        <th class="p-4 text-left text-white font-medium">Número</th>
+                        <th class="p-4 text-left text-white font-medium">Referencia</th>
+                        <th class="p-4 text-left text-white font-medium">Monto</th>
+                        <th class="p-4 text-left text-white font-medium">Fecha</th>
+                        <th class="p-4 text-left text-white font-medium">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for receipt in receipts %}
+                    <tr class="border-b border-forge-light border-opacity-5 hover:bg-forge-primary hover:bg-opacity-5 transition-colors">
+                        <td class="p-4 text-white">{{ receipt.receipt_number }}</td>
+                        <td class="p-4 text-white">{{ receipt.payment_link.reference_id }}</td>
+                        <td class="p-4 text-white">${{ receipt.payment_link.amount|formato_cl:client }}</td>
+                        <td class="p-4 text-white">{{ receipt.generated_at|date:"d/m/Y H:i" }}</td>
+                        <td class="p-4">
+                            <div class="flex space-x-3">
+                                <a href="{% url 'checkout_counters:download_receipt' receipt_number=receipt.receipt_number %}" 
+                                   class="glass-btn px-4 py-1.5 text-white hover:text-forge-bright">
+                                    Descargar PDF
+                                </a>
+                                <a href="{% url 'pdf_generator:generar_pdf_recibo' receipt.payment_link.pk %}" 
+                                   class="glass-btn px-4 py-1.5 text-white hover:text-forge-bright"
+                                   target="_blank">
+                                    Ver Recibo
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="p-4 text-white text-center opacity-60">No hay comprobantes registrados</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

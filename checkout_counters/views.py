@@ -454,45 +454,12 @@ def download_receipt(request, receipt_number):
     """Vista para descargar un comprobante"""
     receipt = get_object_or_404(Receipt, receipt_number=receipt_number)
     
-    if not receipt.pdf_file:
-        from .pdf_generator import generate_payment_receipt
-        
-        # Preparar datos para el PDF
-        payment = {
-            'amount': receipt.payment_link.amount,
-            'reference_id': receipt.payment_link.reference_id,
-            'created_at': receipt.payment_link.created_at,
-            'get_status_display': receipt.payment_link.get_status_display
-        }
-        
-        client = {
-            'company': receipt.payment_link.subscription.client.company,
-            'rut': receipt.payment_link.subscription.client.rut
-        }
-        
-        subscription_id = receipt.payment_link.subscription.reference_id
-        
-        # Obtener o crear código de verificación
-        try:
-            verification = receipt.verification
-            verification_code = verification.verification_code
-        except Receipt.verification.RelatedObjectDoesNotExist:
-            # Crear código de verificación si no existe
-            from checkout_counters.models import ReceiptVerification
-            verification = ReceiptVerification.objects.create(receipt=receipt)
-            verification_code = verification.verification_code
-        
-        # Generar PDF con el código de verificación
-        pdf_buffer = generate_payment_receipt(payment, client, subscription_id, verification_code)
-        
-        # Guardar PDF en el modelo
-        receipt.pdf_file.save(
-            f'comprobante_{receipt.receipt_number}.pdf',
-            ContentFile(pdf_buffer.getvalue()),
-            save=True
-        )
+    # Devolver el archivo PDF si existe
+    if receipt.pdf_file:
+        response = HttpResponse(receipt.pdf_file, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="comprobante_{receipt.receipt_number}.pdf"'
+        return response
     
-    # Devolver el archivo PDF
-    response = HttpResponse(receipt.pdf_file, content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="comprobante_{receipt.receipt_number}.pdf"'
-    return response
+    # Si no hay archivo PDF, redirigir a una página de error
+    messages.error(request, "El comprobante no está disponible")
+    return redirect('checkout_counters:payment_list')

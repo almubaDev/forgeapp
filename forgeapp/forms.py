@@ -25,12 +25,12 @@ class ClientForm(forms.ModelForm):
         model = Client
         fields = ['rut', 'name', 'email', 'phone', 'company', 'company_rut', 'position', 'nationality', 'status', 'notes']
         widgets = {
-            'rut': forms.TextInput(attrs={'class': 'win98-input w-full', 'placeholder': 'Ej: 16819925-2'}),
+            'rut': forms.TextInput(attrs={'class': 'win98-input w-full', 'placeholder': 'Ej: 12345678-9'}),
             'name': forms.TextInput(attrs={'class': 'win98-input w-full'}),
             'email': forms.EmailInput(attrs={'class': 'win98-input w-full'}),
             'phone': forms.TextInput(attrs={'class': 'win98-input w-full'}),
             'company': forms.TextInput(attrs={'class': 'win98-input w-full'}),
-            'company_rut': forms.TextInput(attrs={'class': 'win98-input w-full', 'placeholder': 'Ej: 16819925-2'}),
+            'company_rut': forms.TextInput(attrs={'class': 'win98-input w-full', 'placeholder': 'Ej: 12345678-9'}),
             'position': forms.TextInput(attrs={'class': 'win98-input w-full', 'placeholder': 'Ej: Gerente General'}),
             'nationality': forms.Select(attrs={'class': 'win98-input w-full'}),
             'status': forms.Select(attrs={'class': 'win98-input w-full'}),

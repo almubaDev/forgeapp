@@ -92,6 +92,12 @@
                class="glass-btn px-4 py-2 text-forge-bright hover:text-forge-bright">
                 Actualizar Estado
             </a>
+            {% if payment.receipt %}
+            <a href="{% url 'checkout_counters:download_receipt' payment.receipt.receipt_number %}" 
+               class="glass-btn px-4 py-2 text-green-400 hover:text-green-300">
+                Ver Comprobante
+            </a>
+            {% endif %}
             <a href="{% url 'checkout_counters:payment_delete' payment.pk %}" 
                class="glass-btn px-4 py-2 text-red-400 hover:text-red-300">
                 Eliminar

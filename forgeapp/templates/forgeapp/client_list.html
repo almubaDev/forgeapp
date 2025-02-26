@@ -25,6 +25,7 @@
                         <th class="p-4 text-left text-white font-medium">Teléfono</th>
                         <th class="p-4 text-left text-white font-medium">Empresa</th>
                         <th class="p-4 text-left text-white font-medium">Estado</th>
+                        <th class="p-4 text-left text-white font-medium">Contrato</th>
                         <th class="p-4 text-left text-white font-medium">Suscripciones</th>
                         <th class="p-4 text-left text-white font-medium">Acciones</th>
                     </tr>
@@ -62,26 +63,43 @@
                             </span>
                         </td>
                         <td class="p-4">
+                            <span class="glass-btn px-3 py-1 text-sm
+                                {% if client.contract_status == 'accepted' %}text-green-400 bg-green-900 bg-opacity-20
+                                {% elif client.contract_status == 'pending' %}text-yellow-400 bg-yellow-900 bg-opacity-20
+                                {% elif client.contract_status == 'rejected' %}text-red-400 bg-red-900 bg-opacity-20
+                                {% else %}text-gray-400 bg-gray-900 bg-opacity-20{% endif %}">
+                                {{ client.get_contract_status_display }}
+                            </span>
+                        </td>
+                        <td class="p-4">
                             <span class="px-3 py-1 rounded-full bg-forge-primary bg-opacity-20 backdrop-blur-sm text-white">
-                                {{ client.total_subscriptions }}
+                                {{ client.active_subscriptions }}/{{ client.total_subscriptions }}
                             </span>
                         </td>
                         <td class="p-4">
                             <div class="flex space-x-3">
                                 <a href="{% url 'forgeapp:client_update' client.pk %}" 
-                                   class="glass-btn px-4 py-1.5 text-white hover:text-forge-bright">
-                                    Editar
+                                   class="glass-btn px-4 py-1.5 text-white hover:text-forge-bright" title="Editar">
+                                    <i class="fas fa-edit"></i>
                                 </a>
                                 <a href="{% url 'forgeapp:subscription_create' %}?client={{ client.pk }}" 
-                                   class="glass-btn px-4 py-1.5 text-white hover:text-forge-bright">
-                                    Nueva Suscripción
+                                   class="glass-btn px-4 py-1.5 text-white hover:text-forge-bright" title="Nueva Suscripción">
+                                    <i class="fas fa-plus-circle"></i>
+                                </a>
+                                <a href="{% url 'forgeapp:client_payment_history' client.pk %}" 
+                                   class="glass-btn px-4 py-1.5 text-white hover:text-forge-bright" title="Historial de Pagos">
+                                    <i class="fas fa-history"></i>
+                                </a>
+                                <a href="{% url 'forgeapp:service_contract' client.pk %}" 
+                                   class="glass-btn px-4 py-1.5 text-white hover:text-forge-bright" title="Contrato de Servicio">
+                                    <i class="fas fa-file-contract"></i>
                                 </a>
                             </div>
                         </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="7" class="p-4 text-white text-center opacity-60">No hay clientes registrados</td>
+                        <td colspan="8" class="p-4 text-white text-center opacity-60">No hay clientes registrados</td>
                     </tr>
                     {% endfor %}
                 </tbody>

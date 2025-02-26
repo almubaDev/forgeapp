@@ -29,6 +29,15 @@ urlpatterns = [
     path('clients/<int:pk>/', views.client_detail, name='client_detail'),
     path('clients/<int:pk>/update/', views.client_update, name='client_update'),
     path('clients/<int:pk>/delete/', views.client_delete, name='client_delete'),
+    path('clients/<int:pk>/payment-history/', views.client_payment_history, name='client_payment_history'),
+    path('clients/<int:pk>/contracts/', views.client_contracts, name='client_contracts'),
+    path('clients/<int:pk>/contracts/<int:token_id>/', views.view_client_contract, name='view_client_contract'),
+    path('clients/<int:pk>/service-contract/', views.service_contract, name='service_contract'),
+    path('clients/<int:pk>/send-service-contract/', views.send_service_contract, name='send_service_contract'),
+    
+    # Service Contract URLs
+    path('contracts/<str:token>/', views.view_service_contract, name='view_service_contract'),
+    path('contracts/<str:token>/accept/', views.accept_service_contract, name='accept_service_contract'),
     
     # Subscriptions URLs
     path('subscriptions/', views.subscription_list, name='subscription_list'),
@@ -48,6 +57,7 @@ urlpatterns = [
     path('calculadoras/<int:pk>/update/', views.calculadora_update, name='calculadora_update'),
     path('calculadoras/<int:pk>/delete/', views.calculadora_delete, name='calculadora_delete'),
     path('calculadoras/<int:pk>/pdf/', views.calculadora_pdf, name='calculadora_pdf'),
+    path('calculadoras/<int:pk>/enviar-cotizacion/', views.enviar_cotizacion_email, name='enviar_cotizacion_email'),
     path('items/<int:pk>/delete/', views.item_delete, name='item_delete'),
     path('calculadora/<int:pk>/generar-suscripciones/', views.generar_suscripciones, name='generar_suscripciones'),
 ]

@@ -9,15 +9,22 @@
 {% block content %}
 <div class="space-y-8">
     <div class="flex justify-between items-center">
-        <div class="flex items-center space-x-4">
-            <h2 class="text-2xl text-white font-medium">{{ client.name }}</h2>
-            <span class="glass-btn px-3 py-1.5 text-sm
-                {% if client.status == 'active' %}text-green-400 bg-green-900 bg-opacity-20
-                {% elif client.status == 'pending' %}text-yellow-400 bg-yellow-900 bg-opacity-20
-                {% else %}text-red-400 bg-red-900 bg-opacity-20{% endif %}">
-                {{ client.get_status_display }}
-            </span>
-        </div>
+            <div class="flex items-center space-x-4">
+                <h2 class="text-2xl text-white font-medium">{{ client.name }}</h2>
+                <span class="glass-btn px-3 py-1.5 text-sm
+                    {% if client.status == 'active' %}text-green-400 bg-green-900 bg-opacity-20
+                    {% elif client.status == 'pending' %}text-yellow-400 bg-yellow-900 bg-opacity-20
+                    {% else %}text-red-400 bg-red-900 bg-opacity-20{% endif %}">
+                    {{ client.get_status_display }}
+                </span>
+                <span class="glass-btn px-3 py-1.5 text-sm
+                    {% if client.contract_status == 'accepted' %}text-green-400 bg-green-900 bg-opacity-20
+                    {% elif client.contract_status == 'pending' %}text-yellow-400 bg-yellow-900 bg-opacity-20
+                    {% elif client.contract_status == 'rejected' %}text-red-400 bg-red-900 bg-opacity-20
+                    {% else %}text-gray-400 bg-gray-900 bg-opacity-20{% endif %}">
+                    Contrato: {{ client.get_contract_status_display }}
+                </span>
+            </div>
         <div class="flex space-x-3">
             <a href="{% url 'forgeapp:client_update' client.pk %}" 
                class="glass-btn px-6 py-2.5 text-white hover:text-forge-bright">
@@ -92,6 +99,19 @@
                     <dt class="text-forge-bright text-sm font-medium mb-1">Fecha de Registro</dt>
                     <dd class="text-white opacity-90">{{ client.created_at|date:"d/m/Y" }}</dd>
                 </div>
+                
+                <div>
+                    <dt class="text-forge-bright text-sm font-medium mb-1">Estado del Contrato</dt>
+                    <dd class="text-white opacity-90">
+                        <span class="glass-btn px-3 py-1 text-sm
+                            {% if client.contract_status == 'accepted' %}text-green-400 bg-green-900 bg-opacity-20
+                            {% elif client.contract_status == 'pending' %}text-yellow-400 bg-yellow-900 bg-opacity-20
+                            {% elif client.contract_status == 'rejected' %}text-red-400 bg-red-900 bg-opacity-20
+                            {% else %}text-gray-400 bg-gray-900 bg-opacity-20{% endif %}">
+                            {{ client.get_contract_status_display }}
+                        </span>
+                    </dd>
+                </div>
             </dl>
         </div>
 
@@ -111,10 +131,20 @@
                     <dd class="text-white text-2xl font-bold">${{ client.total_value|default:"0"|formato_cl:client }}</dd>
                 </div>
             </dl>
-            <div>
-                <a href="{% url 'forgeapp:subscription_create' %}?client={{ client.pk }}" 
+            <div class="space-y-3">
+                <a href="{% url 'forgeapp:service_contract' client.pk %}" 
                    class="glass-btn px-6 py-2.5 text-white hover:text-forge-bright w-full flex items-center justify-center">
-                    Nueva Suscripción
+                    <i class="fas fa-file-contract mr-2"></i> Contrato de Servicio
+                </a>
+                {% if client.contract_status == 'accepted' %}
+                <a href="{% url 'forgeapp:client_contracts' client.pk %}" 
+                   class="glass-btn px-6 py-2.5 text-green-400 hover:text-green-300 bg-green-900 bg-opacity-20 w-full flex items-center justify-center">
+                    <i class="fas fa-file-signature mr-2"></i> Ver Contratos Firmados
+                </a>
+                {% endif %}
+                <a href="{% url 'forgeapp:client_payment_history' client.pk %}" 
+                   class="glass-btn px-6 py-2.5 text-white hover:text-forge-bright w-full flex items-center justify-center">
+                    <i class="fas fa-history mr-2"></i> Historial de Pagos
                 </a>
             </div>
         </div>
@@ -162,12 +192,12 @@
                         <td class="p-4">
                             <div class="flex space-x-3">
                                 <a href="{% url 'forgeapp:subscription_update' subscription.pk %}" 
-                                   class="glass-btn px-4 py-1.5 text-white hover:text-forge-bright">
-                                    Editar
+                                   class="glass-btn px-4 py-1.5 text-white hover:text-forge-bright" title="Editar Suscripción">
+                                    <i class="fas fa-edit"></i>
                                 </a>
                                 <button onclick="confirmDeleteSubscription('{{ subscription.pk }}')" 
-                                        class="glass-btn px-4 py-1.5 text-red-400 hover:text-red-300 bg-red-900 bg-opacity-20">
-                                    Eliminar
+                                        class="glass-btn px-4 py-1.5 text-red-400 hover:text-red-300 bg-red-900 bg-opacity-20" title="Eliminar Suscripción">
+                                    <i class="fas fa-trash-alt"></i>
                                 </button>
                             </div>
                         </td>

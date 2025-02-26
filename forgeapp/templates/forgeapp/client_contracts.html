@@ -1,0 +1,101 @@
+<!-- templates/forgeapp/client_contracts.html -->
+{% extends 'base.html' %}
+
+{% block title %}Contratos de {{ client.name }}{% endblock %}
+
+{% block window_title %}Contratos Firmados: {{ client.name }}{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <div class="flex justify-between items-center">
+        <div class="flex items-center space-x-4">
+            <h2 class="text-2xl text-white font-medium">Contratos Firmados</h2>
+            <span class="glass-btn px-3 py-1.5 text-sm text-green-400 bg-green-900 bg-opacity-20">
+                {{ contracts|length }} Contrato{{ contracts|length|pluralize }}
+            </span>
+        </div>
+        <div class="flex space-x-3">
+            <a href="{% url 'forgeapp:client_detail' client.pk %}" 
+               class="glass-btn px-6 py-2.5 text-white hover:text-forge-bright">
+                Volver al Cliente
+            </a>
+        </div>
+    </div>
+
+    <!-- Información del Cliente -->
+    <div class="glass-panel p-6">
+        <h3 class="text-white font-medium text-lg mb-6">Cliente</h3>
+        <dl class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+                <dt class="text-forge-bright text-sm font-medium mb-1">Nombre</dt>
+                <dd class="text-white opacity-90">{{ client.name }}</dd>
+            </div>
+            
+            <div>
+                <dt class="text-forge-bright text-sm font-medium mb-1">RUT</dt>
+                <dd class="text-white opacity-90">{{ client.rut }}</dd>
+            </div>
+            
+            <div>
+                <dt class="text-forge-bright text-sm font-medium mb-1">Email</dt>
+                <dd class="text-white opacity-90">{{ client.email }}</dd>
+            </div>
+        </dl>
+    </div>
+
+    <!-- Lista de Contratos -->
+    <div class="glass-panel p-6">
+        <h3 class="text-white font-medium text-lg mb-6">Contratos Firmados</h3>
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-forge-light border-opacity-10">
+                        <th class="p-4 text-left text-white font-medium">Aplicación</th>
+                        <th class="p-4 text-left text-white font-medium">Tipo</th>
+                        <th class="p-4 text-left text-white font-medium">Precio</th>
+                        <th class="p-4 text-left text-white font-medium">Fecha de Firma</th>
+                        <th class="p-4 text-left text-white font-medium">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for contract in contracts %}
+                    <tr class="border-b border-forge-light border-opacity-5 hover:bg-forge-primary hover:bg-opacity-5 transition-colors">
+                        <td class="p-4 text-white">
+                            <a href="{% url 'forgeapp:application_detail' contract.application.pk %}" 
+                               class="hover:text-forge-bright transition-colors">
+                                {{ contract.application.name }}
+                            </a>
+                        </td>
+                        <td class="p-4">
+                            <span class="glass-btn px-3 py-1 text-sm
+                                {% if contract.subscription_type == 'Mensual' %}text-blue-400 bg-blue-900 bg-opacity-20
+                                {% else %}text-purple-400 bg-purple-900 bg-opacity-20{% endif %}">
+                                {{ contract.subscription_type }}
+                            </span>
+                        </td>
+                        <td class="p-4">
+                            <span class="px-3 py-1 rounded-full bg-forge-primary bg-opacity-20 backdrop-blur-sm text-white">
+                                ${{ contract.price|default:"0"|stringformat:"d"|slice:"-3:" }}
+                            </span>
+                        </td>
+                        <td class="p-4 text-white">{{ contract.used_at|date:"d/m/Y H:i" }}</td>
+                        <td class="p-4">
+                            <div class="flex space-x-3">
+                                <a href="{% url 'forgeapp:view_client_contract' client.pk contract.token.id %}" 
+                                   class="glass-btn px-4 py-1.5 text-white hover:text-forge-bright" title="Ver Contrato">
+                                    <i class="fas fa-file-signature"></i> Ver
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="p-4 text-white text-center opacity-60">No hay contratos firmados</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

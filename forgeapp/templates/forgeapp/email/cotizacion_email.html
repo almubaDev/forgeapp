@@ -1,0 +1,47 @@
+{% extends 'base_email.html' %}
+
+{% block content %}
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+  <tr>
+    <td align="center">
+      <table width="600" border="0" cellspacing="0" cellpadding="0" style="background-color: #0e3559; color: #ffffff; border-radius: 8px; padding: 20px;">
+        <tr>
+          <td align="center" style="padding: 20px;">
+            <img src="https://res.cloudinary.com/do89fyolr/image/upload/v1740102351/logo_rplk5z.png" alt="ForgeApp Logo" style="width: 150px; height: auto;">
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 20px;">
+            <h1 style="color: #4EB8D5; font-size: 24px; margin-bottom: 20px;">Cotización: {{ calculadora.nombre }}</h1>
+            
+            <p style="font-size: 16px; line-height: 1.5; margin-bottom: 20px;">
+              Estimado/a {{ client.name }},
+            </p>
+            
+            <p style="font-size: 16px; line-height: 1.5; margin-bottom: 20px;">
+              Adjunto encontrará la cotización solicitada para {{ calculadora.nombre }} y la descripción de la aplicación a desarrollar.
+            </p>
+            
+            
+            <p style="font-size: 16px; line-height: 1.5; margin-bottom: 20px;">
+              Si tiene alguna pregunta o necesita más información, no dude en contactarnos.
+            </p>
+            
+            <p style="font-size: 16px; line-height: 1.5; margin-bottom: 20px;">
+              Saludos cordiales,<br>
+              Equipo ForgeApp
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 20px; border-top: 1px solid #4EB8D5; text-align: center;">
+            <p style="font-size: 14px; color: #4EB8D5;">
+              www.forgeapp.cl
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+{% endblock %}

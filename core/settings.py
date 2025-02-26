@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'forgeapp',
     'finance',
     'checkout_counters',
+    'pdf_generator',  # Nueva app para generación de PDFs
 ]
 
 MIDDLEWARE = [
@@ -46,6 +47,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'core.middleware.MercadoPagoCSPMiddleware',  # Middleware para CSP de Mercado Pago
 ]
 
 ROOT_URLCONF = 'core.urls'
@@ -170,6 +172,11 @@ LOGGING = {
             'filename': os.path.join(BASE_DIR, 'logs', 'checkout.log'),
             'formatter': 'verbose',
         },
+        'pdf_generator_file': {
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs', 'pdf_generator.log'),
+            'formatter': 'verbose',
+        },
     },
     'loggers': {
         'finance': {
@@ -189,6 +196,11 @@ LOGGING = {
         },
         'checkout_counters': {
             'handlers': ['console', 'checkout_file'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'pdf_generator': {
+            'handlers': ['console', 'pdf_generator_file'],
             'level': 'INFO',
             'propagate': True,
         },

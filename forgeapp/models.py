@@ -11,6 +11,7 @@ from django.core.exceptions import ValidationError
 from django.conf import settings
 from django.core.validators import MinValueValidator
 from cryptography.fernet import Fernet
+from datetime import datetime
 
 logger = logging.getLogger('forgeapp')
 
@@ -108,6 +109,13 @@ class Client(models.Model):
         ('chilena', 'Chilena'),
         ('extranjera', 'Extranjera'),
     ]
+    
+    CONTRACT_STATUS_CHOICES = [
+        ('pending', 'Pendiente'),
+        ('accepted', 'Aceptado'),
+        ('rejected', 'Rechazado'),
+        ('none', 'Sin Contrato'),
+    ]
 
     rut = models.CharField('RUT', max_length=12, unique=True, validators=[validate_rut])
     name = models.CharField('Nombre', max_length=200)
@@ -121,6 +129,8 @@ class Client(models.Model):
     notes = models.TextField('Notas', blank=True)
     created_at = models.DateTimeField('Fecha de Registro', auto_now_add=True)
     updated_at = models.DateTimeField('Última Actualización', auto_now=True)
+    accept_marketing = models.BooleanField('Acepta Marketing', default=False)
+    contract_status = models.CharField('Estado del Contrato', max_length=20, choices=CONTRACT_STATUS_CHOICES, default='none')
 
     class Meta:
         verbose_name = 'Cliente'
@@ -161,6 +171,7 @@ class Subscription(models.Model):
         ('inactive', 'Inactiva'),
         ('cancelled', 'Cancelada'),
         ('expired', 'Expirada'),
+        ('pending', 'Pendiente'),
     ]
 
     PAYMENT_TYPE_CHOICES = [
@@ -175,6 +186,7 @@ class Subscription(models.Model):
     payment_type = models.CharField('Tipo de Pago', max_length=20, choices=PAYMENT_TYPE_CHOICES, default='monthly')
     next_payment_date = models.DateField('Fecha Próximo Pago', null=True, blank=True)
     last_payment_date = models.DateField('Fecha Último Pago', null=True, blank=True)
+    accept_marketing = models.BooleanField('Acepta Marketing', default=False)
 
     @staticmethod
     def generate_reference_id(payment_type, attempt=0):
@@ -438,8 +450,6 @@ class Subscription(models.Model):
         # Calcular próxima fecha de pago
         if self.payment_type == 'monthly':
             # Si es mensual, el próximo pago es en un mes
-            from dateutil.relativedelta import relativedelta
-            
             # Usar la fecha de inicio como referencia para mantener el mismo día del mes
             reference_date = self.start_date
             if self.last_payment_date:
@@ -447,19 +457,46 @@ class Subscription(models.Model):
                 reference_date = self.last_payment_date
             
             # Calcular próxima fecha manteniendo el mismo día del mes
-            next_date = reference_date + relativedelta(months=1)
+            # Crear una nueva fecha con el mismo día pero el mes siguiente
+            next_month = reference_date.month + 1
+            next_year = reference_date.year
+            
+            # Si el mes es diciembre, avanzar al año siguiente
+            if next_month > 12:
+                next_month = 1
+                next_year += 1
+            
+            # Obtener el último día del próximo mes
+            last_day = self._last_day_of_month(next_year, next_month)
+            
+            # Asegurarse de que el día no exceda el último día del mes
+            next_day = min(reference_date.day, last_day)
+            
+            # Crear la fecha del próximo pago
+            next_date = datetime(next_year, next_month, next_day).date()
             
             # Si la fecha calculada ya pasó, avanzar otro mes
             if next_date <= today:
-                next_date = today + relativedelta(months=1)
-                # Intentar mantener el mismo día del mes que la fecha de inicio
-                next_date = next_date.replace(day=min(reference_date.day, self._last_day_of_month(next_date.year, next_date.month)))
+                next_month = next_date.month + 1
+                next_year = next_date.year
+                
+                # Si el mes es diciembre, avanzar al año siguiente
+                if next_month > 12:
+                    next_month = 1
+                    next_year += 1
+                
+                # Obtener el último día del próximo mes
+                last_day = self._last_day_of_month(next_year, next_month)
+                
+                # Asegurarse de que el día no exceda el último día del mes
+                next_day = min(reference_date.day, last_day)
+                
+                # Crear la fecha del próximo pago
+                next_date = datetime(next_year, next_month, next_day).date()
             
             self.next_payment_date = next_date
         else:
             # Si es anual, el próximo pago es en un año
-            from dateutil.relativedelta import relativedelta
-            
             # Usar la fecha de inicio como referencia para mantener el mismo día del año
             reference_date = self.start_date
             if self.last_payment_date:
@@ -467,18 +504,35 @@ class Subscription(models.Model):
                 reference_date = self.last_payment_date
             
             # Calcular próxima fecha manteniendo el mismo día del año
-            next_date = reference_date + relativedelta(years=1)
+            next_year = reference_date.year + 1
+            
+            # Intentar mantener el mismo día del año que la fecha de inicio
+            try:
+                next_date = datetime(next_year, reference_date.month, reference_date.day).date()
+            except ValueError:
+                # En caso de 29 de febrero en año no bisiesto
+                if reference_date.month == 2 and reference_date.day == 29:
+                    next_date = datetime(next_year, 2, 28).date()
+                else:
+                    # Otro error, usar el último día del mes
+                    last_day = self._last_day_of_month(next_year, reference_date.month)
+                    next_date = datetime(next_year, reference_date.month, last_day).date()
             
             # Si la fecha calculada ya pasó, avanzar otro año
             if next_date <= today:
-                next_date = today + relativedelta(years=1)
+                next_year = next_date.year + 1
+                
                 # Intentar mantener el mismo día del año que la fecha de inicio
                 try:
-                    next_date = next_date.replace(month=reference_date.month, day=reference_date.day)
+                    next_date = datetime(next_year, reference_date.month, reference_date.day).date()
                 except ValueError:
                     # En caso de 29 de febrero en año no bisiesto
                     if reference_date.month == 2 and reference_date.day == 29:
-                        next_date = next_date.replace(month=2, day=28)
+                        next_date = datetime(next_year, 2, 28).date()
+                    else:
+                        # Otro error, usar el último día del mes
+                        last_day = self._last_day_of_month(next_year, reference_date.month)
+                        next_date = datetime(next_year, reference_date.month, last_day).date()
             
             self.next_payment_date = next_date
         
@@ -617,6 +671,34 @@ class Calculadora(models.Model):
             sub_anual.items_detail = items_json
             sub_anual.auto_renewal = auto_renewal
             sub_anual.save()
+            sub_mensual.price = self.cuota_mensual
+            sub_mensual.items_detail = items_json
+            sub_mensual.auto_renewal = auto_renewal
+            sub_mensual.save()
+        elif not self.subscriptions.filter(payment_type='monthly').exists():
+            # Crear nueva suscripción solo si no existe ninguna mensual
+            sub_mensual = Subscription(
+                client=self.client,
+                application=self.application,
+                payment_type='monthly',
+                price=self.cuota_mensual,
+                start_date=start_date,
+                end_date=end_date,
+                auto_renewal=auto_renewal,
+                items_detail=items_json,
+                calculadora=self,
+                renewal_notes=f"Generado desde calculadora: {self.nombre}"
+            )
+            sub_mensual.reference_id = Subscription.generate_reference_id('monthly')
+            sub_mensual.save()
+
+        # Actualizar o crear suscripción anual
+        if sub_anual:
+            # Actualizar suscripción existente
+            sub_anual.price = self.total_anual
+            sub_anual.items_detail = items_json
+            sub_anual.auto_renewal = auto_renewal
+            sub_anual.save()
         elif not self.subscriptions.filter(payment_type='annual').exists():
             # Crear nueva suscripción solo si no existe ninguna anual
             sub_anual = Subscription(
@@ -657,3 +739,31 @@ class ItemCalculo(models.Model):
         
         # Actualizar totales de la calculadora
         self.calculadora.save()
+
+class ServiceContractToken(models.Model):
+    """Modelo para almacenar tokens de contratos de servicio"""
+    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='contract_tokens')
+    application_id = models.IntegerField('ID de Aplicación')
+    subscription_type = models.CharField('Tipo de Suscripción', max_length=20, choices=Subscription.PAYMENT_TYPE_CHOICES)
+    token = models.CharField('Token', max_length=100, unique=True)
+    created_at = models.DateTimeField('Fecha de Creación', auto_now_add=True)
+    expires_at = models.DateTimeField('Fecha de Expiración')
+    used = models.BooleanField('Usado', default=False)
+    used_at = models.DateTimeField('Fecha de Uso', null=True, blank=True)
+    price = models.DecimalField('Precio', max_digits=10, decimal_places=2, null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'Token de Contrato'
+        verbose_name_plural = 'Tokens de Contratos'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Token para {self.client.name} - {self.token[:8]}..."
+
+    def is_expired(self):
+        """Verifica si el token ha expirado"""
+        return self.expires_at < timezone.now()
+
+    def is_valid(self):
+        """Verifica si el token es válido (no expirado y no usado)"""
+        return not self.used and not self.is_expired()
