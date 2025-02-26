@@ -34,17 +34,27 @@ class PaymentLinkManager(models.Manager):
                 # Intentar obtener el email del pagador
                 if "payer" in payment_data:
                     payment_link.payer_email = payment_data["payer"].get("email", "")
-                    payer_name = payment_data["payer"].get("first_name", "")
-                    if payment_data["payer"].get("last_name"):
-                        payer_name += f" {payment_data['payer']['last_name']}"
+                    payment_link.payer_first_name = payment_data["payer"].get("first_name", "")
+                    payment_link.payer_last_name = payment_data["payer"].get("last_name", "")
+                    
+                    # Mantener el campo payer_name para compatibilidad
+                    payer_name = payment_link.payer_first_name
+                    if payment_link.payer_last_name:
+                        payer_name += f" {payment_link.payer_last_name}"
                     payment_link.payer_name = payer_name
+                    
                 # Si no está en payer, buscar en additional_info
                 elif "additional_info" in payment_data and "payer" in payment_data["additional_info"]:
                     payer_info = payment_data["additional_info"]["payer"]
                     payment_link.payer_email = payer_info.get("email", "")
-                    payment_link.payer_name = payer_info.get("first_name", "")
-                    if payer_info.get("last_name"):
-                        payment_link.payer_name += f" {payer_info['last_name']}"
+                    payment_link.payer_first_name = payer_info.get("first_name", "")
+                    payment_link.payer_last_name = payer_info.get("last_name", "")
+                    
+                    # Mantener el campo payer_name para compatibilidad
+                    payer_name = payment_link.payer_first_name
+                    if payment_link.payer_last_name:
+                        payer_name += f" {payment_link.payer_last_name}"
+                    payment_link.payer_name = payer_name
             
             payment_link.save()
             
@@ -87,7 +97,9 @@ class PaymentLink(models.Model):
     is_paid = models.BooleanField('Está Pagado', default=False)
     expires_at = models.DateTimeField('Expira en', null=True, blank=True)
     payer_email = models.EmailField('Email del Pagador', blank=True)
-    payer_name = models.CharField('Nombre del Pagador', max_length=200, null=True, blank=True)
+    payer_first_name = models.CharField('Nombre del Pagador', max_length=100, null=True, blank=True)
+    payer_last_name = models.CharField('Apellido del Pagador', max_length=100, null=True, blank=True)
+    payer_name = models.CharField('Nombre Completo del Pagador', max_length=200, null=True, blank=True)
     created_at = models.DateTimeField('Fecha de Creación', auto_now_add=True)
     updated_at = models.DateTimeField('Última Actualización', auto_now=True)
 

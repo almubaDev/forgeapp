@@ -23,10 +23,11 @@ class ApplicationForm(forms.ModelForm):
 class ClientForm(forms.ModelForm):
     class Meta:
         model = Client
-        fields = ['rut', 'name', 'email', 'phone', 'company', 'company_rut', 'position', 'nationality', 'status', 'notes']
+        fields = ['rut', 'first_name', 'last_name', 'email', 'phone', 'company', 'company_rut', 'position', 'nationality', 'status', 'notes']
         widgets = {
             'rut': forms.TextInput(attrs={'class': 'win98-input w-full', 'placeholder': 'Ej: 12345678-9'}),
-            'name': forms.TextInput(attrs={'class': 'win98-input w-full'}),
+            'first_name': forms.TextInput(attrs={'class': 'win98-input w-full', 'placeholder': 'Nombres'}),
+            'last_name': forms.TextInput(attrs={'class': 'win98-input w-full', 'placeholder': 'Apellidos'}),
             'email': forms.EmailInput(attrs={'class': 'win98-input w-full'}),
             'phone': forms.TextInput(attrs={'class': 'win98-input w-full'}),
             'company': forms.TextInput(attrs={'class': 'win98-input w-full'}),

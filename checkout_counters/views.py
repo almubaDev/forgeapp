@@ -56,13 +56,24 @@ class PaymentLinkCreateView(LoginRequiredMixin, CreateView):
         base_url = settings.SITE_URL.rstrip('/')
         payment_return_url = f"{base_url}{reverse('checkout_counters:payment_return')}"
         
+        # Obtener información del cliente desde la suscripción
+        client = form.instance.subscription.client
+        
+        # Asignar datos del cliente al PaymentLink
+        form.instance.payer_email = client.email
+        form.instance.payer_first_name = client.first_name
+        form.instance.payer_last_name = client.last_name
+        
         preference_data = {
             "items": [
                 {
                     "title": form.instance.description,
                     "quantity": 1,
                     "currency_id": "CLP",  # Moneda Chilena
-                    "unit_price": float(form.instance.amount)
+                    "unit_price": float(form.instance.amount),
+                    "description": f"Pago de suscripción {form.instance.subscription.reference_id}",
+                    "category_id": "subscriptions",
+                    "id": form.instance.reference_id
                 }
             ],
             "external_reference": form.instance.reference_id,
@@ -74,7 +85,12 @@ class PaymentLinkCreateView(LoginRequiredMixin, CreateView):
                 "pending": payment_return_url
             },
             "auto_return": "approved",
-            "notification_url": settings.MP_WEBHOOK_URL
+            "notification_url": settings.MP_WEBHOOK_URL,
+            "payer": {
+                "email": client.email,
+                "first_name": client.first_name,
+                "last_name": client.last_name
+            }
         }
         
         logger.info(f"URLs configuradas para Mercado Pago:")
@@ -135,11 +151,16 @@ class PaymentLinkDeleteView(LoginRequiredMixin, SuccessMessageMixin, DeleteView)
 
 class PaymentLinkUpdateView(LoginRequiredMixin, UpdateView):
     model = PaymentLink
-    fields = ['status', 'payer_email', 'payer_name']
+    fields = ['status', 'payer_email', 'payer_first_name', 'payer_last_name']
     template_name = 'checkout_counters/payment_form.html'
 
     def get_success_url(self):
         return reverse('checkout_counters:payment_detail', kwargs={'pk': self.object.pk})
+        
+    def form_valid(self, form):
+        # Actualizar el campo payer_name para mantener compatibilidad
+        form.instance.payer_name = f"{form.instance.payer_first_name or ''} {form.instance.payer_last_name or ''}".strip()
+        return super().form_valid(form)
 
 @csrf_exempt
 @require_POST

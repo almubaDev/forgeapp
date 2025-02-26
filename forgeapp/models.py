@@ -118,7 +118,9 @@ class Client(models.Model):
     ]
 
     rut = models.CharField('RUT', max_length=12, unique=True, validators=[validate_rut])
-    name = models.CharField('Nombre', max_length=200)
+    first_name = models.CharField('Nombres', max_length=100, default='')
+    last_name = models.CharField('Apellidos', max_length=100, default='')
+    name = models.CharField('Nombre Completo', max_length=200, editable=False)
     email = models.EmailField('Correo Electrónico')
     phone = models.CharField('Teléfono', max_length=20, blank=True)
     company = models.CharField('Empresa', max_length=200, blank=True)
@@ -136,6 +138,11 @@ class Client(models.Model):
         verbose_name = 'Cliente'
         verbose_name_plural = 'Clientes'
         ordering = ['-created_at']
+
+    def save(self, *args, **kwargs):
+        # Actualizar el campo name a partir de first_name y last_name
+        self.name = f"{self.first_name} {self.last_name}".strip()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name
@@ -335,7 +342,10 @@ class Subscription(models.Model):
                     "title": f"Pago de suscripción {self.reference_id} - {self.client.name}",
                     "quantity": 1,
                     "currency_id": "CLP",  # Moneda Chilena
-                    "unit_price": float(self.price)
+                    "unit_price": float(self.price),
+                    "description": f"Pago de suscripción {self.reference_id} - {self.get_payment_type_display()}",
+                    "category_id": "subscriptions",
+                    "id": self.reference_id
                 }
             ],
             "external_reference": reference_id,
@@ -348,7 +358,12 @@ class Subscription(models.Model):
             },
             "auto_return": "approved",
             "notification_url": notification_url,
-            "binary_mode": True  # Solo permitir pagos aprobados o rechazados
+            "binary_mode": True,  # Solo permitir pagos aprobados o rechazados
+            "payer": {
+                "email": self.client.email,
+                "first_name": self.client.first_name,
+                "last_name": self.client.last_name
+            }
         }
 
         logger.info(f"Datos de preferencia a enviar: {preference_data}")
