@@ -240,3 +240,9 @@ MP_WEBHOOK_ENABLED = env.bool('MP_WEBHOOK_ENABLED', default=True)
 
 # Mercado Pago sandbox mode
 MP_SANDBOX_MODE = env.bool('MP_SANDBOX_MODE', default=True)
+
+# Importar configuraciones específicas para PythonAnywhere en producción
+try:
+    from core.pythonanywhere_settings import *
+except ImportError:
+    pass
