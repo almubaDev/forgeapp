@@ -71,7 +71,7 @@
                                     Cancelar
                                 </button>
                             </form>
-                            {% if subscription.can_register_payment %}
+                            {% if subscription.status == 'active' %}
                                 <form action="{% url 'finance:register_subscription_payment' subscription.pk %}" method="post" class="inline">
                                     {% csrf_token %}
                                     <button type="submit" class="glass-btn px-4 py-1.5 text-green-400 hover:text-green-300 bg-green-900 bg-opacity-20">

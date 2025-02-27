@@ -282,27 +282,9 @@ class Subscription(models.Model):
 
     def can_register_payment(self):
         """Verifica si se puede registrar un nuevo pago"""
-        today = timezone.now().date()
-        
-        # Verificar condiciones básicas
-        if not self.status == 'active':
-            return False
-        
-        if self.has_pending_payment():
-            return False
-            
-        if self.end_date < today:
-            return False
-            
-        # Si es el primer pago, siempre se puede registrar
-        if self.last_payment_date is None:
-            return True
-            
-        # Si ya hay un pago, verificar si es tiempo del siguiente
-        if self.next_payment_date is None:
-            return False
-            
-        return self.next_payment_date <= today
+        # Temporalmente modificado para permitir registrar pagos manualmente
+        # siempre que la suscripción esté activa
+        return self.status == 'active'
 
     def generate_payment_link(self, request=None):
         """Genera un link de pago para la suscripción"""
