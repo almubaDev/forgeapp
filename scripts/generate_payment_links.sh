@@ -54,9 +54,22 @@ fi
 log "Navegando al directorio del proyecto"
 cd "$PROJECT_PATH"
 
-# Configurar variables de entorno de Django
+# Configurar variables de entorno
 export DJANGO_SETTINGS_MODULE="core.settings"
 export PYTHONPATH="$PROJECT_PATH:$PYTHONPATH"
+
+# Verificar y cargar archivo .env
+ENV_FILE="$PROJECT_PATH/.env"
+if [ ! -f "$ENV_FILE" ]; then
+    log "ERROR: No se encontró el archivo .env en $ENV_FILE"
+    log "Copiando archivo .env de ejemplo..."
+    cp "$PROJECT_PATH/.env.example" "$ENV_FILE" || {
+        log "ERROR: No se pudo copiar el archivo .env.example"
+        exit 1
+    }
+fi
+
+log "Usando archivo .env en: $ENV_FILE"
 
 # Ejecutar el comando de Django
 log "Ejecutando comando de Django"
