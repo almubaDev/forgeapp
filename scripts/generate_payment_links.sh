@@ -13,14 +13,23 @@ log() {
 }
 
 # Crear directorio de logs si no existe
-mkdir -p "$LOG_PATH"
-touch "$LOG_FILE"
-touch "$DJANGO_LOG_FILE"
+mkdir -p "$LOG_PATH" || {
+    echo "ERROR: No se pudo crear el directorio de logs"
+    exit 1
+}
 
-# Configurar permisos
-chmod 755 "$LOG_PATH"
-chmod 644 "$LOG_FILE"
-chmod 644 "$DJANGO_LOG_FILE"
+# Crear archivos de log si no existen
+touch "$LOG_FILE" "$DJANGO_LOG_FILE" || {
+    echo "ERROR: No se pudieron crear los archivos de log"
+    exit 1
+}
+
+# Verificar que los archivos sean escribibles
+if [ ! -w "$LOG_FILE" ] || [ ! -w "$DJANGO_LOG_FILE" ]; then
+    echo "ERROR: No se puede escribir en los archivos de log"
+    echo "Por favor, verifica los permisos de $LOG_PATH"
+    exit 1
+fi
 
 log "Iniciando script de generación de links de pago"
 
