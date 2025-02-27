@@ -283,39 +283,25 @@ class Subscription(models.Model):
         """Verifica si se puede registrar un nuevo pago"""
         today = timezone.now().date()
         
-        # Log del estado actual
-        logger.info(f"Verificando si se puede registrar pago para suscripción {self.reference_id}")
-        logger.info(f"Estado: {self.status}")
-        logger.info(f"Último pago: {self.last_payment_date}")
-        logger.info(f"Próximo pago: {self.next_payment_date}")
-        logger.info(f"Fecha fin: {self.end_date}")
-        logger.info(f"Tiene pagos pendientes: {self.has_pending_payment()}")
+        # Verificar condiciones básicas
+        if not self.status == 'active':
+            return False
         
-        # Verificar condiciones
-        is_active = self.status == 'active'
-        no_pending = not self.has_pending_payment()
-        not_expired = self.end_date >= today
-        first_payment = self.last_payment_date is None
-        is_payment_due = self.next_payment_date is not None and self.next_payment_date <= today
-        
-        # Log de cada condición
-        logger.info("Evaluando condiciones:")
-        logger.info(f"- ¿Está activa? {is_active}")
-        logger.info(f"- ¿No tiene pagos pendientes? {no_pending}")
-        logger.info(f"- ¿No está vencida? {not_expired}")
-        logger.info(f"- ¿Es primer pago? {first_payment}")
-        logger.info(f"- ¿Toca pagar? {is_payment_due}")
-        
-        # Verificar si se puede registrar pago
-        can_register = (
-            is_active and
-            no_pending and
-            not_expired and
-            (first_payment or is_payment_due)
-        )
-        
-        logger.info(f"Resultado: {'Se puede' if can_register else 'No se puede'} registrar pago")
-        return can_register
+        if self.has_pending_payment():
+            return False
+            
+        if self.end_date < today:
+            return False
+            
+        # Si es el primer pago, siempre se puede registrar
+        if self.last_payment_date is None:
+            return True
+            
+        # Si ya hay un pago, verificar si es tiempo del siguiente
+        if self.next_payment_date is None:
+            return False
+            
+        return self.next_payment_date <= today
 
     def generate_payment_link(self, request=None):
         """Genera un link de pago para la suscripción"""

@@ -789,6 +789,24 @@ def subscription_activate(request, pk):
         # Generar enlace de pago
         try:
             logger.info(f"Intentando generar enlace de pago con request...")
+            
+            # Forzar la generación del primer pago independientemente de las condiciones
+            # Esto asegura que siempre se genere un link de pago al activar
+            payment_link = None
+            
+            # Verificar que el cliente tenga first_name y last_name
+            client = subscription.client
+            if not client.first_name or not client.last_name:
+                # Dividir el nombre en first_name y last_name si están vacíos
+                name_parts = client.name.split()
+                if name_parts:
+                    client.first_name = name_parts[0]
+                    if len(name_parts) > 1:
+                        client.last_name = ' '.join(name_parts[1:])
+                    client.save()
+                    logger.info(f"Actualizado first_name y last_name para cliente {client.id}")
+            
+            # Generar el link de pago directamente
             payment_link = subscription.generate_payment_link(request=request)
             
             if payment_link:
@@ -799,11 +817,13 @@ def subscription_activate(request, pk):
                 try:
                     subscription.send_payment_email(payment_link)
                     messages.success(request, 'Suscripción activada y enlace de pago enviado exitosamente.')
+                    logger.info(f"Enlace de pago generado y enviado: {payment_link.payment_link}")
                 except Exception as email_error:
                     logger.error(f"Error al enviar email de pago: {str(email_error)}")
                     messages.warning(request, 'Suscripción activada, pero hubo un error al enviar el email con el enlace de pago.')
             else:
                 messages.warning(request, 'Suscripción activada, pero no se pudo generar el enlace de pago.')
+                logger.error("No se pudo generar el enlace de pago")
         except Exception as payment_error:
             logger.error(f"Error al generar enlace de pago: {str(payment_error)}")
             messages.warning(request, f'Suscripción activada, pero hubo un error al generar el enlace de pago: {str(payment_error)}')

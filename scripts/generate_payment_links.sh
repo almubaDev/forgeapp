@@ -94,4 +94,3 @@ fi
 log "Script finalizado"
 
 # Salir con el código de salida del comando
-exit $EXIT_CODE
