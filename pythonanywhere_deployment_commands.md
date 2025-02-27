@@ -1,6 +1,17 @@
-# Configuración de Generación Automática de Links de Pago en PythonAnywhere
+# Resolver conflictos de Git y configurar en PythonAnywhere
 
-## 1. Crear directorios necesarios
+## 1. Guardar cambios locales y actualizar
+
+```bash
+# Guardar los cambios locales
+git add scripts/generate_payment_links.sh
+git commit -m "Actualizar rutas en script de generación de links de pago"
+
+# Actualizar desde el repositorio
+git pull origin main
+```
+
+## 2. Crear directorios necesarios
 
 ```bash
 # Crear directorio para scripts
@@ -14,7 +25,7 @@ chmod 755 /home/ForgeApp/forgeApp/forgeapp/scripts
 chmod 755 /home/ForgeApp/forgeApp/forgeapp/logs
 ```
 
-## 2. Copiar y configurar el script
+## 3. Copiar y configurar el script
 
 ```bash
 # Copiar el script al directorio correcto
@@ -24,7 +35,7 @@ cp scripts/generate_payment_links.sh /home/ForgeApp/forgeApp/forgeapp/scripts/
 chmod +x /home/ForgeApp/forgeApp/forgeapp/scripts/generate_payment_links.sh
 ```
 
-## 3. Probar el script manualmente
+## 4. Probar el script manualmente
 
 ```bash
 # Ejecutar el script
@@ -34,7 +45,7 @@ chmod +x /home/ForgeApp/forgeApp/forgeapp/scripts/generate_payment_links.sh
 cat /home/ForgeApp/forgeApp/forgeapp/logs/cron.log
 ```
 
-## 4. Configurar las tareas programadas en PythonAnywhere
+## 5. Configurar las tareas programadas en PythonAnywhere
 
 1. Ve a la pestaña "Tasks" en PythonAnywhere
 
@@ -50,7 +61,7 @@ Para las 8:00 PM (hora de Chile):
 0 20 * * * /home/ForgeApp/forgeApp/forgeapp/scripts/generate_payment_links.sh >> /home/ForgeApp/forgeApp/forgeapp/logs/cron.log 2>&1
 ```
 
-## 5. Verificar la configuración
+## 6. Verificar la configuración
 
 ```bash
 # Verificar los permisos del script
@@ -66,7 +77,7 @@ ls -l /home/ForgeApp/.virtualenvs/forgeapp-env/bin/activate
 ls -l /home/ForgeApp/forgeApp/forgeapp/manage.py
 ```
 
-## 6. Monitorear los logs
+## 7. Monitorear los logs
 
 ```bash
 # Ver los últimos logs del cron
