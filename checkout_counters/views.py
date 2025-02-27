@@ -97,6 +97,9 @@ class PaymentLinkCreateView(LoginRequiredMixin, CreateView):
         logger.info(f"Success URL: {payment_return_url}")
         logger.info(f"Notification URL: {settings.MP_WEBHOOK_URL}")
         
+        # Log detallado de los datos enviados a MercadoPago
+        logger.info(f"DATOS COMPLETOS ENVIADOS A MERCADOPAGO: {json.dumps(preference_data, indent=2)}")
+        
         # Crear preferencia en Mercado Pago
         preference_response = sdk.preference().create(preference_data)
         

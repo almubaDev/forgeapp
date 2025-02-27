@@ -11,6 +11,10 @@ class PaymentLinkManager(models.Manager):
         Actualiza el estado del pago y la suscripción asociada
         """
         try:
+            # Log detallado de los datos recibidos de MercadoPago
+            import json
+            logger.info(f"DATOS COMPLETOS RECIBIDOS DE MERCADOPAGO: {json.dumps(payment_data, indent=2) if payment_data else 'None'}")
+            
             payment_link = self.get(reference_id=reference_id)
             
             # Mapear estado de Mercado Pago a nuestro estado

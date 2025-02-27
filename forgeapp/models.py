@@ -390,6 +390,9 @@ class Subscription(models.Model):
             logger.info(f"  * Pending: {preference_data['back_urls']['pending']}")
             logger.info(f"  * Webhook: {preference_data['notification_url']}")
             
+            # Log detallado de los datos enviados a MercadoPago
+            logger.info(f"DATOS COMPLETOS ENVIADOS A MERCADOPAGO DESDE SUBSCRIPTION: {json.dumps(preference_data, indent=2)}")
+            
             preference_response = sdk.preference().create(preference_data)
             
             logger.info("Respuesta de Mercado Pago:")
