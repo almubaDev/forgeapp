@@ -781,6 +781,18 @@ def subscription_activate(request, pk):
     logger.info(f"Aplicación: {subscription.application.name} (ID: {subscription.application.id})")
     
     try:
+        # Verificar que el cliente tenga first_name y last_name
+        client = subscription.client
+        if not client.first_name or not client.last_name:
+            # Dividir el nombre en first_name y last_name si están vacíos
+            name_parts = client.name.split()
+            if name_parts:
+                client.first_name = name_parts[0]
+                if len(name_parts) > 1:
+                    client.last_name = ' '.join(name_parts[1:])
+                client.save()
+                logger.info(f"Actualizado first_name y last_name para cliente {client.id}")
+        
         # Cambiar estado a activo
         subscription.status = 'active'
         subscription.save()
@@ -790,27 +802,54 @@ def subscription_activate(request, pk):
         try:
             logger.info(f"Intentando generar enlace de pago con request...")
             
-            # Forzar la generación del primer pago independientemente de las condiciones
+            # Generar el link de pago directamente, sin verificar can_register_payment
             # Esto asegura que siempre se genere un link de pago al activar
-            payment_link = None
+            from checkout_counters.models import PaymentLink
+            from datetime import timedelta
+            from django.conf import settings
+            from django.urls import reverse
             
-            # Verificar que el cliente tenga first_name y last_name
-            client = subscription.client
-            if not client.first_name or not client.last_name:
-                # Dividir el nombre en first_name y last_name si están vacíos
-                name_parts = client.name.split()
-                if name_parts:
-                    client.first_name = name_parts[0]
-                    if len(name_parts) > 1:
-                        client.last_name = ' '.join(name_parts[1:])
-                    client.save()
-                    logger.info(f"Actualizado first_name y last_name para cliente {client.id}")
+            # Crear referencia única
+            reference_id = f"{subscription.reference_id}-{timezone.now().strftime('%Y%m%d')}"
+            expires_at = timezone.now() + timedelta(days=7)
             
-            # Generar el link de pago directamente
-            payment_link = subscription.generate_payment_link(request=request)
+            # Construir URLs usando SITE_URL
+            base_url = settings.SITE_URL.rstrip('/')
+            payment_return_url = f"{base_url}{reverse('checkout_counters:payment_return')}"
             
-            if payment_link:
+            # Usar la función simplificada para crear la preferencia
+            from checkout_counters.mercadopago_utils import create_preference
+            
+            # Crear un objeto temporal con los datos necesarios
+            class PaymentData:
+                def __init__(self, subscription, reference_id, expires_at):
+                    self.subscription = subscription
+                    self.reference_id = reference_id
+                    self.expires_at = expires_at
+                    self.amount = subscription.price
+                    self.description = f"Pago de suscripción {subscription.reference_id} - {subscription.client.name}"
+            
+            payment_data = PaymentData(subscription, reference_id, expires_at)
+            
+            logger.info(f"Enviando preferencia a Mercado Pago para activación de suscripción")
+            preference_response = create_preference(payment_data, subscription.client, payment_return_url)
+            
+            if preference_response.get("status") == 201 and preference_response.get("response", {}).get("init_point"):
+                # Crear link de pago
+                payment_link = PaymentLink.objects.create(
+                    reference_id=reference_id,
+                    subscription=subscription,
+                    amount=subscription.price,
+                    description=f"Pago de suscripción {subscription.reference_id} - {subscription.client.name}",
+                    expires_at=expires_at,
+                    payment_link=preference_response["response"]["init_point"],
+                    payer_email=subscription.client.email,
+                    payer_first_name=subscription.client.first_name,
+                    payer_last_name=subscription.client.last_name
+                )
+                
                 # Actualizar fechas de pago
+                subscription.last_payment_date = None  # Asegurar que se considera como primer pago
                 subscription.update_payment_dates()
                 
                 # Enviar email con enlace de pago
@@ -822,8 +861,9 @@ def subscription_activate(request, pk):
                     logger.error(f"Error al enviar email de pago: {str(email_error)}")
                     messages.warning(request, 'Suscripción activada, pero hubo un error al enviar el email con el enlace de pago.')
             else:
+                error_msg = f"Error en la respuesta de Mercado Pago. Status: {preference_response.get('status')}"
+                logger.error(error_msg)
                 messages.warning(request, 'Suscripción activada, pero no se pudo generar el enlace de pago.')
-                logger.error("No se pudo generar el enlace de pago")
         except Exception as payment_error:
             logger.error(f"Error al generar enlace de pago: {str(payment_error)}")
             messages.warning(request, f'Suscripción activada, pero hubo un error al generar el enlace de pago: {str(payment_error)}')

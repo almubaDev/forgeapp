@@ -64,44 +64,9 @@ class PaymentLinkCreateView(LoginRequiredMixin, CreateView):
         form.instance.payer_first_name = client.first_name
         form.instance.payer_last_name = client.last_name
         
-        preference_data = {
-            "items": [
-                {
-                    "title": form.instance.description,
-                    "quantity": 1,
-                    "currency_id": "CLP",  # Moneda Chilena
-                    "unit_price": float(form.instance.amount),
-                    "description": f"Pago de suscripción {form.instance.subscription.reference_id}",
-                    "category_id": "subscriptions",
-                    "id": form.instance.reference_id
-                }
-            ],
-            "external_reference": form.instance.reference_id,
-            "expires": True,
-            "expiration_date_to": form.instance.expires_at.isoformat(),
-            "back_urls": {
-                "success": payment_return_url,
-                "failure": payment_return_url,
-                "pending": payment_return_url
-            },
-            "auto_return": "approved",
-            "notification_url": settings.MP_WEBHOOK_URL,
-            "payer": {
-                "email": client.email,
-                "first_name": client.first_name,
-                "last_name": client.last_name
-            }
-        }
-        
-        logger.info(f"URLs configuradas para Mercado Pago:")
-        logger.info(f"Success URL: {payment_return_url}")
-        logger.info(f"Notification URL: {settings.MP_WEBHOOK_URL}")
-        
-        # Log detallado de los datos enviados a MercadoPago
-        logger.info(f"DATOS COMPLETOS ENVIADOS A MERCADOPAGO: {json.dumps(preference_data, indent=2)}")
-        
-        # Crear preferencia en Mercado Pago
-        preference_response = sdk.preference().create(preference_data)
+        # Usar la función simplificada para crear la preferencia
+        from .mercadopago_utils import create_preference
+        preference_response = create_preference(form, client, payment_return_url)
         
         if preference_response["status"] == 201:
             # Guardar link de pago

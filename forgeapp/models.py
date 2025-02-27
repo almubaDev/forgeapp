@@ -3,6 +3,7 @@ import logging
 import base64
 import re
 import os
+import json
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
@@ -378,7 +379,40 @@ class Subscription(models.Model):
             "payer": {
                 "email": self.client.email,
                 "first_name": self.client.first_name,
-                "last_name": self.client.last_name
+                "last_name": self.client.last_name,
+                "identification": {
+                    "type": "RUT",
+                    "number": self.client.rut
+                }
+            },
+            "additional_info": {
+                "items": [
+                    {
+                        "id": self.reference_id,
+                        "title": f"Pago de suscripción {self.reference_id}",
+                        "description": f"Pago de suscripción {self.get_payment_type_display()} para {self.application.name}",
+                        "category_id": "subscriptions",
+                        "quantity": 1,
+                        "unit_price": float(self.price)
+                    }
+                ],
+                "payer": {
+                    "first_name": self.client.first_name,
+                    "last_name": self.client.last_name,
+                    "phone": {
+                        "area_code": "",
+                        "number": self.client.phone or ""
+                    }
+                },
+                "shipments": {
+                    "receiver_address": {
+                        "zip_code": "",
+                        "state_name": "Santiago",
+                        "city_name": "Santiago",
+                        "street_name": "",
+                        "street_number": ""
+                    }
+                }
             }
         }
 
