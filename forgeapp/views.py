@@ -788,8 +788,8 @@ def subscription_activate(request, pk):
         
         # Generar enlace de pago
         try:
-            logger.info(f"Intentando generar enlace de pago...")
-            payment_link = subscription.generate_payment_link(request)
+            logger.info(f"Intentando generar enlace de pago con request...")
+            payment_link = subscription.generate_payment_link(request=request)
             
             if payment_link:
                 # Actualizar fechas de pago

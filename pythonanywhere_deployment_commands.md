@@ -1,171 +1,127 @@
-# Comandos para Despliegue en PythonAnywhere
+# Pasos para Configurar la Generación Automática de Links de Pago en PythonAnywhere
 
-Este archivo contiene los comandos esenciales que necesitarás ejecutar para desplegar la aplicación ForgeApp en PythonAnywhere.
-
-## 1. Configuración Inicial en PythonAnywhere
+## 1. Subir los cambios al repositorio
 
 ```bash
-# Crear un entorno virtual
-mkvirtualenv --python=/usr/bin/python3.10 forgeapp-env
-
-# Activar el entorno virtual
-workon forgeapp-env
-
-# Clonar el repositorio (reemplaza con tu URL de Git)
-cd ~
-git clone https://github.com/tu-usuario/forgeapp.git
-cd forgeapp
+git add .
+git commit -m "Implementar generación automática de links de pago"
+git push
 ```
 
-## 2. Instalación de Dependencias
+## 2. Actualizar el código en PythonAnywhere
 
 ```bash
-# Instalar todas las dependencias
-pip install -r requirements.txt
-```
-
-## 3. Configuración del Archivo .env
-
-Crea el archivo `.env` con la configuración para producción:
-
-```bash
-# Crear el archivo .env
-nano .env
-```
-
-Contenido del archivo `.env`:
-```
-SECRET_KEY=Anada!312$Lacsap21
-DEBUG=False
-
-# Email settings
-EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_HOST_USER=contacto@forgeapp.cl
-EMAIL_HOST_PASSWORD=jnfu dumy gkki bjod
-EMAIL_USE_TLS=True
-DEFAULT_FROM_EMAIL=contacto@forgeapp.cl
-
-# Encryption settings
-ENCRYPTION_KEY=Hl6SAOdnpqCgYlqWxzX_qJbYoGkrTNGILGvK8KqVGYE=
-
-# Mercado Pago Settings
-MP_PUBLIC_KEY=APP_USR-875984f4-0bd7-4ac0-9873-e68715149a74
-MP_ACCESS_TOKEN=APP_USR-3140749224688195-022120-5a5cf9d45712703a5db702c0e5f8f348-2281330215
-MP_CLIENT_ID=3140749224688195
-MP_CLIENT_SECRET=MtPoBdD1fVsqW8mm5zoxe7a3mpUy3fVR
-
-# Site URL for webhooks (reemplaza con tu dominio de PythonAnywhere)
-SITE_URL=https://tu-usuario.pythonanywhere.com
-
-# Mercado Pago webhook settings
-MP_WEBHOOK_ENABLED=True
-MP_SANDBOX_MODE=False
-```
-
-## 4. Migraciones de Base de Datos
-
-```bash
-# Aplicar migraciones
-python manage.py migrate
-```
-
-## 5. Recolección de Archivos Estáticos
-
-```bash
-# Recolectar archivos estáticos
-python manage.py collectstatic --noinput
-```
-
-## 6. Crear Superusuario (opcional)
-
-```bash
-# Crear superusuario para el panel de administración
-python manage.py createsuperuser
-```
-
-## 7. Configuración de la Aplicación Web en PythonAnywhere
-
-1. Ve a la pestaña "Web" en el dashboard de PythonAnywhere
-2. Haz clic en "Add a new web app"
-3. Selecciona "Manual configuration" y la versión de Python que coincida con tu entorno virtual
-
-### Configuración del archivo WSGI
-
-Edita el archivo WSGI generado por PythonAnywhere y reemplaza su contenido con:
-
-```python
-import os
-import sys
-
-# Añadir el directorio del proyecto al path
-path = '/home/tu-usuario/forgeapp'
-if path not in sys.path:
-    sys.path.append(path)
-
-# Configurar variables de entorno
-os.environ['DJANGO_SETTINGS_MODULE'] = 'core.settings'
-
-# Importar la aplicación WSGI
-from django.core.wsgi import get_wsgi_application
-application = get_wsgi_application()
-```
-
-### Configuración del Entorno Virtual
-
-En la sección "Virtualenv", ingresa la ruta a tu entorno virtual:
-```
-/home/tu-usuario/.virtualenvs/forgeapp-env
-```
-
-### Configuración de Archivos Estáticos
-
-En la sección "Static files", configura:
-
-- URL: `/static/`
-- Directory: `/home/tu-usuario/forgeapp/staticfiles`
-
-- URL: `/media/`
-- Directory: `/home/tu-usuario/forgeapp/media`
-
-## 8. Reiniciar la Aplicación
-
-Haz clic en el botón "Reload" en la pestaña "Web" para reiniciar tu aplicación.
-
-## 9. Verificar el Despliegue
-
-Visita tu sitio en `https://tu-usuario.pythonanywhere.com` para verificar que todo funcione correctamente.
-
-## 10. Configurar el Webhook de Mercado Pago
-
-Asegúrate de actualizar la URL del webhook en tu cuenta de Mercado Pago para que apunte a:
-```
-https://tu-usuario.pythonanywhere.com/checkout_counters/webhook/mercadopago/
-```
-
-## Comandos para Actualizar la Aplicación
-
-Cuando necesites actualizar la aplicación después de hacer cambios:
-
-```bash
-# Activar el entorno virtual
-workon forgeapp-env
+# Conectarse a PythonAnywhere
+ssh username@ssh.pythonanywhere.com
 
 # Ir al directorio del proyecto
 cd ~/forgeapp
 
-# Obtener los últimos cambios
-git pull
+# Actualizar el código
+git pull origin main
 
-# Instalar nuevas dependencias (si las hay)
+# Activar el entorno virtual
+source ~/.virtualenvs/forgeapp/bin/activate
+
+# Instalar cualquier nueva dependencia (si las hay)
 pip install -r requirements.txt
 
 # Aplicar migraciones (si las hay)
 python manage.py migrate
 
-# Recolectar archivos estáticos (si han cambiado)
+# Recolectar archivos estáticos (si hay cambios)
 python manage.py collectstatic --noinput
 ```
 
-Luego, haz clic en "Reload" en la pestaña "Web" de PythonAnywhere para aplicar los cambios.
+## 3. Configurar directorios y permisos
+
+```bash
+# Crear directorio para scripts
+mkdir -p ~/forgeapp/scripts
+
+# Crear directorio para logs
+mkdir -p ~/forgeapp/logs
+
+# Copiar el script a su ubicación
+cp forgeapp/management/commands/generate_payment_links.sh ~/forgeapp/scripts/
+
+# Dar permisos de ejecución al script
+chmod +x ~/forgeapp/scripts/generate_payment_links.sh
+
+# Asegurar que el directorio de logs sea escribible
+chmod 755 ~/forgeapp/logs
+```
+
+## 4. Configurar las tareas programadas
+
+1. En PythonAnywhere, ve a la pestaña "Tasks"
+
+2. Agrega las siguientes tareas programadas:
+
+Para las 8:00 AM (hora de Chile):
+```
+0 8 * * * ~/forgeapp/scripts/generate_payment_links.sh >> ~/forgeapp/logs/cron.log 2>&1
+```
+
+Para las 8:00 PM (hora de Chile):
+```
+0 20 * * * ~/forgeapp/scripts/generate_payment_links.sh >> ~/forgeapp/logs/cron.log 2>&1
+```
+
+## 5. Probar la configuración
+
+```bash
+# Probar el script manualmente
+~/forgeapp/scripts/generate_payment_links.sh
+
+# Verificar los logs
+tail -f ~/forgeapp/logs/cron.log
+
+# Verificar que no haya errores en el log de la aplicación
+tail -f ~/forgeapp/logs/django.log
+```
+
+## 6. Reiniciar la aplicación
+
+1. Ve a la pestaña "Web" en PythonAnywhere
+2. Haz clic en el botón "Reload" para tu aplicación
+
+## Verificación final
+
+1. Revisa los logs para asegurarte de que no hay errores:
+```bash
+tail -f ~/forgeapp/logs/cron.log
+tail -f ~/forgeapp/logs/django.log
+```
+
+2. Espera a que se ejecute la primera tarea programada y verifica que:
+   - Se generan los links de pago cuando corresponde
+   - Se envían los emails correctamente
+   - Los logs muestran la información esperada
+
+## Solución de problemas
+
+Si encuentras algún problema:
+
+1. Verifica los permisos:
+```bash
+ls -la ~/forgeapp/scripts/generate_payment_links.sh
+ls -la ~/forgeapp/logs
+```
+
+2. Verifica que el script use el path correcto al entorno virtual:
+```bash
+which python
+echo $VIRTUAL_ENV
+```
+
+3. Verifica las variables de entorno:
+```bash
+printenv | grep DJANGO
+printenv | grep PYTHONPATH
+```
+
+4. Revisa los logs detallados:
+```bash
+cat ~/forgeapp/logs/cron.log
+cat ~/forgeapp/logs/django.log

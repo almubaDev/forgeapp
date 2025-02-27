@@ -282,17 +282,40 @@ class Subscription(models.Model):
     def can_register_payment(self):
         """Verifica si se puede registrar un nuevo pago"""
         today = timezone.now().date()
-        return (
-            self.status == 'active' and  # Suscripción activa
-            not self.has_pending_payment() and  # No hay pagos pendientes
-            self.end_date >= today and  # No está vencida
-            (
-                # Si es la primera vez (no hay último pago)
-                self.last_payment_date is None or
-                # O si es tiempo del siguiente pago
-                (self.next_payment_date is not None and self.next_payment_date <= today)
-            )
+        
+        # Log del estado actual
+        logger.info(f"Verificando si se puede registrar pago para suscripción {self.reference_id}")
+        logger.info(f"Estado: {self.status}")
+        logger.info(f"Último pago: {self.last_payment_date}")
+        logger.info(f"Próximo pago: {self.next_payment_date}")
+        logger.info(f"Fecha fin: {self.end_date}")
+        logger.info(f"Tiene pagos pendientes: {self.has_pending_payment()}")
+        
+        # Verificar condiciones
+        is_active = self.status == 'active'
+        no_pending = not self.has_pending_payment()
+        not_expired = self.end_date >= today
+        first_payment = self.last_payment_date is None
+        is_payment_due = self.next_payment_date is not None and self.next_payment_date <= today
+        
+        # Log de cada condición
+        logger.info("Evaluando condiciones:")
+        logger.info(f"- ¿Está activa? {is_active}")
+        logger.info(f"- ¿No tiene pagos pendientes? {no_pending}")
+        logger.info(f"- ¿No está vencida? {not_expired}")
+        logger.info(f"- ¿Es primer pago? {first_payment}")
+        logger.info(f"- ¿Toca pagar? {is_payment_due}")
+        
+        # Verificar si se puede registrar pago
+        can_register = (
+            is_active and
+            no_pending and
+            not_expired and
+            (first_payment or is_payment_due)
         )
+        
+        logger.info(f"Resultado: {'Se puede' if can_register else 'No se puede'} registrar pago")
+        return can_register
 
     def generate_payment_link(self, request=None):
         """Genera un link de pago para la suscripción"""

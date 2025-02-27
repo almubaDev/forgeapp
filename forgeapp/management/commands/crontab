@@ -1,5 +1,5 @@
-# Ejecutar el envío de links de pago todos los días a las 8:00 AM
-0 8 * * * cd /path/to/project && python manage.py send_payment_links >> /var/log/forgeapp/payment_links.log 2>&1
+# Ejecutar el script de generación de links de pago todos los días a las 8:00 AM (hora de Chile)
+0 8 * * * ~/forgeapp/scripts/generate_payment_links.sh >> ~/forgeapp/logs/cron.log 2>&1
 
-# Ejecutar la renovación automática de suscripciones todos los días a las 7:00 AM
-0 7 * * * cd /path/to/project && python manage.py renew_subscriptions >> /var/log/forgeapp/renew_subscriptions.log 2>&1
+# Ejecutar el script de generación de links de pago todos los días a las 8:00 PM (hora de Chile)
+0 20 * * * ~/forgeapp/scripts/generate_payment_links.sh >> ~/forgeapp/logs/cron.log 2>&1
