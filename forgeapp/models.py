@@ -301,6 +301,13 @@ class Subscription(models.Model):
         import mercadopago
         from django.conf import settings
         from django.urls import reverse
+        
+        # Log detallado del inicio del proceso
+        logger.info(f"INICIO: Generando link de pago para suscripción {self.reference_id} (ID: {self.id})")
+        logger.info(f"Estado actual de la suscripción: {self.status}")
+        logger.info(f"Cliente: {self.client.name} (ID: {self.client.id})")
+        logger.info(f"Aplicación: {self.application.name} (ID: {self.application.id})")
+        logger.info(f"Precio: {self.price}")
 
         # Crear referencia única
         reference_id = f"{self.reference_id}-{timezone.now().strftime('%Y%m%d')}"

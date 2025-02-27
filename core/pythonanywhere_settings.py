@@ -146,11 +146,11 @@ MP_PUBLIC_KEY = env('MP_PUBLIC_KEY')
 MP_ACCESS_TOKEN = env('MP_ACCESS_TOKEN')
 MP_CLIENT_ID = env('MP_CLIENT_ID')
 MP_CLIENT_SECRET = env('MP_CLIENT_SECRET')
-MP_SANDBOX_MODE = False
-MP_WEBHOOK_ENABLED = True
+MP_SANDBOX_MODE = env.bool('MP_SANDBOX_MODE', default=False)
+MP_WEBHOOK_ENABLED = env.bool('MP_WEBHOOK_ENABLED', default=True)
 
 # Configuración de URL del sitio
-SITE_URL = 'https://forgeapp.cl'
+SITE_URL = env('SITE_URL', default='https://forgeapp.cl')
 MP_WEBHOOK_URL = f"{SITE_URL}/checkout_counters/webhook/mercadopago/"
 
 # Configuración de encriptación
@@ -197,17 +197,17 @@ LOGGING = {
         },
         'forgeapp': {
             'handlers': ['forgeapp_file'],
-            'level': 'ERROR',
+            'level': 'INFO',  # Cambiado de ERROR a INFO
             'propagate': True,
         },
         'checkout_counters': {
             'handlers': ['checkout_file'],
-            'level': 'ERROR',
+            'level': 'INFO',  # Cambiado de ERROR a INFO
             'propagate': True,
         },
         'pdf_generator': {
             'handlers': ['pdf_generator_file'],
-            'level': 'ERROR',
+            'level': 'INFO',  # Cambiado de ERROR a INFO
             'propagate': True,
         },
     },

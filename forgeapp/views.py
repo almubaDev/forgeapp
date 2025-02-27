@@ -775,13 +775,20 @@ def subscription_delete(request, pk):
 def subscription_activate(request, pk):
     subscription = get_object_or_404(Subscription, pk=pk)
     
+    logger.info(f"INICIO: Activando suscripción {subscription.reference_id} (ID: {subscription.id})")
+    logger.info(f"Estado actual: {subscription.status}")
+    logger.info(f"Cliente: {subscription.client.name} (ID: {subscription.client.id})")
+    logger.info(f"Aplicación: {subscription.application.name} (ID: {subscription.application.id})")
+    
     try:
         # Cambiar estado a activo
         subscription.status = 'active'
         subscription.save()
+        logger.info(f"Estado cambiado a 'active' y guardado")
         
         # Generar enlace de pago
         try:
+            logger.info(f"Intentando generar enlace de pago...")
             payment_link = subscription.generate_payment_link(request)
             
             if payment_link:
