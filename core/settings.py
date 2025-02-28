@@ -32,11 +32,10 @@ INSTALLED_APPS = [
     # 'theme',
     'crispy_forms',
     'crispy_tailwind',
-    'django_apscheduler',  # Agregado
+    'django_apscheduler',
     'forgeapp',
     'finance',
-    'checkout_counters',
-    'pdf_generator',  # Nueva app para generación de PDFs
+    'pdf_generator',
 ]
 
 MIDDLEWARE = [
@@ -47,7 +46,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'core.middleware.MercadoPagoCSPMiddleware',  # Middleware para CSP de Mercado Pago
 ]
 
 ROOT_URLCONF = 'core.urls'
@@ -167,11 +165,6 @@ LOGGING = {
             'filename': os.path.join(BASE_DIR, 'logs', 'forgeapp.log'),
             'formatter': 'verbose',
         },
-        'checkout_file': {
-            'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, 'logs', 'checkout.log'),
-            'formatter': 'verbose',
-        },
         'pdf_generator_file': {
             'class': 'logging.FileHandler',
             'filename': os.path.join(BASE_DIR, 'logs', 'pdf_generator.log'),
@@ -194,11 +187,6 @@ LOGGING = {
             'level': 'INFO',
             'propagate': True,
         },
-        'checkout_counters': {
-            'handlers': ['console', 'checkout_file'],
-            'level': 'INFO',
-            'propagate': True,
-        },
         'pdf_generator': {
             'handlers': ['console', 'pdf_generator_file'],
             'level': 'INFO',
@@ -207,42 +195,8 @@ LOGGING = {
     },
 }
 
-# Mercado Pago Settings
-MP_PUBLIC_KEY = env('MP_PUBLIC_KEY')
-MP_ACCESS_TOKEN = env('MP_ACCESS_TOKEN')
-MP_CLIENT_ID = env('MP_CLIENT_ID')
-MP_CLIENT_SECRET = env('MP_CLIENT_SECRET')
-
-# Site URL for webhooks
+# Site URL para webhooks
 SITE_URL = env('SITE_URL', default='http://localhost:8000')
-MP_WEBHOOK_URL = f"{SITE_URL}/checkout_counters/webhook/mercadopago/"
 
-# Asegurar que la URL del webhook sea accesible desde Internet
-if DEBUG:
-    import socket
-    try:
-        # Intentar obtener la IP pública
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.connect(("8.8.8.8", 80))
-        local_ip = s.getsockname()[0]
-        s.close()
-        # Si estamos en desarrollo, usar ngrok o similar para exponer el webhook
-        if SITE_URL == 'http://localhost:8000':
-            logger.warning(
-                "Usando localhost para webhooks. En desarrollo, considera usar ngrok "
-                "para exponer el webhook a Internet: ngrok http 8000"
-            )
-    except Exception as e:
-        logger.warning(f"No se pudo determinar la IP local: {e}")
-
-# Mercado Pago settings
-MP_WEBHOOK_ENABLED = env.bool('MP_WEBHOOK_ENABLED', default=True)
-
-# Mercado Pago sandbox mode
-MP_SANDBOX_MODE = env.bool('MP_SANDBOX_MODE', default=True)
-
-# Importar configuraciones específicas para PythonAnywhere en producción
-try:
-    from core.pythonanywhere_settings import *
-except ImportError:
-    pass
+# Crear directorio de logs si no existe
+os.makedirs(os.path.join(BASE_DIR, 'logs'), exist_ok=True)

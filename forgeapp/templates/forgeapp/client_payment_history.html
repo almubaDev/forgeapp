@@ -23,13 +23,13 @@
     </div>
 
     <div class="glass-panel p-6">
-        <h3 class="text-white font-medium text-lg mb-6">Enlaces de Pago</h3>
+        <h3 class="text-white font-medium text-lg mb-6">Pagos de Suscripciones</h3>
         <div class="overflow-x-auto">
             <table class="w-full">
                 <thead>
                     <tr class="border-b border-forge-light border-opacity-10">
                         <th class="p-4 text-left text-white font-medium">Referencia</th>
-                        <th class="p-4 text-left text-white font-medium">Descripción</th>
+                        <th class="p-4 text-left text-white font-medium">Suscripción</th>
                         <th class="p-4 text-left text-white font-medium">Monto</th>
                         <th class="p-4 text-left text-white font-medium">Estado</th>
                         <th class="p-4 text-left text-white font-medium">Fecha</th>
@@ -37,83 +37,32 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for payment in payment_links %}
+                    {% for payment in payments %}
                     <tr class="border-b border-forge-light border-opacity-5 hover:bg-forge-primary hover:bg-opacity-5 transition-colors">
-                        <td class="p-4 text-white">{{ payment.reference_id }}</td>
-                        <td class="p-4 text-white">{{ payment.description }}</td>
+                        <td class="p-4 text-white">{{ payment.reference }}</td>
+                        <td class="p-4 text-white">{{ payment.subscription.reference_id }}</td>
                         <td class="p-4 text-white">${{ payment.amount|formato_cl:client }}</td>
                         <td class="p-4">
                             <span class="glass-btn px-3 py-1 text-sm
-                                {% if payment.status == 'paid' %}text-green-400 bg-green-900 bg-opacity-20
+                                {% if payment.status == 'completed' %}text-green-400 bg-green-900 bg-opacity-20
                                 {% elif payment.status == 'pending' %}text-yellow-400 bg-yellow-900 bg-opacity-20
                                 {% else %}text-red-400 bg-red-900 bg-opacity-20{% endif %}">
                                 {{ payment.get_status_display }}
                             </span>
                         </td>
-                        <td class="p-4 text-white">{{ payment.created_at|date:"d/m/Y H:i" }}</td>
+                        <td class="p-4 text-white">{{ payment.payment_date|date:"d/m/Y" }}</td>
                         <td class="p-4">
                             <div class="flex space-x-3">
-                                <a href="{% url 'checkout_counters:payment_detail' payment.pk %}" 
+                                <a href="{% url 'finance:payment_detail' payment.pk %}" 
                                    class="glass-btn px-4 py-1.5 text-white hover:text-forge-bright">
                                     Ver Detalles
                                 </a>
-                                {% if payment.is_paid and payment.receipt %}
-                                <a href="{% url 'pdf_generator:generar_pdf_recibo' payment.pk %}" 
-                                   class="glass-btn px-4 py-1.5 text-white hover:text-forge-bright"
-                                   target="_blank">
-                                    Ver Recibo
-                                </a>
-                                {% endif %}
                             </div>
                         </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="6" class="p-4 text-white text-center opacity-60">No hay enlaces de pago registrados</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <div class="glass-panel p-6">
-        <h3 class="text-white font-medium text-lg mb-6">Comprobantes de Pago</h3>
-        <div class="overflow-x-auto">
-            <table class="w-full">
-                <thead>
-                    <tr class="border-b border-forge-light border-opacity-10">
-                        <th class="p-4 text-left text-white font-medium">Número</th>
-                        <th class="p-4 text-left text-white font-medium">Referencia</th>
-                        <th class="p-4 text-left text-white font-medium">Monto</th>
-                        <th class="p-4 text-left text-white font-medium">Fecha</th>
-                        <th class="p-4 text-left text-white font-medium">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for receipt in receipts %}
-                    <tr class="border-b border-forge-light border-opacity-5 hover:bg-forge-primary hover:bg-opacity-5 transition-colors">
-                        <td class="p-4 text-white">{{ receipt.receipt_number }}</td>
-                        <td class="p-4 text-white">{{ receipt.payment_link.reference_id }}</td>
-                        <td class="p-4 text-white">${{ receipt.payment_link.amount|formato_cl:client }}</td>
-                        <td class="p-4 text-white">{{ receipt.generated_at|date:"d/m/Y H:i" }}</td>
-                        <td class="p-4">
-                            <div class="flex space-x-3">
-                                <a href="{% url 'checkout_counters:download_receipt' receipt_number=receipt.receipt_number %}" 
-                                   class="glass-btn px-4 py-1.5 text-white hover:text-forge-bright">
-                                    Descargar PDF
-                                </a>
-                                <a href="{% url 'pdf_generator:generar_pdf_recibo' receipt.payment_link.pk %}" 
-                                   class="glass-btn px-4 py-1.5 text-white hover:text-forge-bright"
-                                   target="_blank">
-                                    Ver Recibo
-                                </a>
-                            </div>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="5" class="p-4 text-white text-center opacity-60">No hay comprobantes registrados</td>
+                        <td colspan="6" class="p-4 text-white text-center opacity-60">No hay pagos registrados</td>
                     </tr>
                     {% endfor %}
                 </tbody>

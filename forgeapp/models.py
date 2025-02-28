@@ -12,7 +12,7 @@ from django.core.exceptions import ValidationError
 from django.conf import settings
 from django.core.validators import MinValueValidator
 from cryptography.fernet import Fernet
-from datetime import datetime
+from datetime import datetime, timedelta
 
 logger = logging.getLogger('forgeapp')
 
@@ -154,7 +154,7 @@ class Application(models.Model):
     url = models.URLField('URL del Proyecto')
     documentation_url = models.URLField('URL de Documentación', blank=True, null=True)
     git_repository = models.URLField('Repositorio Git', blank=True, null=True)
-    owner = models.ForeignKey(  # Añadimos este campo
+    owner = models.ForeignKey(
         Client,
         on_delete=models.SET_NULL,
         null=True,
@@ -171,6 +171,43 @@ class Application(models.Model):
 
     def __str__(self):
         return self.name
+
+class Payment(models.Model):
+    """Modelo para registrar pagos de suscripciones"""
+    STATUS_CHOICES = [
+        ('pending', 'Pendiente'),
+        ('completed', 'Completado'),
+        ('cancelled', 'Cancelado'),
+        ('failed', 'Fallido'),
+    ]
+
+    subscription = models.ForeignKey('Subscription', on_delete=models.CASCADE, related_name='payments')
+    amount = models.DecimalField('Monto', max_digits=10, decimal_places=2)
+    payment_date = models.DateField('Fecha de Pago')
+    status = models.CharField('Estado', max_length=20, choices=STATUS_CHOICES, default='pending')
+    reference = models.CharField('Referencia', max_length=100, blank=True)
+    notes = models.TextField('Notas', blank=True)
+    created_at = models.DateTimeField('Fecha de Creación', auto_now_add=True)
+    updated_at = models.DateTimeField('Última Actualización', auto_now=True)
+
+    class Meta:
+        verbose_name = 'Pago'
+        verbose_name_plural = 'Pagos'
+        ordering = ['-payment_date']
+
+    def __str__(self):
+        return f"Pago {self.reference} - {self.subscription.reference_id}"
+
+    def complete_payment(self):
+        """Marca el pago como completado y actualiza las fechas de la suscripción"""
+        self.status = 'completed'
+        self.save()
+        
+        # Actualizar la suscripción
+        self.subscription.last_payment_date = self.payment_date
+        self.subscription.update_payment_dates()
+        
+        return True
 
 class Subscription(models.Model):
     """Modelo para las suscripciones"""
@@ -282,215 +319,35 @@ class Subscription(models.Model):
 
     def can_register_payment(self):
         """Verifica si se puede registrar un nuevo pago"""
-        # Temporalmente modificado para permitir registrar pagos manualmente
-        # siempre que la suscripción esté activa
         return self.status == 'active'
-
-    def generate_payment_link(self, request=None):
-        """Genera un link de pago para la suscripción"""
-        from checkout_counters.models import PaymentLink
-        from datetime import timedelta
-        import mercadopago
-        from django.conf import settings
-        from django.urls import reverse
         
-        # Log detallado del inicio del proceso
-        logger.info(f"INICIO: Generando link de pago para suscripción {self.reference_id} (ID: {self.id})")
-        logger.info(f"Estado actual de la suscripción: {self.status}")
-        logger.info(f"Cliente: {self.client.name} (ID: {self.client.id})")
-        logger.info(f"Aplicación: {self.application.name} (ID: {self.application.id})")
-        logger.info(f"Precio: {self.price}")
-
-        # Crear referencia única
-        reference_id = f"{self.reference_id}-{timezone.now().strftime('%Y%m%d')}"
-        expires_at = timezone.now() + timedelta(days=7)
-
-        # Configurar SDK de Mercado Pago
-        sdk = mercadopago.SDK(settings.MP_ACCESS_TOKEN)
-        logger.info(f"Iniciando creación de preferencia de pago para suscripción {self.reference_id}")
-        
-        # Construir URLs usando SITE_URL
-        base_url = settings.SITE_URL.rstrip('/')
-        success_url = f"{base_url}{reverse('checkout_counters:payment_return')}"
-        failure_url = success_url
-        pending_url = success_url
-        notification_url = settings.MP_WEBHOOK_URL
-
-        logger.info(f"Configuración de MercadoPago:")
-        logger.info(f"Access Token: {'*' * len(settings.MP_ACCESS_TOKEN)}")
-        logger.info(f"Sandbox Mode: {settings.MP_SANDBOX_MODE}")
-        logger.info(f"URLs configuradas:")
-        logger.info(f"Success URL: {success_url}")
-        logger.info(f"Notification URL: {notification_url}")
-
-        logger.info(f"URLs configuradas para Mercado Pago:")
-        logger.info(f"Success URL: {success_url}")
-        logger.info(f"Failure URL: {failure_url}")
-        logger.info(f"Pending URL: {pending_url}")
-        logger.info(f"Notification URL: {notification_url}")
-
-        # Verificar precio
-        if not self.price or float(self.price) <= 0:
-            error_msg = f"Precio inválido para suscripción {self.reference_id}: {self.price}"
-            logger.error(error_msg)
-            raise ValueError(error_msg)
-
-        preference_data = {
-            "items": [
-                {
-                    "title": f"Pago de suscripción {self.reference_id} - {self.client.name}",
-                    "quantity": 1,
-                    "currency_id": "CLP",  # Moneda Chilena
-                    "unit_price": float(self.price),
-                    "description": f"Pago de suscripción {self.reference_id} - {self.get_payment_type_display()}",
-                    "category_id": "subscriptions",
-                    "id": self.reference_id
-                }
-            ],
-            "external_reference": reference_id,
-            "expires": True,
-            "expiration_date_to": expires_at.isoformat(),
-            "back_urls": {
-                "success": success_url,
-                "failure": failure_url,
-                "pending": pending_url
-            },
-            "auto_return": "approved",
-            "notification_url": notification_url,
-            "binary_mode": True,  # Solo permitir pagos aprobados o rechazados
-            "payer": {
-                "email": self.client.email,
-                "first_name": self.client.first_name,
-                "last_name": self.client.last_name,
-                "identification": {
-                    "type": "RUT",
-                    "number": self.client.rut
-                }
-            },
-            "additional_info": {
-                "items": [
-                    {
-                        "id": self.reference_id,
-                        "title": f"Pago de suscripción {self.reference_id}",
-                        "description": f"Pago de suscripción {self.get_payment_type_display()} para {self.application.name}",
-                        "category_id": "subscriptions",
-                        "quantity": 1,
-                        "unit_price": float(self.price)
-                    }
-                ],
-                "payer": {
-                    "first_name": self.client.first_name,
-                    "last_name": self.client.last_name,
-                    "phone": {
-                        "area_code": "",
-                        "number": self.client.phone or ""
-                    }
-                },
-                "shipments": {
-                    "receiver_address": {
-                        "zip_code": "",
-                        "state_name": "Santiago",
-                        "city_name": "Santiago",
-                        "street_name": "",
-                        "street_number": ""
-                    }
-                }
-            }
-        }
-
-        logger.info(f"Datos de preferencia a enviar: {preference_data}")
-
-        if settings.MP_WEBHOOK_ENABLED:
-            logger.info("Webhook de Mercado Pago habilitado")
-        else:
-            logger.warning("Webhook de Mercado Pago deshabilitado")
-        
-        # Verificar que el token de acceso esté configurado
-        if not settings.MP_ACCESS_TOKEN:
-            error_msg = "Token de acceso de Mercado Pago no configurado"
-            logger.error(error_msg)
-            raise ValueError(error_msg)
-
-        try:
-            logger.info("Enviando preferencia a Mercado Pago con los siguientes datos:")
-            logger.info(f"- Title: {preference_data['items'][0]['title']}")
-            logger.info(f"- Amount: {preference_data['items'][0]['unit_price']}")
-            logger.info(f"- Reference: {preference_data['external_reference']}")
-            logger.info(f"- URLs configuradas:")
-            logger.info(f"  * Success: {preference_data['back_urls']['success']}")
-            logger.info(f"  * Failure: {preference_data['back_urls']['failure']}")
-            logger.info(f"  * Pending: {preference_data['back_urls']['pending']}")
-            logger.info(f"  * Webhook: {preference_data['notification_url']}")
+    def register_payment(self, amount=None, payment_date=None, notes=''):
+        """
+        Registra un nuevo pago para la suscripción.
+        """
+        if amount is None:
+            amount = self.price
             
-            # Log detallado de los datos enviados a MercadoPago
-            logger.info(f"DATOS COMPLETOS ENVIADOS A MERCADOPAGO DESDE SUBSCRIPTION: {json.dumps(preference_data, indent=2)}")
+        if payment_date is None:
+            payment_date = timezone.now().date()
             
-            preference_response = sdk.preference().create(preference_data)
-            
-            logger.info("Respuesta de Mercado Pago:")
-            logger.info(f"- Status: {preference_response.get('status')}")
-            if preference_response.get('response'):
-                logger.info(f"- ID: {preference_response['response'].get('id')}")
-                logger.info(f"- Init Point: {preference_response['response'].get('init_point')}")
-                if 'error' in preference_response['response']:
-                    logger.error(f"- Error: {preference_response['response']['error']}")
-            
-            if not preference_response or 'status' not in preference_response:
-                error_msg = "No se recibió una respuesta válida de Mercado Pago"
-                logger.error(error_msg)
-                raise ValueError(error_msg)
-            
-            if preference_response.get("status") == 201 and preference_response.get("response", {}).get("init_point"):
-                logger.info(f"Preferencia creada exitosamente. ID: {preference_response['response'].get('id')}")
-                try:
-                    # Crear link de pago
-                    payment_link = PaymentLink.objects.create(
-                        reference_id=reference_id,
-                        subscription=self,  # Vincular con la suscripción
-                        amount=self.price,
-                        description=f"Pago de suscripción {self.reference_id} - {self.client.name}",
-                        expires_at=expires_at,
-                        payment_link=preference_response["response"]["init_point"],
-                        payer_email=self.client.email  # Asignar email del cliente
-                    )
-                    return payment_link
-                except Exception as e:
-                    error_msg = f"Error al crear PaymentLink: {str(e)}"
-                    logger.error(error_msg)
-                    raise ValueError(error_msg)
-            else:
-                error_msg = f"Error en la respuesta de Mercado Pago. Status: {preference_response.get('status')}, Response: {preference_response}"
-                logger.error(error_msg)
-                raise ValueError(error_msg)
-        except Exception as e:
-            error_msg = f"Error al crear preferencia en Mercado Pago: {str(e)}"
-            logger.error(error_msg)
-            raise ValueError(error_msg)
-
-    def send_payment_email(self, payment_link):
-        """Envía email con link de pago al cliente"""
-        from django.core.mail import send_mail
-        from django.template.loader import render_to_string
-        from django.conf import settings
-
-        context = {
-            'subscription': self,
-            'payment_link': payment_link,
-            'client': self.client
-        }
-
-        # Renderizar el email
-        html_message = render_to_string('forgeapp/email/payment_notification.html', context)
-        plain_message = f"Link de pago para su suscripción: {payment_link.payment_link}"
-
-        # Enviar email
-        send_mail(
-            subject=f'Link de pago - Suscripción {self.reference_id}',
-            message=plain_message,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[self.client.email],
-            html_message=html_message
+        # Crear un nuevo pago
+        payment = Payment.objects.create(
+            subscription=self,
+            amount=amount,
+            payment_date=payment_date,
+            status='completed',
+            reference=f"PAY-{self.reference_id}-{timezone.now().strftime('%Y%m%d%H%M%S')}",
+            notes=notes
         )
+        
+        # Actualizar fechas de la suscripción
+        self.last_payment_date = payment_date
+        self.update_payment_dates()
+        self.status = 'active'  # Asegurar que la suscripción esté activa después del pago
+        self.save()
+        
+        return payment
 
     def update_payment_dates(self):
         """Actualiza las fechas de pago basado en el último pago"""
@@ -693,34 +550,6 @@ class Calculadora(models.Model):
         # Actualizar o crear suscripción mensual
         if sub_mensual:
             # Actualizar suscripción existente
-            sub_mensual.price = self.cuota_mensual
-            sub_mensual.items_detail = items_json
-            sub_mensual.auto_renewal = auto_renewal
-            sub_mensual.save()
-        elif not self.subscriptions.filter(payment_type='monthly').exists():
-            # Crear nueva suscripción solo si no existe ninguna mensual
-            sub_mensual = Subscription(
-                client=self.client,
-                application=self.application,
-                payment_type='monthly',
-                price=self.cuota_mensual,
-                start_date=start_date,
-                end_date=end_date,
-                auto_renewal=auto_renewal,
-                items_detail=items_json,
-                calculadora=self,
-                renewal_notes=f"Generado desde calculadora: {self.nombre}"
-            )
-            sub_mensual.reference_id = Subscription.generate_reference_id('monthly')
-            sub_mensual.save()
-
-        # Actualizar o crear suscripción anual
-        if sub_anual:
-            # Actualizar suscripción existente
-            sub_anual.price = self.total_anual
-            sub_anual.items_detail = items_json
-            sub_anual.auto_renewal = auto_renewal
-            sub_anual.save()
             sub_mensual.price = self.cuota_mensual
             sub_mensual.items_detail = items_json
             sub_mensual.auto_renewal = auto_renewal

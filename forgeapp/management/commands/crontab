@@ -1,5 +1,0 @@
-# Ejecutar el script de generación de links de pago todos los días a las 8:00 AM (hora de Chile)
-0 8 * * * /home/ForgeApp/forgeApp/forgeapp/scripts/generate_payment_links.sh >> /home/ForgeApp/forgeApp/forgeapp/logs/cron.log 2>&1
-
-# Ejecutar el script de generación de links de pago todos los días a las 8:00 PM (hora de Chile)
-0 20 * * * /home/ForgeApp/forgeApp/forgeapp/scripts/generate_payment_links.sh >> /home/ForgeApp/forgeApp/forgeapp/logs/cron.log 2>&1

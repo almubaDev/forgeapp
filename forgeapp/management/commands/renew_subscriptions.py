@@ -48,27 +48,6 @@ class Command(BaseCommand):
                     )
                 )
                 
-                # Si es una suscripción anual, generar link de pago inmediatamente
-                if subscription.payment_type == 'annual':
-                    try:
-                        # Generar link de pago
-                        payment_link = subscription.generate_payment_link()
-                        
-                        # Enviar email con el link
-                        subscription.send_payment_email(payment_link)
-                        
-                        self.stdout.write(
-                            self.style.SUCCESS(
-                                f'Link de pago enviado para suscripción anual {subscription.reference_id}'
-                            )
-                        )
-                    except Exception as e:
-                        self.stdout.write(
-                            self.style.ERROR(
-                                f'Error al generar link de pago para suscripción {subscription.reference_id}: {str(e)}'
-                            )
-                        )
-                
             except Exception as e:
                 self.stdout.write(
                     self.style.ERROR(
