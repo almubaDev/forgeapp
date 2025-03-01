@@ -82,8 +82,8 @@ def dashboard(request):
     subscriptions_needing_payment = active_subscriptions.filter(
         Q(next_payment_date__lte=today) | Q(next_payment_date__isnull=True)
     ).exclude(
-        payments__payment_date__gte=start_of_month,
-        payments__status='completed'
+        finance_payments__payment_date__gte=start_of_month,  # Cambiado de payments a finance_payments
+        finance_payments__status='completed'  # Cambiado de payments a finance_payments
     ).distinct()
 
     return render(request, 'finance/dashboard.html', {

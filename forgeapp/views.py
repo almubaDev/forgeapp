@@ -29,20 +29,54 @@ def contact_form(request):
 @login_required
 def dashboard(request):
     """Vista del panel de control"""
-    return render(request, 'forgeapp/dashboard.html')
+    # Obtener estadísticas
+    total_clients = Client.objects.count()
+    active_subscriptions = Subscription.objects.filter(status='active').count()
+    total_applications = Application.objects.count()
+    
+    # Obtener datos recientes
+    recent_clients = Client.objects.order_by('-created_at')[:5]
+    recent_subscriptions = Subscription.objects.order_by('-created_at')[:5]
+    
+    return render(request, 'forgeapp/dashboard.html', {
+        'total_clients': total_clients,
+        'active_subscriptions': active_subscriptions,
+        'total_applications': total_applications,
+        'recent_clients': recent_clients,
+        'recent_subscriptions': recent_subscriptions
+    })
 
 # Application views
 @login_required
 def application_list(request):
     """Lista de aplicaciones"""
     applications = Application.objects.all()
+    
+    # Añadir estadísticas a cada aplicación
+    for app in applications:
+        app.total_subscriptions = Subscription.objects.filter(application=app).count()
+        app.active_subscriptions = Subscription.objects.filter(application=app, status='active').count()
+        app.total_revenue = Subscription.objects.filter(application=app, status='active', payment_type='monthly').aggregate(models.Sum('price'))['price__sum'] or 0
+    
     return render(request, 'forgeapp/application_list.html', {'applications': applications})
 
 @login_required
 def application_detail(request, pk):
     """Detalle de una aplicación"""
     application = get_object_or_404(Application, pk=pk)
-    return render(request, 'forgeapp/application_detail.html', {'application': application})
+    
+    # Obtener estadísticas
+    application.total_subscriptions = Subscription.objects.filter(application=application).count()
+    application.active_subscriptions = Subscription.objects.filter(application=application, status='active').count()
+    application.total_revenue = Subscription.objects.filter(application=application, status='active', payment_type='monthly').aggregate(models.Sum('price'))['price__sum'] or 0
+    
+    # Obtener suscripciones
+    subscriptions = Subscription.objects.filter(application=application).order_by('-created_at')
+    
+    return render(request, 'forgeapp/application_detail.html', {
+        'application': application,
+        'subscriptions': subscriptions
+    })
 
 @login_required
 def application_create(request):
@@ -55,7 +89,9 @@ def application_create(request):
             return redirect('forgeapp:application_detail', pk=application.pk)
     else:
         form = ApplicationForm()
-    return render(request, 'forgeapp/application_form.html', {'form': form})
+    
+    cancel_url = request.META.get('HTTP_REFERER', 'forgeapp:application_list')
+    return render(request, 'forgeapp/application_form.html', {'form': form, 'cancel_url': cancel_url})
 
 @login_required
 def application_update(request, pk):
@@ -69,7 +105,9 @@ def application_update(request, pk):
             return redirect('forgeapp:application_detail', pk=pk)
     else:
         form = ApplicationForm(instance=application)
-    return render(request, 'forgeapp/application_form.html', {'form': form, 'application': application})
+    
+    cancel_url = request.META.get('HTTP_REFERER', f'forgeapp:application_detail')
+    return render(request, 'forgeapp/application_form.html', {'form': form, 'application': application, 'cancel_url': cancel_url})
 
 @login_required
 def application_delete(request, pk):
@@ -147,13 +185,33 @@ def application_config_delete(request, config_pk):
 def client_list(request):
     """Lista de clientes"""
     clients = Client.objects.all()
+    
+    # Añadir estadísticas a cada cliente
+    for client in clients:
+        client.total_subscriptions = Subscription.objects.filter(client=client).count()
+        client.active_subscriptions = Subscription.objects.filter(client=client, status='active').count()
+    
     return render(request, 'forgeapp/client_list.html', {'clients': clients})
 
 @login_required
 def client_detail(request, pk):
     """Detalle de un cliente"""
     client = get_object_or_404(Client, pk=pk)
-    return render(request, 'forgeapp/client_detail.html', {'client': client})
+    
+    # Obtener suscripciones
+    subscriptions = Subscription.objects.filter(client=client).order_by('-created_at')
+    
+    # Calcular estadísticas
+    client.total_subscriptions = subscriptions.count()
+    client.active_subscriptions = subscriptions.filter(status='active').count()
+    
+    # Calcular valor total mensual
+    client.total_value = subscriptions.filter(status='active', payment_type='monthly').aggregate(models.Sum('price'))['price__sum'] or 0
+    
+    return render(request, 'forgeapp/client_detail.html', {
+        'client': client,
+        'subscriptions': subscriptions
+    })
 
 @login_required
 def client_create(request):
@@ -166,7 +224,9 @@ def client_create(request):
             return redirect('forgeapp:client_detail', pk=client.pk)
     else:
         form = ClientForm()
-    return render(request, 'forgeapp/client_form.html', {'form': form})
+    
+    cancel_url = request.META.get('HTTP_REFERER', 'forgeapp:client_list')
+    return render(request, 'forgeapp/client_form.html', {'form': form, 'cancel_url': cancel_url})
 
 @login_required
 def client_update(request, pk):
@@ -180,7 +240,9 @@ def client_update(request, pk):
             return redirect('forgeapp:client_detail', pk=pk)
     else:
         form = ClientForm(instance=client)
-    return render(request, 'forgeapp/client_form.html', {'form': form, 'client': client})
+    
+    cancel_url = request.META.get('HTTP_REFERER', f'forgeapp:client_detail')
+    return render(request, 'forgeapp/client_form.html', {'form': form, 'client': client, 'cancel_url': cancel_url})
 
 @login_required
 def client_delete(request, pk):
@@ -196,7 +258,11 @@ def client_delete(request, pk):
 def client_payment_history(request, pk):
     """Historial de pagos de un cliente"""
     client = get_object_or_404(Client, pk=pk)
-    payments = Payment.objects.filter(subscription__client=client).order_by('-payment_date')
+    
+    # Ajustado para usar finance_payments en lugar de payments
+    from finance.models import Payment as FinancePayment
+    payments = FinancePayment.objects.filter(subscription__client=client).order_by('-payment_date')
+    
     return render(request, 'forgeapp/client_payment_history.html', {
         'client': client,
         'payments': payments
@@ -206,71 +272,372 @@ def client_payment_history(request, pk):
 def client_contracts(request, pk):
     """Contratos de un cliente"""
     client = get_object_or_404(Client, pk=pk)
-    return render(request, 'forgeapp/client_contracts.html', {'client': client})
+    contracts = ServiceContractToken.objects.filter(client=client, used=True).order_by('-used_at')
+    
+    # Preparar datos para la plantilla
+    contract_list = []
+    for token in contracts:
+        try:
+            app = Application.objects.get(pk=token.application_id)
+            contract_list.append({
+                'application': app,
+                'subscription_type': 'Mensual' if token.subscription_type == 'monthly' else 'Anual',
+                'token': token,
+                'price': token.price
+            })
+        except Application.DoesNotExist:
+            # Si la aplicación no existe
+            continue
+    
+    return render(request, 'forgeapp/client_contracts.html', {
+        'client': client,
+        'contracts': contract_list
+    })
 
 @login_required
 def view_client_contract(request, pk, token_id):
     """Ver un contrato específico de un cliente"""
     client = get_object_or_404(Client, pk=pk)
     token = get_object_or_404(ServiceContractToken, pk=token_id, client=client)
-    return render(request, 'forgeapp/view_client_contract.html', {
+    
+    # Obtener la aplicación
+    try:
+        application = Application.objects.get(pk=token.application_id)
+    except Application.DoesNotExist:
+        application = None
+    
+    # Obtener la suscripción relacionada, si existe
+    subscription = Subscription.objects.filter(
+        client=client,
+        application_id=token.application_id,
+        payment_type=token.subscription_type
+    ).first()
+    
+    return render(request, 'forgeapp/service_contract.html', {
         'client': client,
-        'token': token
+        'token_obj': token,
+        'application': application,
+        'subscription_type': token.subscription_type,
+        'subscription': subscription,
+        'is_accepted': True,
+        'just_accepted': False
     })
 
 @login_required
 def service_contract(request, pk):
-    """Generar contrato de servicio"""
+    """Generar contrato de servicio (vista de administrador)"""
     client = get_object_or_404(Client, pk=pk)
-    return render(request, 'forgeapp/service_contract.html', {'client': client})
+    applications = Application.objects.all()
+    
+    return render(request, 'forgeapp/service_contract.html', {
+        'client': client,
+        'applications': applications,
+        'is_preview': True
+    })
 
 @login_required
 def send_service_contract(request, pk):
     """Enviar contrato de servicio por email"""
+    import uuid
+    from django.urls import reverse
+    
     client = get_object_or_404(Client, pk=pk)
-    messages.success(request, 'Contrato enviado exitosamente.')
-    return redirect('forgeapp:client_detail', pk=pk)
+    
+    if request.method == 'POST':
+        # Obtener datos del formulario
+        application_id = request.POST.get('application')
+        subscription_type = request.POST.get('subscription_type')
+        price = request.POST.get('price')
+        
+        # Validar datos
+        if not application_id or not subscription_type:
+            messages.error(request, 'Por favor complete todos los campos.')
+            return redirect('forgeapp:service_contract', pk=client.pk)
+        
+        try:
+            application = Application.objects.get(pk=application_id)
+        except Application.DoesNotExist:
+            messages.error(request, 'La aplicación seleccionada no existe.')
+            return redirect('forgeapp:service_contract', pk=client.pk)
+        
+        # Crear token
+        token = uuid.uuid4().hex
+        expires_at = timezone.now() + timezone.timedelta(days=7)
+        
+        # Guardar token en la base de datos
+        token_obj = ServiceContractToken.objects.create(
+            client=client,
+            application_id=application_id,
+            subscription_type=subscription_type,
+            token=token,
+            expires_at=expires_at,
+            price=price
+        )
+        
+        # Generar URL del contrato
+        contract_url = request.build_absolute_uri(
+            reverse('forgeapp:view_service_contract', kwargs={'token': token})
+        )
+        
+        # Enviar correo electrónico
+        from django.core.mail import send_mail
+        
+        subject = f'Contrato de Servicio - {application.name}'
+        html_message = render_to_string('forgeapp/email/service_contract_email.html', {
+            'client': client,
+            'application': application,
+            'subscription_type': 'Mensual' if subscription_type == 'monthly' else 'Anual',
+            'contract_url': contract_url,
+            'expires_at': expires_at.strftime('%d/%m/%Y %H:%M')
+        })
+        
+        try:
+            send_mail(
+                subject=subject,
+                message='',  # Mensaje en texto plano (vacío)
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[client.email],
+                html_message=html_message,
+                fail_silently=False
+            )
+            messages.success(request, f'Contrato enviado exitosamente a {client.email}')
+        except Exception as e:
+            logger.error(f"Error al enviar correo de contrato: {str(e)}")
+            messages.error(request, f'Error al enviar el correo: {str(e)}')
+        
+        return redirect('forgeapp:client_detail', pk=client.pk)
+    
+    # Si no es POST, redirigir a la vista del contrato
+    return redirect('forgeapp:service_contract', pk=client.pk)
 
 def view_service_contract(request, token):
-    """Ver contrato de servicio público"""
-    token_obj = get_object_or_404(ServiceContractToken, token=token)
-    return render(request, 'forgeapp/public_service_contract.html', {'token': token_obj})
+    """Ver contrato de servicio (vista pública)"""
+    # Buscar token
+    try:
+        token_obj = ServiceContractToken.objects.get(token=token)
+    except ServiceContractToken.DoesNotExist:
+        return render(request, 'forgeapp/public_service_contract.html', {
+            'is_error': True,
+            'error_message': 'El token no existe o es inválido.'
+        })
+    
+    # Verificar si ha expirado
+    if token_obj.is_expired():
+        return render(request, 'forgeapp/public_service_contract.html', {
+            'is_expired': True,
+            'token': token
+        })
+    
+    # Verificar si ya ha sido usado
+    if token_obj.used:
+        try:
+            # Obtener cliente y aplicación
+            client = token_obj.client
+            application = Application.objects.get(pk=token_obj.application_id)
+            
+            # Buscar suscripción relacionada
+            subscription = Subscription.objects.filter(
+                client=client,
+                application=application,
+                payment_type=token_obj.subscription_type
+            ).first()
+            
+            return render(request, 'forgeapp/public_service_contract.html', {
+                'is_accepted': True,
+                'token_obj': token_obj,
+                'client': client,
+                'application': application,
+                'subscription_type': token_obj.subscription_type,
+                'subscription': subscription,
+                'token': token
+            })
+        except Application.DoesNotExist:
+            return render(request, 'forgeapp/public_service_contract.html', {
+                'is_error': True,
+                'error_message': 'La aplicación asociada a este contrato no existe.'
+            })
+    
+    # Si no ha expirado ni ha sido usado, mostrar contrato para aceptar
+    try:
+        client = token_obj.client
+        application = Application.objects.get(pk=token_obj.application_id)
+        
+        return render(request, 'forgeapp/public_service_contract.html', {
+            'client': client,
+            'application': application,
+            'subscription_type': token_obj.subscription_type,
+            'token_obj': token_obj,
+            'token': token
+        })
+    except Exception as e:
+        logger.error(f"Error al mostrar contrato: {str(e)}")
+        return render(request, 'forgeapp/public_service_contract.html', {
+            'is_error': True,
+            'error_message': str(e)
+        })
 
 def accept_service_contract(request, token):
     """Aceptar contrato de servicio"""
-    token_obj = get_object_or_404(ServiceContractToken, token=token)
+    # Buscar token
+    try:
+        token_obj = ServiceContractToken.objects.get(token=token)
+    except ServiceContractToken.DoesNotExist:
+        return render(request, 'forgeapp/public_service_contract.html', {
+            'is_error': True,
+            'error_message': 'El token no existe o es inválido.'
+        })
+    
+    # Verificar si ha expirado
+    if token_obj.is_expired():
+        return render(request, 'forgeapp/public_service_contract.html', {
+            'is_expired': True,
+            'token': token
+        })
+    
+    # Verificar si ya ha sido usado
+    if token_obj.used:
+        return redirect('forgeapp:view_service_contract', token=token)
+    
+    # Procesar la aceptación del contrato
     if request.method == 'POST':
-        token_obj.used = True
-        token_obj.used_at = timezone.now()
-        token_obj.save()
-        messages.success(request, 'Contrato aceptado exitosamente.')
+        # Obtener datos del formulario
+        accept_terms = request.POST.get('accept_terms') == 'on'
+        accept_marketing = request.POST.get('accept_marketing') == 'on'
+        
+        if not accept_terms:
+            messages.error(request, 'Debe aceptar los términos y condiciones.')
+            return redirect('forgeapp:view_service_contract', token=token)
+        
+        try:
+            # Actualizar token
+            token_obj.used = True
+            token_obj.used_at = timezone.now()
+            token_obj.save()
+            
+            # Actualizar datos del cliente
+            client = token_obj.client
+            client.contract_status = 'accepted'
+            client.accept_marketing = accept_marketing
+            client.save()
+            
+            # Obtener la aplicación
+            application = Application.objects.get(pk=token_obj.application_id)
+            
+            # Crear suscripción si no existe
+            subscription, created = Subscription.objects.get_or_create(
+                client=client,
+                application=application,
+                payment_type=token_obj.subscription_type,
+                defaults={
+                    'price': token_obj.price,
+                    'status': 'inactive',
+                    'start_date': timezone.now().date(),
+                    'end_date': (timezone.now() + timezone.timedelta(days=365)).date(),
+                    'auto_renewal': False,
+                    'accept_marketing': accept_marketing,
+                    'renewal_notes': f'Creado desde contrato aceptado el {timezone.now().strftime("%d/%m/%Y %H:%M")}'
+                }
+            )
+            
+            # Enviar correo de confirmación
+            from django.core.mail import send_mail
+            
+            subject = f'Confirmación de Contrato - {application.name}'
+            html_message = render_to_string('forgeapp/email/contract_confirmation_email.html', {
+                'client': client,
+                'application': application,
+                'subscription_type': 'Mensual' if token_obj.subscription_type == 'monthly' else 'Anual'
+            })
+            
+            try:
+                send_mail(
+                    subject=subject,
+                    message='',  # Mensaje en texto plano (vacío)
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[client.email],
+                    html_message=html_message,
+                    fail_silently=False
+                )
+            except Exception as e:
+                logger.error(f"Error al enviar correo de confirmación: {str(e)}")
+            
+            # Redirigir a la vista de contrato aceptado
+            return render(request, 'forgeapp/public_service_contract.html', {
+                'is_accepted': True,
+                'just_accepted': True,
+                'token_obj': token_obj,
+                'client': client,
+                'application': application,
+                'subscription_type': token_obj.subscription_type,
+                'subscription': subscription,
+                'token': token
+            })
+            
+        except Exception as e:
+            logger.error(f"Error al aceptar contrato: {str(e)}")
+            return render(request, 'forgeapp/public_service_contract.html', {
+                'is_error': True,
+                'error_message': str(e)
+            })
+    
+    # Si no es POST, redirigir a la vista del contrato
     return redirect('forgeapp:view_service_contract', token=token)
 
 # Subscription views
 @login_required
 def subscription_list(request):
-    subscriptions = Subscription.objects.all()
+    """Lista de suscripciones"""
+    subscriptions = Subscription.objects.all().select_related('client', 'application')
     return render(request, 'forgeapp/subscription_list.html', {'subscriptions': subscriptions})
 
 @login_required
 def subscription_detail(request, pk):
+    """Detalle de una suscripción"""
     subscription = get_object_or_404(Subscription, pk=pk)
-    return render(request, 'forgeapp/subscription_detail.html', {'subscription': subscription})
+    
+    # Pasar la fecha actual para comparaciones en la plantilla
+    today = timezone.now().date()
+    
+    return render(request, 'forgeapp/subscription_detail.html', {
+        'subscription': subscription,
+        'today': today
+    })
 
 @login_required
 def subscription_create(request):
+    """Crear una nueva suscripción"""
+    # Prellenar el formulario si vienen parámetros en la URL
+    initial_data = {}
+    if request.GET.get('client'):
+        initial_data['client'] = request.GET.get('client')
+    if request.GET.get('application'):
+        initial_data['application'] = request.GET.get('application')
+    
     if request.method == 'POST':
         form = SubscriptionForm(request.POST)
         if form.is_valid():
             subscription = form.save()
+            
+            # Generar ID de referencia si no se ha generado
+            if not subscription.reference_id or subscription.reference_id == 'TEMP000000':
+                subscription.reference_id = Subscription.generate_reference_id(subscription.payment_type)
+                subscription.save()
+            
             messages.success(request, 'Suscripción creada exitosamente.')
             return redirect('forgeapp:subscription_detail', pk=subscription.pk)
     else:
-        form = SubscriptionForm()
-    return render(request, 'forgeapp/subscription_form.html', {'form': form, 'is_create': True})
+        form = SubscriptionForm(initial=initial_data)
+    
+    cancel_url = request.META.get('HTTP_REFERER', 'forgeapp:subscription_list')
+    return render(request, 'forgeapp/subscription_form.html', {
+        'form': form, 
+        'is_create': True,
+        'cancel_url': cancel_url
+    })
 
 @login_required
 def subscription_update(request, pk):
+    """Actualizar una suscripción"""
     subscription = get_object_or_404(Subscription, pk=pk)
     if request.method == 'POST':
         form = SubscriptionForm(request.POST, instance=subscription)
@@ -280,15 +647,30 @@ def subscription_update(request, pk):
             return redirect('forgeapp:subscription_detail', pk=pk)
     else:
         form = SubscriptionForm(instance=subscription)
-    return render(request, 'forgeapp/subscription_form.html', {'form': form, 'subscription': subscription, 'is_create': False})
+    
+    cancel_url = request.META.get('HTTP_REFERER', f'forgeapp:subscription_detail')
+    return render(request, 'forgeapp/subscription_form.html', {
+        'form': form, 
+        'subscription': subscription, 
+        'is_create': False,
+        'cancel_url': cancel_url
+    })
 
 @login_required
 def subscription_delete(request, pk):
+    """Eliminar una suscripción"""
     subscription = get_object_or_404(Subscription, pk=pk)
     if request.method == 'POST':
+        client_pk = subscription.client.pk  # Guardar el ID del cliente antes de eliminar
         subscription.delete()
         messages.success(request, 'Suscripción eliminada exitosamente.')
-        return redirect('forgeapp:subscription_list')
+        
+        # Redirigir a la página de detalle del cliente si venimos de allí
+        if 'client_detail' in request.META.get('HTTP_REFERER', ''):
+            return redirect('forgeapp:client_detail', pk=client_pk)
+        else:
+            return redirect('forgeapp:subscription_list')
+    
     return render(request, 'forgeapp/subscription_confirm_delete.html', {'subscription': subscription})
 
 @login_required
@@ -323,11 +705,14 @@ def subscription_activate(request, pk):
         subscription.update_payment_dates()
         
         # Crear un registro de pago pendiente
-        payment = Payment.objects.create(
+        from finance.models import Payment as FinancePayment
+        payment = FinancePayment.objects.create(
             subscription=subscription,
             amount=subscription.price,
-            payment_date=subscription.next_payment_date or timezone.now().date(),
-            status='pending'
+            payment_date=timezone.now(),
+            due_date=subscription.next_payment_date or timezone.now().date(),
+            status='pending',
+            notes='Pago inicial al activar suscripción'
         )
         
         messages.success(request, 'Suscripción activada exitosamente. Registre el pago manualmente.')
@@ -400,7 +785,9 @@ def calculadora_create(request):
             return redirect('forgeapp:calculadora_detail', pk=calculadora.pk)
     else:
         form = CalculadoraForm()
-    return render(request, 'forgeapp/calculadora_form.html', {'form': form, 'is_create': True})
+    
+    cancel_url = request.META.get('HTTP_REFERER', 'forgeapp:calculadora_list')
+    return render(request, 'forgeapp/calculadora_form.html', {'form': form, 'is_create': True, 'cancel_url': cancel_url})
 
 @login_required
 def calculadora_update(request, pk):
@@ -413,7 +800,9 @@ def calculadora_update(request, pk):
             return redirect('forgeapp:calculadora_detail', pk=pk)
     else:
         form = CalculadoraForm(instance=calculadora)
-    return render(request, 'forgeapp/calculadora_form.html', {'form': form, 'calculadora': calculadora, 'is_create': False})
+    
+    cancel_url = request.META.get('HTTP_REFERER', f'forgeapp:calculadora_detail')
+    return render(request, 'forgeapp/calculadora_form.html', {'form': form, 'calculadora': calculadora, 'is_create': False, 'cancel_url': cancel_url})
 
 @login_required
 def calculadora_delete(request, pk):
@@ -545,7 +934,7 @@ def generar_suscripciones(request, pk):
                 messages.error(request, 'La calculadora debe tener un cliente asignado.')
                 return redirect('forgeapp:calculadora_detail', pk=pk)
             
-            if not hasattr(calculadora, 'application') or not calculadora.application:
+            if not calculadora.application:
                 messages.error(request, 'La calculadora debe tener una aplicación asignada.')
                 return redirect('forgeapp:calculadora_detail', pk=pk)
             

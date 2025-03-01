@@ -181,7 +181,7 @@ class Payment(models.Model):
         ('failed', 'Fallido'),
     ]
 
-    subscription = models.ForeignKey('Subscription', on_delete=models.CASCADE, related_name='payments')
+    subscription = models.ForeignKey('Subscription', on_delete=models.CASCADE, related_name='forgeapp_payments')
     amount = models.DecimalField('Monto', max_digits=10, decimal_places=2)
     payment_date = models.DateField('Fecha de Pago')
     status = models.CharField('Estado', max_length=20, choices=STATUS_CHOICES, default='pending')
@@ -315,7 +315,7 @@ class Subscription(models.Model):
     
     def has_pending_payment(self):
         """Verifica si hay pagos pendientes para esta suscripción"""
-        return self.payments.filter(status='pending').exists()
+        return self.forgeapp_payments.filter(status='pending').exists()
 
     def can_register_payment(self):
         """Verifica si se puede registrar un nuevo pago"""
@@ -646,3 +646,5 @@ class ServiceContractToken(models.Model):
     def is_valid(self):
         """Verifica si el token es válido (no expirado y no usado)"""
         return not self.used and not self.is_expired()
+            
+            

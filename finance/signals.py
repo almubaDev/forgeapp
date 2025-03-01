@@ -49,6 +49,8 @@ def register_signals():
 
                 # Si el pago falló o fue cancelado
                 elif instance.status in ['failed', 'cancelled']:
+                    # Verificar si hay otros pagos pendientes o completados
+                    # Usar finance_payments en lugar de payments
                     pending_or_completed = Payment.objects.filter(
                         subscription=subscription,
                         status__in=['pending', 'completed']

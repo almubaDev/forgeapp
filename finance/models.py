@@ -37,7 +37,7 @@ class Payment(models.Model):
     subscription = models.ForeignKey(
         'forgeapp.Subscription', 
         on_delete=models.CASCADE,
-        related_name='payments',
+        related_name='finance_payments',  # Modificado: Añadido related_name único
         verbose_name='Suscripción'
     )
     amount = models.DecimalField('Monto', max_digits=10, decimal_places=2)
