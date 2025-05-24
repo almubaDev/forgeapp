@@ -5,6 +5,7 @@ from django.utils import timezone
 from django.conf import settings
 from django.template.loader import render_to_string
 from datetime import datetime
+from django.db import models
 import logging
 import os
 from .models import (
@@ -318,7 +319,7 @@ def view_client_contract(request, pk, token_id):
         'token_obj': token,
         'application': application,
         'subscription_type': token.subscription_type,
-        'subscription': subscription,
+                'subscription': None,  # Ya no se crea suscripción al aceptar contrato
         'is_accepted': True,
         'just_accepted': False
     })
@@ -382,7 +383,7 @@ def send_service_contract(request, pk):
         # Enviar correo electrónico
         from django.core.mail import send_mail
         
-        subject = f'Contrato de Servicio - {application.name}'
+        subject = f'ForgeApp: Contrato de Servicio - {application.name}'
         html_message = render_to_string('forgeapp/email/service_contract_email.html', {
             'client': client,
             'application': application,
@@ -448,7 +449,7 @@ def view_service_contract(request, token):
                 'client': client,
                 'application': application,
                 'subscription_type': token_obj.subscription_type,
-                'subscription': subscription,
+                'subscription': None,  # Ya no se crea suscripción al aceptar contrato
                 'token': token
             })
         except Application.DoesNotExist:
@@ -523,41 +524,90 @@ def accept_service_contract(request, token):
             # Obtener la aplicación
             application = Application.objects.get(pk=token_obj.application_id)
             
-            # Crear suscripción si no existe
-            subscription, created = Subscription.objects.get_or_create(
-                client=client,
-                application=application,
-                payment_type=token_obj.subscription_type,
-                defaults={
-                    'price': token_obj.price,
-                    'status': 'inactive',
-                    'start_date': timezone.now().date(),
-                    'end_date': (timezone.now() + timezone.timedelta(days=365)).date(),
-                    'auto_renewal': False,
-                    'accept_marketing': accept_marketing,
-                    'renewal_notes': f'Creado desde contrato aceptado el {timezone.now().strftime("%d/%m/%Y %H:%M")}'
-                }
-            )
+            # Enviar correo de confirmación con PDF adjunto
+            from django.core.mail import EmailMultiAlternatives
+            import io
+            from django.template.loader import get_template
+            from xhtml2pdf import pisa
             
-            # Enviar correo de confirmación
-            from django.core.mail import send_mail
+            subject = f'ForgeApp: Confirmación de Contrato - {application.name}'
             
-            subject = f'Confirmación de Contrato - {application.name}'
+            # Renderizar la plantilla HTML del correo
             html_message = render_to_string('forgeapp/email/contract_confirmation_email.html', {
                 'client': client,
                 'application': application,
-                'subscription_type': 'Mensual' if token_obj.subscription_type == 'monthly' else 'Anual'
+                'subscription_type': 'Mensual' if token_obj.subscription_type == 'monthly' else 'Anual',
+                'price': token_obj.price,
+                'date': timezone.now().strftime('%d/%m/%Y'),
+                'site_url': settings.SITE_URL,
+                'now': timezone.now()
             })
             
+            # Crear versión texto plano del correo
+            text_content = f"""
+                Estimado/a {client.name},
+                
+                ¡Gracias por confiar en ForgeApp! Nos complace confirmarle que ha aceptado exitosamente el contrato de servicio para {application.name}.
+                
+                Adjunto a este correo encontrará una copia completa del contrato firmado en formato PDF. Le recomendamos guardar este documento para futuras referencias.
+                
+                Detalles del Contrato:
+                - Aplicación: {application.name}
+                - Tipo de Suscripción: {'Mensual' if token_obj.subscription_type == 'monthly' else 'Anual'}
+                - Precio: ${token_obj.price}
+                - Fecha: {timezone.now().strftime('%d/%m/%Y')}
+                
+                Nuestro equipo se pondrá en contacto con usted para coordinar la activación de su suscripción y proporcionarle las instrucciones necesarias para realizar el primer pago. Una vez completado este proceso, tendrá acceso completo a todas las funcionalidades de la aplicación.
+                
+                En ForgeApp estamos comprometidos con brindarle una experiencia excepcional. Si tiene alguna pregunta, sugerencia o necesita asistencia, nuestro equipo de soporte está siempre disponible para ayudarle.
+                
+                Le damos la bienvenida a la familia ForgeApp,
+                Equipo ForgeApp
+                
+                ForgeApp - www.forgeapp.cl
+                Teléfono: +56 9 1234 5678 | Email: contacto@forgeapp.cl
+            """
+            
             try:
-                send_mail(
-                    subject=subject,
-                    message='',  # Mensaje en texto plano (vacío)
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=[client.email],
-                    html_message=html_message,
-                    fail_silently=False
+                # Generar PDF del contrato
+                contract_buffer = io.BytesIO()
+                
+                # Renderizar la plantilla del contrato para el PDF
+                contract_template = get_template('forgeapp/pdf/service_contract_pdf.html')
+                contract_html = contract_template.render({
+                    'client': client,
+                    'application': application,
+                    'subscription_type': 'Mensual' if token_obj.subscription_type == 'monthly' else 'Anual',
+                    'price': token_obj.price,
+                    'date': timezone.now().strftime('%d/%m/%Y'),
+                    'accept_marketing': client.accept_marketing
+                })
+                
+                # Generar PDF del HTML
+                pisa.CreatePDF(
+                    contract_html,
+                    dest=contract_buffer
                 )
+                
+                # Crear el email con texto alternativo HTML y adjunto
+                email = EmailMultiAlternatives(
+                    subject=subject,
+                    body=text_content,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    to=[client.email]
+                )
+                
+                # Agregar la versión HTML
+                email.attach_alternative(html_message, "text/html")
+                
+                # Adjuntar el PDF
+                contract_buffer.seek(0)
+                email.attach(f'contrato_{application.name}.pdf', contract_buffer.getvalue(), 'application/pdf')
+                
+                # Enviar el correo
+                email.send(fail_silently=False)
+                logger.info(f"Correo de confirmación enviado a {client.email} con contrato adjunto")
+                
             except Exception as e:
                 logger.error(f"Error al enviar correo de confirmación: {str(e)}")
             
@@ -569,7 +619,6 @@ def accept_service_contract(request, token):
                 'client': client,
                 'application': application,
                 'subscription_type': token_obj.subscription_type,
-                'subscription': subscription,
                 'token': token
             })
             
@@ -704,16 +753,42 @@ def subscription_activate(request, pk):
         subscription.last_payment_date = None  # Asegurar que se considera como primer pago
         subscription.update_payment_dates()
         
-        # Crear un registro de pago pendiente
+        # Crear registros de pago pendiente
         from finance.models import Payment as FinancePayment
-        payment = FinancePayment.objects.create(
-            subscription=subscription,
-            amount=subscription.price,
-            payment_date=timezone.now(),
-            due_date=subscription.next_payment_date or timezone.now().date(),
-            status='pending',
-            notes='Pago inicial al activar suscripción'
-        )
+        current_date = timezone.now().date()
+
+        if subscription.payment_type == 'annual':
+            # Para suscripciones anuales, crear un solo pago
+            FinancePayment.objects.create(
+                subscription=subscription,
+                amount=subscription.price,
+                payment_date=None,
+                due_date=current_date,
+                status='pending',
+                notes=f'Pago anual para {current_date.year}'
+            )
+        else:
+            # Para suscripciones mensuales, crear 12 pagos
+            for i in range(12):
+                # Calcular la fecha para este mes
+                if i == 0:
+                    payment_date = current_date
+                else:
+                    if current_date.month + i > 12:
+                        new_year = current_date.year + ((current_date.month + i - 1) // 12)
+                        new_month = ((current_date.month + i - 1) % 12) + 1
+                        payment_date = current_date.replace(year=new_year, month=new_month)
+                    else:
+                        payment_date = current_date.replace(month=current_date.month + i)
+
+                FinancePayment.objects.create(
+                    subscription=subscription,
+                    amount=subscription.price,
+                    payment_date=None,
+                    due_date=payment_date,
+                    status='pending',
+                    notes=f'Pago mensual para {payment_date.strftime("%B %Y")}'
+                )
         
         messages.success(request, 'Suscripción activada exitosamente. Registre el pago manualmente.')
         
@@ -745,6 +820,73 @@ def subscription_deactivate(request, pk):
     subscription.status = 'inactive'
     subscription.save()
     messages.success(request, 'Suscripción desactivada exitosamente.')
+    return redirect('forgeapp:subscription_detail', pk=pk)
+
+@login_required
+def subscription_renew(request, pk):
+    """Genera pagos para el siguiente período (año o 12 meses)"""
+    subscription = get_object_or_404(Subscription, pk=pk)
+    
+    try:
+        # Obtener la última fecha de pago o usar la fecha actual
+        last_payment = subscription.finance_payments.order_by('-due_date').first()
+        start_date = (last_payment.due_date if last_payment else timezone.now().date()) + timezone.timedelta(days=1)
+        
+        from finance.models import Payment as FinancePayment
+        
+        if subscription.payment_type == 'annual':
+            # Para suscripciones anuales, verificar si ya existe un pago para el siguiente año
+            next_year = start_date.year + 1
+            existing_payment = FinancePayment.objects.filter(
+                subscription=subscription,
+                due_date__year=next_year,
+                status='pending'
+            ).first()
+            
+            if not existing_payment:
+                # Si no existe, crear un pago para el siguiente año
+                FinancePayment.objects.create(
+                    subscription=subscription,
+                    amount=subscription.price,
+                    payment_date=None,
+                    due_date=start_date.replace(year=next_year),
+                    status='pending',
+                    notes=f'Pago anual generado automáticamente para {next_year}'
+                )
+                messages.success(request, f'Pago anual generado para el año {next_year}')
+            else:
+                messages.info(request, f'Ya existe un pago pendiente para el año {next_year}')
+            
+        else:  # monthly
+            # Para suscripciones mensuales, generar 12 pagos mensuales
+            current_date = start_date
+            for i in range(12):
+                # Calcular la fecha para este mes
+                if i == 0:
+                    payment_date = current_date
+                else:
+                    if current_date.month + i > 12:
+                        new_year = current_date.year + ((current_date.month + i - 1) // 12)
+                        new_month = ((current_date.month + i - 1) % 12) + 1
+                        payment_date = current_date.replace(year=new_year, month=new_month)
+                    else:
+                        payment_date = current_date.replace(month=current_date.month + i)
+
+                FinancePayment.objects.create(
+                    subscription=subscription,
+                    amount=subscription.price,
+                    payment_date=None,
+                    due_date=payment_date,
+                    status='pending',
+                    notes=f'Pago mensual generado automáticamente para {payment_date.strftime("%B %Y")}'
+                )
+            
+            messages.success(request, 'Se generaron los pagos para los próximos 12 meses')
+            
+    except Exception as e:
+        logger.error(f"Error al renovar suscripción: {str(e)}")
+        messages.error(request, f'Error al generar los pagos: {str(e)}')
+    
     return redirect('forgeapp:subscription_detail', pk=pk)
 
 # Calculadora views

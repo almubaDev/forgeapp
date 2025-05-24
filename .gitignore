@@ -6,7 +6,8 @@
 tree.txt
 vitacora.txt
 landing/
-
+logs/
+scripts/
 ### Django ###
 *.log
 *.pot

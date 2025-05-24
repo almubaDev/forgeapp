@@ -1,0 +1,86 @@
+/* Loading overlay and spinner styles */
+
+.spinner {
+    width: 64px;
+    height: 64px;
+    border: 5px solid rgba(65, 163, 205, 0.2);
+    border-radius: 50%;
+    border-top-color: #64C5E8;
+    animation: spin 1s ease-in-out infinite;
+    margin: 0 auto;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Pulse effect for the loading container */
+.pulse-container {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+        box-shadow: 0 0 20px rgba(100, 197, 232, 0.3);
+    }
+    50% {
+        opacity: 0.9;
+        box-shadow: 0 0 30px rgba(100, 197, 232, 0.5);
+    }
+}
+
+/* Additional loading animations for variety - can be used with data-loading-style="dots" */
+.loading-dots:after {
+    content: '.';
+    animation: dots 1.5s steps(5, end) infinite;
+}
+
+@keyframes dots {
+    0%, 20% {
+        content: '.';
+    }
+    40% {
+        content: '..';
+    }
+    60% {
+        content: '...';
+    }
+    80%, 100% {
+        content: '';
+    }
+}
+
+/* Add a glowing effect to the button when loading */
+.btn-loading {
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-loading:after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    bottom: -50%;
+    left: -50%;
+    background: linear-gradient(
+        to bottom right,
+        rgba(100, 197, 232, 0) 0%,
+        rgba(100, 197, 232, 0.2) 50%,
+        rgba(100, 197, 232, 0) 100%
+    );
+    transform: rotate(30deg);
+    animation: loading-shine 3s ease-in-out infinite;
+}
+
+@keyframes loading-shine {
+    from {
+        transform: translateX(-100%) rotate(30deg);
+    }
+    to {
+        transform: translateX(100%) rotate(30deg);
+    }
+}

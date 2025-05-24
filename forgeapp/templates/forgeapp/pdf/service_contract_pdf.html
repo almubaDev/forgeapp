@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Contrato de Servicio</title>
+    <style>
+        @page {
+            size: letter;
+            margin: 1.5cm;
+        }
+        
+        html, body {
+            font-family: Arial, Helvetica, sans-serif;
+            margin: 0;
+            padding: 0;
+            line-height: 1.5;
+            color: #333;
+            background-color: #fff;
+            font-size: 11pt;
+        }
+        
+        .document {
+            max-width: 21cm;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #4EB8D5;
+            padding-bottom: 15px;
+            position: relative;
+        }
+        
+        .logo-container {
+            position: absolute;
+            left: 0;
+            top: 0;
+
+
+        }
+        .logo-container img {
+            height:150px;
+            width:150px;
+        }
+        
+        .header-text {
+            margin: 0 auto;
+            width: 70%;
+        }
+        
+        
+        h1 {
+            color: #0e3559;
+            font-size: 16pt;
+            margin: 0 0 5px 0;
+            font-weight: bold;
+            text-align: center;
+        }
+        
+        .header-subtitle {
+            color: #4EB8D5;
+            font-size: 11pt;
+            margin: 0;
+        }
+        
+        h2 {
+            color: #0e3559;
+            font-size: 13pt;
+            margin: 25px 0 12px 0;
+            padding-bottom: 6px;
+            border-bottom: 1px solid #4EB8D5;
+            font-weight: bold;
+        }
+        
+        .info-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .info-block {
+            flex: 1;
+            min-width: 300px;
+            padding: 15px;
+            background-color: #f4f9ff;
+            border-radius: 5px;
+            border-left: 4px solid #4EB8D5;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .info-block h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: #0e3559;
+            font-size: 12pt;
+            font-weight: bold;
+        }
+        
+        .info-row {
+            display: flex;
+            margin-bottom: 5px;
+            align-items: baseline;
+        }
+        
+        .info-label {
+            font-weight: bold;
+            width: 150px;
+            color: #0e3559;
+            font-size: 10pt;
+        }
+        
+        .info-value {
+            flex: 1;
+            font-size: 10.5pt;
+        }
+        
+        .contract-body {
+            text-align: justify;
+            margin-top: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .contract-body p {
+            margin-bottom: 10px;
+            margin-top: 10px;
+        }
+        
+        .signatures {
+            margin-top: 60px;
+            page-break-inside: avoid;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            border: 1px dashed #ccc;
+            text-align: center;
+        }
+        
+        .signature-line {
+            margin-top: 60px;
+            border-top: 1px solid #0e3559;
+            width: 70%;
+            margin-left: auto;
+            margin-right: auto;
+            text-align: center;
+            padding-top: 10px;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 15px;
+            font-size: 9pt;
+            color: #666;
+            border-top: 1px solid #eee;
+        }
+        
+        .statement {
+            padding: 15px;
+            margin: 25px 0;
+            background-color: rgb(255, 255, 255);
+            border-left: 4px solid rgb(154, 220, 238);
+            border-radius: 5px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+        
+        .marketing-consent {
+            padding: 15px;
+            margin: 25px 0;
+            background-color: {% if accept_marketing %}rgba(251, 251, 251, 0.97){% else %}rgb(255, 255, 255){% endif %};
+            border-left: 4px solid {% if accept_marketing %}rgb(128, 242, 143) {% else %}rgb(255, 148, 148) {% endif %};
+            border-radius: 5px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+        
+        .section-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #0e3559;
+        }
+        
+        .clause {
+            margin-bottom: 15px;
+        }
+        
+        .clause-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .clause-body {
+            margin-left: 15px;
+        }
+        
+        .clause-item {
+            margin-bottom: 5px;
+            position: relative;
+            padding-left: 20px;
+        }
+        
+        .clause-item:before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 8px;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color:rgb(148, 232, 255);
+        }
+        
+        .watermark {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            opacity: 0.025;
+            font-size: 80pt;
+            color: #0e3559;
+            z-index: -1;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="document">
+        <div class="header">
+            <div class="logo-container">
+                <img src="https://res.cloudinary.com/do89fyolr/image/upload/v1740102351/logo_rplk5z.png" alt="ForgeApp Logo">
+            </div>
+            <div class="header-text">
+                <h1>CONTRATO DE SERVICIO</h1>
+                <p class="header-subtitle">Fecha: {{ date }}</p>
+            </div>
+        </div>
+        
+        <div class="info-container">
+            <div class="info-block">
+                <h3>Información del Cliente</h3>
+                <div class="info-row">
+                    <div class="info-label">Cliente:</div>
+                    <div class="info-value">{{ client.name }}</div>
+           
+                {% if client.rut %}
+           
+                    <div class="info-label">RUT Cliente:</div>
+                    <div class="info-value">{{ client.rut }}</div>
+             
+                {% endif %}
+                {% if client.company %}
+                
+                    <div class="info-label">Empresa:</div>
+                    <div class="info-value">{{ client.company }}</div>
+               
+                {% endif %}
+                {% if client.company_rut %}
+               
+                    <div class="info-label">RUT Empresa:</div>
+                    <div class="info-value">{{ client.company_rut }}</div>
+               
+                {% endif %}
+               
+                    <div class="info-label">Correo:</div>
+                    <div class="info-value">{{ client.email }}</div>
+              
+              
+                    <div class="info-label">Teléfono:</div>
+                    <div class="info-value">{{ client.phone }}</div>
+                </div>
+            </div>
+            
+            <div class="info-block">
+                <h3>Detalles del Servicio</h3>
+                <div class="info-row">
+                    <div class="info-label">Aplicación:</div>
+                    <div class="info-value">{{ application.name }}</div>
+      
+                    <div class="info-label">Tipo de Suscripción:</div>
+                    <div class="info-value">{{ subscription_type }}</div>
+
+                    <div class="info-label">Precio:</div>
+                    <div class="info-value">${{ price }}</div>
+  
+                    <div class="info-label">Fecha de Inicio:</div>
+                    <div class="info-value">{{ date }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="contract-body">
+            <h2>TÉRMINOS Y CONDICIONES DEL SERVICIO</h2>
+            
+            <p>Este Contrato de Servicios (en adelante, el "Contrato") se celebra entre ForgeApp (en adelante, el "Proveedor") y {{ client.name }} (en adelante, el "Cliente").</p>
+            
+            <div class="clause">
+                <h2>1. OBJETO DEL CONTRATO</h2>
+                <p>El Proveedor se compromete a proporcionar al Cliente el acceso y uso del software {{ application.name }} según los términos y condiciones establecidos en este Contrato.</p>
+            </div>
+            
+            <div class="clause">
+                <h2>2. DURACIÓN DEL CONTRATO</h2>
+                <p>El presente Contrato tendrá una duración inicial de un mes para suscripciones mensuales o un año para suscripciones anuales, renovable automáticamente por períodos iguales salvo notificación en contrario de alguna de las partes con al menos 15 días de antelación al vencimiento del período en curso.</p>
+            </div>
+            
+            <div class="clause">
+                <h2>3. PRECIO Y FORMA DE PAGO</h2>
+                <p>El Cliente abonará al Proveedor la cantidad de ${{ price }} por período de {% if subscription_type == 'Mensual' %}mes{% else %}año{% endif %}. El pago se realizará por adelantado al inicio de cada período de facturación.</p>
+            </div>
+            
+            <div class="clause">
+                <h2>4. OBLIGACIONES DEL PROVEEDOR</h2>
+                <p>El Proveedor se compromete a:</p>
+                <div class="clause-body">
+                    <div class="clause-item">Proporcionar el acceso al software {{ application.name }} conforme a las especificaciones técnicas establecidas.</div>
+                    <div class="clause-item">Garantizar un nivel de disponibilidad del servicio del 99% durante el período de vigencia del Contrato.</div>
+                    <div class="clause-item">Proporcionar soporte técnico al Cliente en caso de incidencias o consultas relacionadas con el uso del software.</div>
+                </div>
+            </div>
+            
+            <div class="clause">
+                <h2>5. OBLIGACIONES DEL CLIENTE</h2>
+                <p>El Cliente se compromete a:</p>
+                <div class="clause-body">
+                    <div class="clause-item">Utilizar el software conforme a las instrucciones proporcionadas por el Proveedor.</div>
+                    <div class="clause-item">No ceder, sublicenciar o transferir a terceros los derechos de uso del software.</div>
+                    <div class="clause-item">Abonar el precio estipulado en los plazos convenidos.</div>
+                </div>
+            </div>
+            
+            <div class="clause">
+                <h2>6. CONFIDENCIALIDAD</h2>
+                <p>Ambas partes se comprometen a mantener la confidencialidad de toda la información intercambiada en el marco de este Contrato, no pudiendo revelarla a terceros sin el consentimiento previo y por escrito de la otra parte.</p>
+            </div>
+            
+            <div class="clause">
+                <h2>7. PROTECCIÓN DE DATOS</h2>
+                <p>El Proveedor tratará los datos personales del Cliente de conformidad con la legislación vigente en materia de protección de datos personales.</p>
+            </div>
+            
+            <div class="clause">
+                <h2>8. RESOLUCIÓN DEL CONTRATO</h2>
+                <p>El presente Contrato podrá resolverse por las siguientes causas:</p>
+                <div class="clause-body">
+                    <div class="clause-item">Por mutuo acuerdo entre las partes.</div>
+                    <div class="clause-item">Por incumplimiento grave de las obligaciones por alguna de las partes.</div>
+                    <div class="clause-item">Por la finalización del plazo de vigencia sin que se haya producido la renovación.</div>
+                </div>
+            </div>
+            
+            <div class="statement">
+                <p class="section-title">DECLARACIÓN DE ACEPTACIÓN</p>
+                <p>El Cliente declara haber leído y aceptado expresamente todas las cláusulas del presente Contrato de Servicios para el uso del software {{ application.name }}.</p>
+            </div>
+            
+            <div class="marketing-consent">
+                <p class="section-title">CONSENTIMIENTO PARA RECIBIR COMUNICACIONES COMERCIALES</p>
+                <p>El Cliente {% if accept_marketing %}ha aceptado{% else %}no ha aceptado{% endif %} recibir comunicaciones comerciales, informativas y promocionales por parte de ForgeApp a través del correo electrónico facilitado.</p>
+            </div>
+        </div>
+        
+        <div class="signatures">
+            <div class="signature-line">
+                {{ client.name }}<br>
+                Cliente
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Este contrato fue aceptado electrónicamente el {{ date }}.</p>
+            <p>ForgeApp - www.forgeapp.cl</p>
+        </div>
+    </div>
+</body>
+</html>

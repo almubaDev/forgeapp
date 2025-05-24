@@ -49,6 +49,7 @@ urlpatterns = [
     path('subscriptions/<int:pk>/suspend/', views.subscription_suspend, name='subscription_suspend'),
     path('subscriptions/<int:pk>/cancel/', views.subscription_cancel, name='subscription_cancel'),
     path('subscriptions/<int:pk>/deactivate/', views.subscription_deactivate, name='subscription_deactivate'),
+    path('subscriptions/<int:pk>/renew/', views.subscription_renew, name='subscription_renew'),
     
     # Calculadora URLs
     path('calculadoras/', views.calculadora_list, name='calculadora_list'),

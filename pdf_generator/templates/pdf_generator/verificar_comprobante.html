@@ -1,0 +1,127 @@
+{% extends 'base_public.html' %}
+
+{% block title %}Verificación de Comprobante{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex flex-col items-center justify-center p-4 bg-forge-dark bg-opacity-90">
+    <div class="glass-panel p-8 max-w-2xl w-full">
+
+        {% if is_valid %}
+            <!-- Comprobante válido -->
+            <div class="text-center mb-8">
+                <div class="inline-block p-4 bg-green-900 bg-opacity-20 rounded-full mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                </div>
+                <h1 class="text-2xl text-white font-bold mb-2">Comprobante Verificado</h1>
+                <p class="text-forge-light">Este comprobante es auténtico y ha sido emitido por ForgeApp.</p>
+            </div>
+
+            <!-- Detalles del comprobante -->
+            <div class="bg-forge-dark bg-opacity-50 rounded-lg p-6 mb-6">
+                <h2 class="text-xl text-forge-bright font-medium mb-4">Detalles del Comprobante</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-forge-light text-sm">Número de Comprobante</p>
+                        <p class="text-white">{{ receipt.receipt_number }}</p>
+                    </div>
+                    <div>
+                        <p class="text-forge-light text-sm">Fecha de Pago</p>
+                        <p class="text-white">{{ payment.payment_date|date:"d/m/Y H:i" }}</p>
+                    </div>
+                    <div>
+                        <p class="text-forge-light text-sm">Estado</p>
+                        <p class="text-green-400">{{ payment.get_status_display }}</p>
+                    </div>
+                    <div>
+                        <p class="text-forge-light text-sm">Monto</p>
+                        <p class="text-white">${{ payment.amount|floatformat:0|intcomma }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detalles del cliente y aplicación -->
+            <div class="bg-forge-dark bg-opacity-50 rounded-lg p-6 mb-6">
+                <h2 class="text-xl text-forge-bright font-medium mb-4">Detalles del Servicio</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {% if client %}
+                    <div>
+                        <p class="text-forge-light text-sm">Cliente</p>
+                        <p class="text-white">{{ client.name }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if application %}
+                    <div>
+                        <p class="text-forge-light text-sm">Aplicación</p>
+                        <p class="text-white">{{ application.name }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if payment.subscription %}
+                    <div>
+                        <p class="text-forge-light text-sm">Tipo de Suscripción</p>
+                        <p class="text-white">{{ payment.subscription.get_payment_type_display }}</p>
+                    </div>
+                    
+                    <div>
+                        <p class="text-forge-light text-sm">Referencia</p>
+                        <p class="text-white">{{ payment.subscription.reference_id }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Notas o comentarios adicionales -->
+            {% if payment.notes %}
+            <div class="bg-forge-dark bg-opacity-50 rounded-lg p-6 mb-6">
+                <h2 class="text-xl text-forge-bright font-medium mb-4">Notas</h2>
+                <p class="text-white">{{ payment.notes }}</p>
+            </div>
+            {% endif %}
+
+            <div class="text-center mt-8">
+                <p class="text-forge-light text-sm">
+                    Este comprobante fue verificado el {{ now|date:"d/m/Y H:i" }}
+                </p>
+            </div>
+
+        {% else %}
+            <!-- Comprobante inválido o error -->
+            <div class="text-center mb-8">
+                <div class="inline-block p-4 bg-red-900 bg-opacity-20 rounded-full mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </div>
+                <h1 class="text-2xl text-white font-bold mb-2">Verificación Fallida</h1>
+                <p class="text-red-400">{{ error_message }}</p>
+            </div>
+
+            <div class="text-center mt-8">
+                <p class="text-forge-light">
+                    Si cree que esto es un error, por favor contacte con soporte técnico.
+                </p>
+            </div>
+        {% endif %}
+
+        <!-- Botones de acción -->
+        <div class="flex justify-center mt-8">
+            <a href="{% url 'forgeapp:landing' %}" 
+               class="glass-btn px-6 py-3 text-white hover:text-forge-bright">
+                Volver al Inicio
+            </a>
+            
+            {% if is_valid %}
+            <a href="{% url 'pdf_generator:generar_recibo' payment.id %}" 
+               class="glass-btn px-6 py-3 ml-4 text-white hover:text-forge-bright bg-forge-bright bg-opacity-20">
+                Descargar Comprobante
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -13,9 +13,15 @@ urlpatterns = [
     # Pagos
     path('payments/', views.payment_list, name='payment_list'),
     path('payments/<int:pk>/', views.payment_detail, name='payment_detail'),
+    path('payments/<int:pk>/mark-completed/', views.payment_mark_completed, name='payment_mark_completed'),
+    path('payments/<int:pk>/generate-receipt/', views.payment_generate_receipt, name='payment_generate_receipt'),
     path('subscriptions/<int:subscription_id>/register-payment/', 
          views.register_subscription_payment, 
          name='register_subscription_payment'),
+    
+    # Recibos
+    path('receipts/<int:pk>/download/', views.receipt_download, name='receipt_download'),
+    path('receipts/<int:pk>/send/', views.receipt_send, name='receipt_send'),
          
     # Transacciones
     path('transactions/', views.transaction_list, name='transaction_list'),

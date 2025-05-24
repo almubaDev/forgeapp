@@ -20,7 +20,7 @@
     <div class="glass-panel p-6">
         {% if is_preview %}
         <!-- Vista de preparación para el administrador -->
-        <form method="post" action="{% url 'forgeapp:send_service_contract' client.pk %}" class="space-y-6">
+        <form method="post" action="{% url 'forgeapp:send_service_contract' client.pk %}" class="space-y-6" data-loading="true">
             {% csrf_token %}
             
             <div class="space-y-4">
@@ -208,6 +208,17 @@
                 <h3 class="text-xl text-green-400 font-medium mb-2">Contrato Aceptado</h3>
                 <p class="text-white">Este contrato ya ha sido aceptado. No es necesario volver a aceptarlo.</p>
                 
+                {% if just_accepted or is_accepted %}
+                <div class="bg-green-900 bg-opacity-20 p-4 rounded-md mt-4">
+                    <p class="text-white">Contrato aceptado el {{ token_obj.used_at|date:"d/m/Y H:i" }}</p>
+                    {% if client.accept_marketing %}
+                    <p class="text-white mt-2">El cliente ha aceptado recibir correos electrónicos con ofertas y novedades de ForgeApp.</p>
+                    {% else %}
+                    <p class="text-white mt-2">El cliente no ha aceptado recibir correos electrónicos con ofertas y novedades.</p>
+                    {% endif %}
+                </div>
+                {% endif %}
+
                 {% if subscription %}
                 <div class="mt-4">
                     <h4 class="text-lg text-forge-bright font-medium mb-2">Detalles de la Suscripción</h4>
@@ -297,7 +308,7 @@
         </div>
         {% else %}
         <!-- Vista para el cliente cuando el contrato aún no ha sido aceptado -->
-        <form method="post" action="{% url 'forgeapp:accept_service_contract' token %}" class="space-y-6">
+        <form method="post" action="{% url 'forgeapp:accept_service_contract' token %}" class="space-y-6" data-loading="true">
             {% csrf_token %}
             
             <div class="space-y-4">

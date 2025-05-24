@@ -1,0 +1,52 @@
+{% extends 'base_public.html' %}
+
+{% block title %}Verificar Comprobante{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex flex-col items-center justify-center p-4 bg-forge-dark bg-opacity-90">
+    <div class="glass-panel p-8 max-w-md w-full">
+        <div class="text-center mb-8">
+            <h1 class="text-2xl text-white font-bold mb-2">Verificación de Comprobante</h1>
+            <p class="text-forge-light">Ingrese los datos del comprobante para verificar su autenticidad.</p>
+        </div>
+
+        <form method="post" action="{% url 'pdf_generator:verificar_comprobante_form' %}" class="space-y-6">
+            {% csrf_token %}
+            
+            {% if error_message %}
+            <div class="bg-red-900 bg-opacity-20 p-4 rounded-lg text-red-400 mb-4">
+                {{ error_message }}
+            </div>
+            {% endif %}
+            
+            <div class="space-y-2">
+                <label for="receipt_number" class="text-white">Número de Comprobante</label>
+                <input type="text" id="receipt_number" name="receipt_number" 
+                       class="w-full bg-forge-dark bg-opacity-40 border border-forge-light border-opacity-20 rounded-lg px-4 py-2 text-white"
+                       placeholder="Ej: REC-123-456789" required>
+            </div>
+            
+            <div class="space-y-2">
+                <label for="verification_code" class="text-white">Código de Verificación</label>
+                <input type="text" id="verification_code" name="verification_code" 
+                       class="w-full bg-forge-dark bg-opacity-40 border border-forge-light border-opacity-20 rounded-lg px-4 py-2 text-white"
+                       placeholder="Ingrese el código de verificación" required>
+            </div>
+            
+            <div class="pt-4">
+                <button type="submit"
+                        class="w-full glass-btn py-3 text-white hover:text-forge-bright bg-forge-bright bg-opacity-20">
+                    Verificar Comprobante
+                </button>
+            </div>
+        </form>
+        
+        <div class="text-center mt-8">
+            <a href="{% url 'forgeapp:landing' %}" 
+               class="text-forge-light hover:text-forge-bright">
+                Volver al Inicio
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

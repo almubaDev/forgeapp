@@ -5,8 +5,16 @@ from django.utils import timezone
 from django.db.models import Q, Sum, Count
 from django import forms
 from django.db import transaction
-from .models import Payment, Transaction
-from forgeapp.models import Subscription
+from django.http import HttpResponse, FileResponse
+from django.core.mail import EmailMultiAlternatives
+from django.conf import settings
+from django.template.loader import render_to_string
+from io import BytesIO
+import logging
+from pdf_generator.views import generar_pdf_recibo_buffer
+from .models import Payment, Transaction, Receipt
+
+logger = logging.getLogger('finance')
 
 @login_required
 def dashboard(request):
@@ -60,17 +68,16 @@ def dashboard(request):
             status='completed',
             payment_date__range=[month_end, month_start]
         ).aggregate(total=Sum('amount'))['total'] or 0
-        monthly_data.append(month_total)
+        monthly_data.append(float(month_total))
         monthly_labels.append(month_end.strftime('%B'))
     
     monthly_data.reverse()
     monthly_labels.reverse()
 
     # Distribución de pagos
-    payment_distribution = [
-        active_subscriptions.filter(payment_type='monthly').count(),
-        active_subscriptions.filter(payment_type='annual').count()
-    ]
+    monthly_count = active_subscriptions.filter(payment_type='monthly').count()
+    annual_count = active_subscriptions.filter(payment_type='annual').count()
+    payment_distribution = [monthly_count, annual_count]
 
     # Identificar suscripciones que necesitan pago
     today = timezone.now().date()
@@ -135,39 +142,235 @@ def payment_detail(request, pk):
     })
 
 @login_required
+def payment_mark_completed(request, pk):
+    """Marca un pago como completado manualmente"""
+    payment = get_object_or_404(Payment, pk=pk)
+    
+    if request.method == 'POST':
+        try:
+            with transaction.atomic():
+                # Actualizar pago
+                payment.status = 'completed'
+                payment.payment_date = timezone.now()
+                
+                # Actualizar ID de transacción si se proporcionó
+                transaction_id = request.POST.get('transaction_id')
+                if transaction_id:
+                    payment.transaction_id = transaction_id
+                
+                payment.save()
+                
+                logger.info(f"Pago {payment.id} marcado como completado manualmente")
+                
+                # Los signals se encargarán del resto (actualizar suscripción, crear transacción, etc.)
+                messages.success(request, 'Pago marcado como completado exitosamente')
+        except Exception as e:
+            logger.error(f"Error al marcar pago como completado: {str(e)}")
+            messages.error(request, f'Error al procesar el pago: {str(e)}')
+    
+    return redirect('finance:payment_detail', pk=pk)
+
+@login_required
+def payment_generate_receipt(request, pk):
+    """Genera un recibo para un pago completado"""
+    payment = get_object_or_404(Payment, pk=pk)
+    
+    if payment.status != 'completed':
+        messages.error(request, 'Solo se pueden generar recibos para pagos completados')
+        return redirect('finance:payment_detail', pk=pk)
+    
+    try:
+        # Verificar si ya existe un recibo
+        if hasattr(payment, 'receipt'):
+            receipt = payment.receipt
+            messages.info(request, 'Este pago ya tiene un recibo generado')
+        else:
+            # Generar un nuevo recibo
+            import secrets
+            verification_code = secrets.token_hex(8)
+            
+            receipt = Receipt.objects.create(
+                payment=payment,
+                receipt_number=f"REC-{payment.id}-{int(timezone.now().timestamp())}",
+                verification_code=verification_code
+            )
+            
+            logger.info(f"Recibo generado para el pago {payment.id}: {receipt.receipt_number}")
+            messages.success(request, 'Recibo generado exitosamente')
+    
+    except Exception as e:
+        logger.error(f"Error al generar recibo: {str(e)}")
+        messages.error(request, f'Error al generar el recibo: {str(e)}')
+    
+    return redirect('finance:payment_detail', pk=pk)
+
+@login_required
+def receipt_download(request, pk):
+    """Descarga un recibo en formato PDF"""
+    receipt = get_object_or_404(Receipt, pk=pk)
+    payment = receipt.payment
+    
+    try:
+        # Generar el PDF del recibo
+        buffer = BytesIO()
+        generar_pdf_recibo_buffer(payment, buffer)
+        buffer.seek(0)
+        
+        # Configurar respuesta HTTP
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="comprobante_{receipt.receipt_number}.pdf"'
+        response.write(buffer.getvalue())
+        
+        buffer.close()
+        logger.info(f"Recibo {receipt.receipt_number} descargado")
+        
+        return response
+    
+    except Exception as e:
+        logger.error(f"Error al descargar recibo: {str(e)}")
+        messages.error(request, f'Error al descargar el recibo: {str(e)}')
+        return redirect('finance:payment_detail', pk=payment.pk)
+
+@login_required
+def receipt_send(request, pk):
+    """Envía un recibo por correo electrónico al cliente"""
+    receipt = get_object_or_404(Receipt, pk=pk)
+    payment = receipt.payment
+    
+    if request.method == 'POST':
+        try:
+            # Verificar que el pago tenga una suscripción y cliente asociados
+            if not payment.subscription or not payment.subscription.client:
+                messages.error(request, 'El pago no tiene un cliente asociado')
+                return redirect('finance:payment_detail', pk=payment.pk)
+            
+            # Obtener datos para el correo
+            client = payment.subscription.client
+            application = payment.subscription.application if payment.subscription.application else None
+            
+            if not client.email:
+                messages.error(request, 'El cliente no tiene un correo electrónico configurado')
+                return redirect('finance:payment_detail', pk=payment.pk)
+            
+            # Generar el PDF
+            buffer = BytesIO()
+            generar_pdf_recibo_buffer(payment, buffer)
+            pdf_data = buffer.getvalue()
+            buffer.close()
+            
+            # Preparar asunto del correo
+            subject = f'ForgeApp: Comprobante de Pago - {application.name if application else "ForgeApp"}'
+            
+            # Obtener URL del sitio
+            site_url = settings.SITE_URL
+            
+            # Renderizar plantilla de email
+            html_content = render_to_string('finance/email/payment_receipt.html', {
+                'payment': payment,
+                'client': client,
+                'subscription': payment.subscription,
+                'application': application,
+                'site_url': site_url,
+                'now': timezone.now()
+            })
+            
+            # Crear el email con texto plano también para mejor compatibilidad
+            text_content = f"""
+            Estimado/a {client.name},
+            
+            ¡Su pago ha sido procesado exitosamente!
+            
+            Nos complace confirmarle que hemos recibido su pago por el servicio de {application.name if application else "ForgeApp"}. Adjunto a este email encontrará el comprobante de pago que puede guardar para sus registros.
+            
+            Detalles de la transacción:
+            - Monto: ${payment.amount}
+            - Fecha: {payment.payment_date.strftime('%d/%m/%Y %H:%M') if payment.payment_date else timezone.now().strftime('%d/%m/%Y %H:%M')}
+            - Referencia: {payment.subscription.reference_id}
+            - Tipo: {payment.subscription.get_payment_type_display()}
+            
+            Puede verificar la autenticidad de este comprobante escaneando el código QR adjunto en el PDF.
+            
+            Agradecemos su confianza en nosotros y estamos comprometidos en brindarle el mejor servicio. ¡Su satisfacción es nuestra prioridad!
+            
+            Si tiene alguna pregunta o necesita asistencia, no dude en contactarnos.
+            
+            Saludos cordiales,
+            Equipo ForgeApp
+            www.forgeapp.cl
+            """
+            
+            # Crear mensaje de correo
+            email = EmailMultiAlternatives(
+                subject=subject,
+                body=text_content,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[client.email]
+            )
+            
+            # Añadir versión HTML
+            email.attach_alternative(html_content, "text/html")
+            
+            # Adjuntar el PDF
+            filename = f"comprobante_{receipt.receipt_number}.pdf"
+            email.attach(filename, pdf_data, 'application/pdf')
+            
+            # Enviar el email
+            email.send()
+            
+            # Actualizar estado de envío
+            receipt.sent_to_client = True
+            receipt.sent_at = timezone.now()
+            receipt.save()
+            
+            logger.info(f"Recibo {receipt.receipt_number} enviado a {client.email}")
+            messages.success(request, f'Recibo enviado exitosamente a {client.email}')
+        
+        except Exception as e:
+            logger.error(f"Error al enviar recibo: {str(e)}")
+            messages.error(request, f'Error al enviar el recibo: {str(e)}')
+    
+    return redirect('finance:payment_detail', pk=payment.pk)
+
+@login_required
 def register_subscription_payment(request, subscription_id):
     """Registra un pago manual para una suscripción"""
     subscription = get_object_or_404(Subscription, pk=subscription_id)
     
-    # Verificar si se puede registrar el pago
-    if not subscription.can_register_payment():
-        messages.error(request, 'No se puede registrar el pago en este momento')
-        return redirect('forgeapp:subscription_detail', pk=subscription_id)
-    
     try:
         with transaction.atomic():
-            # Crear el pago
-            payment = Payment.objects.create(
+            # Obtener el pago pendiente más antiguo
+            payment = Payment.objects.filter(
                 subscription=subscription,
-                amount=subscription.price,
-                payment_date=timezone.now(),
-                due_date=subscription.end_date,
-                status='completed',
-                notes='Pago registrado manualmente'
-            )
-
-            # Crear la transacción
+                status='pending'
+            ).order_by('due_date').first()
+            
+            if not payment:
+                messages.error(request, 'No hay pagos pendientes para esta suscripción')
+                return redirect('forgeapp:subscription_detail', pk=subscription_id)
+            
+            # Actualizar el pago existente a completado
+            payment.status = 'completed'
+            payment.payment_date = timezone.now()
+            payment.save()
+            
+            # Crear transacción manualmente (no confiar en el signal)
             Transaction.objects.create(
                 type='income',
                 category=subscription.reference_id,
                 description=f"Pago de suscripción - Cliente: {subscription.client.name} - App: {subscription.application.name}",
-                amount=subscription.price,
+                amount=payment.amount,
                 date=timezone.now().date(),
-                payment=payment
+                payment=payment,
+                notes='Pago registrado manualmente'
             )
 
             # Actualizar fechas de pago en la suscripción
-            subscription.update_payment_dates()
+            subscription.last_payment_date = timezone.now().date()
+            if subscription.payment_type == 'monthly':
+                subscription.next_payment_date = subscription.last_payment_date + timezone.timedelta(days=30)
+            else:
+                subscription.next_payment_date = subscription.last_payment_date + timezone.timedelta(days=365)
+            subscription.save()
 
             messages.success(request, 'Pago registrado exitosamente')
     except Exception as e:
@@ -452,3 +655,6 @@ def transaction_delete(request, pk):
     return render(request, 'finance/transaction_confirm_delete.html', {
         'transaction': transaction
     })
+
+# Add the missing import for Subscription
+from forgeapp.models import Subscription

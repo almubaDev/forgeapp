@@ -78,7 +78,8 @@ class Receipt(models.Model):
         verbose_name='Pago'
     )
     receipt_number = models.CharField('Número de Comprobante', max_length=100, unique=True)
-    pdf_file = models.FileField('Archivo PDF', upload_to='receipts/')
+    pdf_file = models.FileField('Archivo PDF', upload_to='receipts/', blank=True, null=True)
+    verification_code = models.CharField('Código de Verificación', max_length=100, blank=True)
     created_at = models.DateTimeField('Fecha de Creación', auto_now_add=True)
     updated_at = models.DateTimeField('Última Actualización', auto_now=True)
 

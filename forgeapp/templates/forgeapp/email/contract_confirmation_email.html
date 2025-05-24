@@ -1,36 +1,75 @@
 {% extends 'base_email.html' %}
+{% load static %}
+
+{% block title %}Confirmación de Contrato{% endblock %}
 
 {% block content %}
-<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
-    <div style="text-align: center; margin-bottom: 30px;">
-        <img src="https://res.cloudinary.com/do89fyolr/image/upload/v1740102351/logo_rplk5z.png" alt="ForgeApp Logo" style="max-width: 150px;">
-    </div>
-    
-    <h2 style="color: #0e3559; margin-bottom: 20px;">Confirmación de Contrato</h2>
-    
-    <p>Estimado/a {{ client.name }},</p>
-    
-    <p>Gracias por aceptar el contrato de servicio para la aplicación <strong>{{ application.name }}</strong>.</p>
-    
-    <div style="background-color: #f5f5f5; padding: 15px; border-radius: 4px; margin: 20px 0;">
-        <h3 style="color: #0e3559; margin-top: 0;">Detalles del Contrato</h3>
-        <ul style="padding-left: 20px; margin-bottom: 0;">
-            <li><strong>Aplicación:</strong> {{ application.name }}</li>
-            <li><strong>Tipo de Suscripción:</strong> {{ subscription_type }}</li>
-        </ul>
-    </div>
-    
-    <p>Nuestro equipo se pondrá en contacto con usted para activar su suscripción y proporcionarle instrucciones para realizar el primer pago. Una vez completado el pago, su suscripción será activada y podrá comenzar a utilizar la aplicación.</p>
-    
-    <p>Si tiene alguna pregunta o necesita asistencia, no dude en contactarnos respondiendo a este correo electrónico o llamando al número que aparece a continuación.</p>
-    
-    <p>Saludos cordiales,<br>
-    Equipo ForgeApp</p>
-    
-    <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #777; text-align: center;">
-        <p>ForgeApp - www.forgeapp.cl<br>
-        Teléfono: +56 9 1234 5678<br>
-        Email: contacto@forgeapp.cl</p>
-    </div>
-</div>
+<table width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+        <td align="center" style="padding: 20px 0;">
+            <!-- Header with Logo -->
+            <table width="90%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                    <td align="center">
+                        <img src="https://res.cloudinary.com/do89fyolr/image/upload/v1740102351/logo_rplk5z.png" alt="ForgeApp Logo" style="width: 180px; height: auto; margin-bottom: 20px;">
+                        <h1 style="font-size: 28px; color: #4EB8D5; margin: 0 0 20px 0; font-weight: 700;">Confirmación de Contrato</h1>
+                    </td>
+                </tr>
+            </table>
+            
+            <!-- Main Content -->
+            <table width="90%" cellpadding="0" cellspacing="0" border="0" style="background: linear-gradient(135deg, #0e3559 0%, #0a2546 100%); color: #ffffff; border-radius: 10px; margin-bottom: 30px; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">
+                <tr>
+                    <td style="padding: 30px;">
+                        <p style="margin-bottom: 20px; font-size: 16px; line-height: 1.6;">Estimado/a <strong>{{ client.name }}</strong>,</p>
+                        
+                        <p style="margin-bottom: 20px; font-size: 16px; line-height: 1.6;">¡Gracias por confiar en ForgeApp! Nos complace confirmarle que ha aceptado exitosamente el contrato de servicio para <strong>{{ application.name }}</strong>.</p>
+                        
+                        <p style="margin-bottom: 20px; font-size: 16px; line-height: 1.6;">Adjunto a este correo encontrará una copia completa del contrato firmado en formato PDF. Le recomendamos guardar este documento para futuras referencias.</p>
+                        
+                        <table width="100%" cellpadding="12" cellspacing="0" border="0" style="margin: 25px 0; background-color: rgba(255, 255, 255, 0.1); border-radius: 8px; border-left: 4px solid #4EB8D5;">
+                            <tr>
+                                <td colspan="2" style="font-weight: bold; font-size: 18px; padding-bottom: 15px;">Detalles del Contrato:</td>
+                            </tr>
+                            <tr>
+                                <td width="40%" style="font-weight: bold;">Aplicación:</td>
+                                <td>{{ application.name }}</td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: bold;">Tipo de Suscripción:</td>
+                                <td>{{ subscription_type }}</td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: bold;">Precio:</td>
+                                <td>${{ price }}</td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: bold;">Fecha:</td>
+                                <td>{{ date }}</td>
+                            </tr>
+                        </table>
+                        
+                        <p style="margin-bottom: 20px; font-size: 16px; line-height: 1.6;">Nuestro equipo se pondrá en contacto con usted para coordinar la activación de su suscripción y proporcionarle las instrucciones necesarias para realizar el primer pago. Una vez completado este proceso, tendrá acceso completo a todas las funcionalidades de la aplicación.</p>
+                        
+                        <p style="margin-bottom: 20px; font-size: 16px; line-height: 1.6;">En ForgeApp estamos comprometidos con brindarle una experiencia excepcional. Si tiene alguna pregunta, sugerencia o necesita asistencia, nuestro equipo de soporte está siempre disponible para ayudarle.</p>
+                        
+                        <p style="margin-top: 30px; font-size: 16px;">Le damos la bienvenida a la familia ForgeApp,</p>
+                        <p style="margin-bottom: 0; font-weight: 700; font-size: 16px;">Equipo ForgeApp</p>
+                    </td>
+                </tr>
+            </table>
+            
+            <!-- Footer -->
+            <table width="90%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                    <td align="center" style="color: #666666; font-size: 12px; padding: 20px 0;">
+                        <p>ForgeApp - www.forgeapp.cl</p>
+                        <p>Teléfono: +56 9 1234 5678 | Email: contacto@forgeapp.cl</p>
+                        <p>© {{ now.year }} ForgeApp - Todos los derechos reservados</p>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
 {% endblock %}

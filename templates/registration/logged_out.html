@@ -1,0 +1,26 @@
+{% extends "base_public.html" %}
+
+{% block title %}Sesión Cerrada{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex flex-col items-center justify-center p-4">
+    <div class="text-center mb-8">
+        <h1 class="text-2xl text-white font-bold mb-4">¡Hasta pronto!</h1>
+        <p class="text-forge-light mb-6">Su sesión ha sido cerrada correctamente.</p>
+        
+        <div class="mt-8">
+            <a href="{% url 'login' %}" 
+               class="glass-btn py-3 px-6 text-white hover:text-forge-bright bg-forge-bright bg-opacity-20">
+                Iniciar Sesión Nuevamente
+            </a>
+        </div>
+        
+        <div class="mt-4">
+            <a href="{% url 'forgeapp:landing' %}" 
+               class="text-forge-light hover:text-forge-bright">
+                Volver a la página principal
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

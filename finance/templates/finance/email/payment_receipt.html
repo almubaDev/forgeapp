@@ -1,53 +1,76 @@
 {% extends 'base_email.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Comprobante de Pago{% endblock %}
 
 {% block content %}
-<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-    <div style="text-align: center; margin-bottom: 30px;">
-        <img src="{{ request.scheme }}://{{ request.get_host }}{% static 'img/logo.png' %}" alt="ForgeApp" style="max-width: 150px;">
-    </div>
-
-    <div style="background-color: #1B3A5D; border-radius: 10px; padding: 30px; color: white;">
-        <h2 style="color: #64C5E8; margin-bottom: 20px;">Comprobante de Pago</h2>
-        
-        <p style="margin-bottom: 20px;">Estimado(a) {{ payment.subscription.client.name }},</p>
-        
-        <p style="margin-bottom: 20px;">
-            ¡Gracias por su pago! A continuación, encontrará los detalles de la transacción:
-        </p>
-
-        <div style="background-color: rgba(100, 197, 232, 0.1); border-radius: 5px; padding: 20px; margin-bottom: 20px;">
-            <p style="margin: 5px 0;"><strong>Comprobante N°:</strong> {{ receipt.receipt_number }}</p>
-            <p style="margin: 5px 0;"><strong>Fecha de Pago:</strong> {{ payment.payment_date|date:"d/m/Y H:i" }}</p>
-            <p style="margin: 5px 0;"><strong>Aplicación:</strong> {{ payment.subscription.application.name }}</p>
-            <p style="margin: 5px 0;"><strong>Monto:</strong> ${{ payment.amount|floatformat:0|intcomma }}</p>
-            <p style="margin: 5px 0;"><strong>Método de Pago:</strong> {{ payment.payment_method.name }}</p>
-            {% if payment.transaction_id %}
-            <p style="margin: 5px 0;"><strong>ID Transacción:</strong> {{ payment.transaction_id }}</p>
-            {% endif %}
-        </div>
-
-        <div style="background-color: rgba(100, 197, 232, 0.1); border-radius: 5px; padding: 20px; margin-bottom: 20px;">
-            <h3 style="color: #64C5E8; margin-bottom: 10px;">Detalles de la Suscripción</h3>
-            <p style="margin: 5px 0;"><strong>Período:</strong> {{ payment.subscription.start_date|date:"d/m/Y" }} - {{ payment.subscription.end_date|date:"d/m/Y" }}</p>
-            <p style="margin: 5px 0;"><strong>Tipo:</strong> {{ payment.subscription.get_payment_type_display }}</p>
-        </div>
-
-        <div style="text-align: center; margin-top: 30px;">
-            <p style="margin-bottom: 15px;">Adjunto encontrará una copia del comprobante en formato PDF.</p>
-            <a href="{{ request.scheme }}://{{ request.get_host }}{% url 'finance:receipt_download' receipt.pk %}" 
-               style="background-color: #64C5E8; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; display: inline-block;">
-                Descargar Comprobante
-            </a>
-        </div>
-    </div>
-
-    <div style="text-align: center; margin-top: 30px; color: #666;">
-        <p style="margin-bottom: 10px;">
-            Si tiene alguna pregunta sobre este comprobante, no dude en contactarnos.
-        </p>
-        <p style="font-size: 12px;">
-            Este es un correo automático, por favor no responda a este mensaje.
-        </p>
-    </div>
-</div>
+<table width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+        <td align="center" style="padding: 20px 0;">
+            <!-- Header with Logo -->
+            <table width="90%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                    <td align="center">
+                        <img src="https://res.cloudinary.com/do89fyolr/image/upload/v1740102351/logo_rplk5z.png" alt="ForgeApp Logo" style="width: 180px; height: auto; margin-bottom: 20px;">
+                        <h1 style="font-size: 28px; color: #4EB8D5; margin: 0 0 20px 0; font-weight: 700;">Comprobante de Pago</h1>
+                    </td>
+                </tr>
+            </table>
+            
+            <!-- Main Content -->
+            <table width="90%" cellpadding="0" cellspacing="0" border="0" style="background: linear-gradient(135deg, #0e3559 0%, #0a2546 100%); color: #ffffff; border-radius: 10px; margin-bottom: 30px; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">
+                <tr>
+                    <td style="padding: 30px;">
+                        <p style="margin-bottom: 20px; font-size: 16px; line-height: 1.6;">Estimado/a <strong>{{ client.name }}</strong>,</p>
+                        
+                        <p style="margin-bottom: 20px; font-size: 16px; line-height: 1.6;">¡Su pago ha sido procesado exitosamente!</p>
+                        
+                        <p style="margin-bottom: 20px; font-size: 16px; line-height: 1.6;">Nos complace confirmarle que hemos recibido su pago por el servicio de <strong>{{ application.name }}</strong>. Adjunto a este email encontrará el comprobante de pago que puede guardar para sus registros.</p>
+                        
+                        <p style="margin-bottom: 16px; font-size: 16px; font-weight: 600;">Detalles de la transacción:</p>
+                        
+                        <table width="100%" cellpadding="12" cellspacing="0" border="0" style="margin-bottom: 20px; background-color: rgba(255, 255, 255, 0.1); border-radius: 8px; border-left: 4px solid #4EB8D5;">
+                            <tr>
+                                <td width="30%" style="font-weight: bold;">Fecha:</td>
+                                <td>{{ payment.payment_date|date:"d/m/Y H:i" }}</td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: bold;">Monto:</td>
+                                <td>${{ payment.amount|floatformat:0|intcomma }}</td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: bold;">Referencia:</td>
+                                <td>{{ subscription.reference_id }}</td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: bold;">Tipo:</td>
+                                <td>{{ subscription.get_payment_type_display }}</td>
+                            </tr>
+                        </table>
+                        
+                        <p style="margin-bottom: 20px; font-size: 16px; line-height: 1.6;">Puede verificar la autenticidad de este comprobante escaneando el código QR adjunto en el PDF.</p>
+                        
+                        <p style="margin-bottom: 20px; font-size: 16px; line-height: 1.6;">Agradecemos su confianza en nosotros y estamos comprometidos en brindarle el mejor servicio. ¡Su satisfacción es nuestra prioridad!</p>
+                        
+                        <p style="margin-bottom: 10px; font-size: 16px; line-height: 1.6;">Si tiene alguna pregunta o necesita asistencia, no dude en contactarnos.</p>
+                        
+                        <p style="margin-top: 30px; font-size: 16px;">Saludos cordiales,</p>
+                        <p style="margin-bottom: 0; font-weight: 700; font-size: 16px;">Equipo ForgeApp</p>
+                    </td>
+                </tr>
+            </table>
+            
+            <!-- Footer -->
+            <table width="90%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                    <td align="center" style="color: #666666; font-size: 12px; padding: 20px 0;">
+                        <p>Si tiene alguna pregunta o necesita ayuda, no dude en contactarnos.</p>
+                        <p>© {{ now.year }} ForgeApp - www.forgeapp.cl</p>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
 {% endblock %}

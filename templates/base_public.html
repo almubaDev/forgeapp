@@ -218,6 +218,7 @@
         <p>ForgeApp © {% now "Y" %}</p>
     </footer>
 
+
     <!-- Scripts base -->
     <script>
         // Auto-ocultar mensajes después de 5 segundos
@@ -234,6 +235,7 @@
             }, 5000);
         });
     </script>
+    <script src="{% static 'js/loading.js' %}"></script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>
