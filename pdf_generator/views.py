@@ -4,7 +4,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch, cm
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image, PageBreak
-from reportlab.lib.enums import TA_CENTER, TA_LEFT
+from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
 from io import BytesIO
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth.decorators import login_required
@@ -20,241 +20,374 @@ from finance.models import Payment, Transaction, Receipt
 
 logger = logging.getLogger('pdf_generator')
 
+def format_currency(amount):
+    """
+    Formatea un número como moneda usando punto como separador de miles.
+    Ejemplo: 13000 -> "13.000"
+    """
+    return f"{amount:,.0f}".replace(',', '.')
+
 def generar_pdf_propuesta_buffer(calculadora, buffer=None):
     """
     Genera un PDF con la propuesta de costos basada en una calculadora y lo escribe en un buffer.
-    
+
     Args:
         calculadora: Instancia de Calculadora
         buffer: BytesIO buffer (opcional). Si no se proporciona, se crea uno nuevo.
-        
+
     Returns:
         BytesIO: Buffer con el PDF generado
     """
     if buffer is None:
         buffer = BytesIO()
-    
+
     try:
-        # Configurar el documento
-        doc = SimpleDocTemplate(buffer, pagesize=letter, leftMargin=inch, rightMargin=inch, topMargin=inch, bottomMargin=inch)
-        
-        # Definir estilos personalizados
+        # Configurar el documento con márgenes compactos
+        doc = SimpleDocTemplate(
+            buffer,
+            pagesize=letter,
+            leftMargin=0.6*inch,
+            rightMargin=0.6*inch,
+            topMargin=0.5*inch,
+            bottomMargin=0.6*inch
+        )
+
+        # Definir estilos personalizados modernos
         styles = getSampleStyleSheet()
-        
-        # Color azul del fondo
-        bg_color = colors.HexColor('#0e3559')
-        
-        # Color turquesa para los títulos
-        turquoise_color = colors.HexColor('#4EB8D5')
-        
-        # Estilo para los títulos principales
+
+        # Colores modernos
+        primary_color = colors.HexColor('#64C5E8')  # Color primary del sistema
+        dark_color = colors.HexColor('#1e293b')     # Gris oscuro moderno
+        accent_color = colors.HexColor('#f59e0b')   # Amber para destacar
+        bg_color = colors.HexColor('#f8fafc')       # Fondo claro
+        text_color = colors.HexColor('#334155')     # Texto gris
+
+        # Estilo para el título principal - más compacto
         title_style = ParagraphStyle(
             'TitleStyle',
             parent=styles['Heading1'],
-            fontSize=24,
-            textColor=turquoise_color,
+            fontSize=22,
+            textColor=dark_color,
             alignment=TA_LEFT,
-            spaceAfter=20,
-            fontName='Helvetica-Bold'
+            spaceAfter=4,
+            spaceBefore=0,
+            fontName='Helvetica-Bold',
+            leading=26
         )
-        
-        # Estilo para subtítulos
-        subtitle_style = ParagraphStyle(
-            'SubtitleStyle',
+
+        # Estilo para subtítulo del título - más compacto
+        subtitle_main_style = ParagraphStyle(
+            'SubtitleMainStyle',
+            parent=styles['Normal'],
+            fontSize=11,
+            textColor=text_color,
+            alignment=TA_LEFT,
+            spaceAfter=12,
+            fontName='Helvetica'
+        )
+
+        # Estilo para secciones - más compacto
+        section_style = ParagraphStyle(
+            'SectionStyle',
             parent=styles['Heading2'],
-            fontSize=18,
-            textColor=turquoise_color,
+            fontSize=13,
+            textColor=primary_color,
             alignment=TA_LEFT,
-            spaceAfter=15,
+            spaceAfter=6,
+            spaceBefore=10,
             fontName='Helvetica-Bold'
         )
-        
-        # Estilo para texto normal
+
+        # Estilo para texto normal - más compacto
         normal_style = ParagraphStyle(
             'NormalStyle',
             parent=styles['Normal'],
-            fontSize=12,
-            textColor=colors.white,
+            fontSize=9,
+            textColor=text_color,
             alignment=TA_LEFT,
-            spaceAfter=10,
-            fontName='Helvetica'
+            spaceAfter=2,
+            fontName='Helvetica',
+            leading=11
         )
-        
+
+        # Estilo para etiquetas - más compacto
+        label_style = ParagraphStyle(
+            'LabelStyle',
+            parent=styles['Normal'],
+            fontSize=8,
+            textColor=colors.HexColor('#64748b'),
+            alignment=TA_LEFT,
+            spaceAfter=2,
+            fontName='Helvetica-Bold'
+        )
+
         # Iniciar lista de elementos
         elements = []
-        
-        # Agregar logotipo
+
+        # Header con logo y info de contacto - más compacto
         logo_path = os.path.join('static', 'img', 'logo.png')
         if os.path.exists(logo_path):
-            logo = Image(logo_path, width=2*inch, height=1*inch)
-            elements.append(logo)
-            elements.append(Spacer(1, 0.5*inch))
-        
-        # URL del sitio
-        url = Paragraph("www.forgeapp.cl", ParagraphStyle(
-            'URLStyle',
-            parent=styles['Normal'],
-            fontSize=12,
-            textColor=turquoise_color,
-            alignment=TA_CENTER,
-            spaceAfter=20,
-            fontName='Helvetica'
-        ))
-        elements.append(url)
-        elements.append(Spacer(1, 0.5*inch))
-        
-        # Título principal
-        title = Paragraph("Propuesta de Costo por servicio", title_style)
+            # Crear tabla para header con logo más pequeño
+            logo = Image(logo_path, width=1.6*inch, height=0.8*inch)
+
+            contact_info = Paragraph(
+                "<b>ForgeApp</b><br/>"
+                "www.forgeapp.cl<br/>"
+                f"<font color='#64748b' size='8'>Fecha: {datetime.now().strftime('%d/%m/%Y')}</font>",
+                ParagraphStyle(
+                    'ContactStyle',
+                    parent=styles['Normal'],
+                    fontSize=9,
+                    textColor=text_color,
+                    alignment=TA_RIGHT,
+                    fontName='Helvetica',
+                    leading=11
+                )
+            )
+
+            header_data = [[logo, contact_info]]
+            header_table = Table(header_data, colWidths=[3.5*inch, 3.3*inch])
+            header_table.setStyle(TableStyle([
+                ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                ('ALIGN', (1, 0), (1, 0), 'RIGHT'),
+            ]))
+
+            elements.append(header_table)
+            elements.append(Spacer(1, 0.15*inch))
+
+        # Título principal con línea decorativa
+        title = Paragraph("Propuesta de Costo por Servicio", title_style)
         elements.append(title)
-        elements.append(Spacer(1, 0.3*inch))
-        
-        # Información del cliente
-        cliente_info = [
-            Paragraph(f"Cliente: {calculadora.client.name}", normal_style),
+
+        subtitle = Paragraph(f"Cotización para {calculadora.nombre}", subtitle_main_style)
+        elements.append(subtitle)
+
+        # Línea decorativa
+        line_data = [['']]
+        line_table = Table(line_data, colWidths=[6.8*inch])
+        line_table.setStyle(TableStyle([
+            ('LINEABOVE', (0, 0), (-1, 0), 2, primary_color),
+            ('TOPPADDING', (0, 0), (-1, -1), 0),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+        ]))
+        elements.append(line_table)
+        elements.append(Spacer(1, 0.15*inch))
+
+        # Información del cliente en tarjeta moderna - más compacta
+        cliente_data = [
+            [Paragraph("INFORMACIÓN DEL CLIENTE", label_style), ''],
         ]
-        
-        # Agregar aplicación si existe
+        cliente_data.append([
+            Paragraph(f"<b>Cliente:</b>", normal_style),
+            Paragraph(calculadora.client.name, normal_style)
+        ])
+
         if hasattr(calculadora, 'application') and calculadora.application:
-            cliente_info.append(Paragraph(f"Aplicación: {calculadora.application.name}", normal_style))
-        
-        for info in cliente_info:
-            elements.append(info)
-        elements.append(Spacer(1, 0.3*inch))
-        
-        # Tabla de costos
+            cliente_data.append([
+                Paragraph(f"<b>Aplicación:</b>", normal_style),
+                Paragraph(calculadora.application.name, normal_style)
+            ])
+
+        cliente_table = Table(cliente_data, colWidths=[1.5*inch, 5.3*inch])
+        cliente_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f1f5f9')),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+            ('TEXTCOLOR', (0, 0), (-1, -1), text_color),
+            ('SPAN', (0, 0), (1, 0)),
+            ('ALIGN', (0, 0), (0, 0), 'LEFT'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+            ('TOPPADDING', (0, 0), (-1, -1), 6),
+            ('LEFTPADDING', (0, 0), (-1, -1), 10),
+            ('BOX', (0, 0), (-1, -1), 1, colors.HexColor('#e2e8f0')),
+            ('ROUNDEDCORNERS', [5, 5, 5, 5]),
+        ]))
+
+        elements.append(cliente_table)
+        elements.append(Spacer(1, 0.15*inch))
+
+        # Sección de items
+        elements.append(Paragraph("DESGLOSE DE COSTOS", section_style))
+        elements.append(Spacer(1, 0.08*inch))
+
+        # Tabla de costos con diseño moderno
         data = [
-            ["Descripción", "Cantidad", "Precio Unit.", "Subtotal"]
+            [
+                Paragraph("<b>Descripción</b>", label_style),
+                Paragraph("<b>Cant.</b>", label_style),
+                Paragraph("<b>Precio Unit.</b>", label_style),
+                Paragraph("<b>Subtotal</b>", label_style)
+            ]
         ]
-        
+
         # Agregar items de la calculadora
         for item in calculadora.items.all():
             cantidad_str = f"{item.cantidad:.2f}".rstrip('0').rstrip('.') if item.cantidad == int(item.cantidad) else f"{item.cantidad:.2f}"
             data.append([
-                item.descripcion,
-                cantidad_str,
-                f"${item.precio_unitario:,.0f}",
-                f"${item.subtotal:,.0f}"
+                Paragraph(item.descripcion, normal_style),
+                Paragraph(cantidad_str, normal_style),
+                Paragraph(f"${format_currency(item.precio_unitario)}", normal_style),
+                Paragraph(f"<b>${format_currency(item.subtotal)}</b>", normal_style)
             ])
-        
+
         # Agregar fila para "Logística de desarrollo" si hay margen
         if calculadora.margen > 0:
             logistica_valor = calculadora.subtotal * (calculadora.margen / 100)
             data.append([
-                "Logística de desarrollo",
-                "1",
-                f"${logistica_valor:,.0f}",  # Mostrar el valor en dinero en lugar del porcentaje
-                f"${logistica_valor:,.0f}"
+                Paragraph("Logística de desarrollo", normal_style),
+                Paragraph("1", normal_style),
+                Paragraph(f"${format_currency(logistica_valor)}", normal_style),
+                Paragraph(f"<b>${format_currency(logistica_valor)}</b>", normal_style)
             ])
-        
-        tabla_costos = Table(data, colWidths=[9*cm, 2*cm, 2.5*cm, 2.5*cm])
+
+        tabla_costos = Table(data, colWidths=[3.5*inch, 0.8*inch, 1.2*inch, 1.3*inch])
         tabla_costos.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#0e4575')),
+            # Header
+            ('BACKGROUND', (0, 0), (-1, 0), primary_color),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-            ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+            ('ALIGN', (0, 0), (-1, 0), 'LEFT'),
+            ('ALIGN', (1, 0), (1, 0), 'CENTER'),
+            ('ALIGN', (2, 0), (-1, 0), 'RIGHT'),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#0e3559')),
-            ('TEXTCOLOR', (0, 1), (-1, -1), colors.white),
-            ('ALIGN', (1, 1), (-1, -1), 'RIGHT'),
+            ('FONTSIZE', (0, 0), (-1, 0), 9),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+            ('TOPPADDING', (0, 0), (-1, 0), 8),
+
+            # Body
+            ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+            ('TEXTCOLOR', (0, 1), (-1, -1), text_color),
+            ('ALIGN', (1, 1), (1, -1), 'CENTER'),
+            ('ALIGN', (2, 1), (-1, -1), 'RIGHT'),
             ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-            ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#4EB8D5')),
+            ('FONTSIZE', (0, 1), (-1, -1), 9),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f8fafc')]),
+
+            # Borders
+            ('BOX', (0, 0), (-1, -1), 1, colors.HexColor('#e2e8f0')),
+            ('LINEBELOW', (0, 0), (-1, 0), 2, colors.white),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-            ('TOPPADDING', (0, 0), (-1, -1), 6),
-            ('WORDWRAP', (0, 0), (-1, -1), True),
+            ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
+            ('TOPPADDING', (0, 1), (-1, -1), 6),
+            ('LEFTPADDING', (0, 0), (-1, -1), 8),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 8),
         ]))
-        
+
         elements.append(tabla_costos)
-        elements.append(Spacer(1, 0.5*inch))
-        
-        # Costo mensual
-        costo_mensual = Paragraph("Costo", subtitle_style)
-        elements.append(costo_mensual)
-        elements.append(Spacer(1, 0.2*inch))
-        
-        # Mostrar solo el costo mensual
-        costo_mensual_texto = Paragraph(
-            f"${calculadora.cuota_mensual:,.0f} a pagar mes a mes mientras se esté suscrito.",
-            ParagraphStyle(
-                'CostoMensualStyle',
-                parent=normal_style,
-                fontSize=16,
-                alignment=TA_LEFT
+        elements.append(Spacer(1, 0.15*inch))
+
+        # Resumen de costos en tarjeta destacada - más compacto
+        elements.append(Paragraph("INVERSIÓN MENSUAL", section_style))
+        elements.append(Spacer(1, 0.08*inch))
+
+        costo_data = [[
+            Paragraph(
+                f"<b><font size='16' color='#64C5E8'>${format_currency(calculadora.cuota_mensual)}</font></b><br/>"
+                f"<font size='9' color='#64748b'>Cuota mensual mientras esté suscrito</font>",
+                ParagraphStyle(
+                    'CostoStyle',
+                    parent=styles['Normal'],
+                    fontSize=9,
+                    textColor=text_color,
+                    alignment=TA_CENTER,
+                    spaceAfter=0,
+                    fontName='Helvetica',
+                    leading=20
+                )
             )
-        )
-        elements.append(costo_mensual_texto)
-        elements.append(Spacer(1, 0.5*inch))
+        ]]
+
+        costo_table = Table(costo_data, colWidths=[6.8*inch])
+        costo_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#f0f9ff')),
+            ('BOX', (0, 0), (-1, -1), 2, primary_color),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('TOPPADDING', (0, 0), (-1, -1), 12),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+            ('ROUNDEDCORNERS', [8, 8, 8, 8]),
+        ]))
+
+        elements.append(costo_table)
+        elements.append(Spacer(1, 0.1*inch))
         
         # Descripción de la aplicación (si existe)
         if hasattr(calculadora, 'application') and calculadora.application and calculadora.application.description:
             # Agregar página de salto
             elements.append(PageBreak())
-            
-            desc_app = Paragraph("Descripción de la Aplicación", subtitle_style)
+
+            # Título de la sección
+            desc_app = Paragraph("DESCRIPCIÓN DE LA APLICACIÓN", section_style)
             elements.append(desc_app)
             elements.append(Spacer(1, 0.2*inch))
-            
-            # Descripción funcional
-            desc_func = Paragraph("Descripción Funcional", ParagraphStyle(
-                'FuncionalStyle', 
-                parent=subtitle_style, 
-                fontSize=16
-            ))
-            elements.append(desc_func)
-            elements.append(Spacer(1, 0.2*inch))
-            
+
             # Procesar markdown
             from forgeapp.markdown_processor import process_markdown_section
             sections = process_markdown_section(calculadora.application.description)
-            
+
+            # Estilos para los títulos de markdown
+            h1_style = ParagraphStyle(
+                'H1Style',
+                parent=styles['Heading1'],
+                fontSize=16,
+                textColor=dark_color,
+                alignment=TA_LEFT,
+                spaceAfter=10,
+                spaceBefore=15,
+                fontName='Helvetica-Bold'
+            )
+
+            h2_style = ParagraphStyle(
+                'H2Style',
+                parent=styles['Heading2'],
+                fontSize=14,
+                textColor=primary_color,
+                alignment=TA_LEFT,
+                spaceAfter=8,
+                spaceBefore=12,
+                fontName='Helvetica-Bold'
+            )
+
+            h3_style = ParagraphStyle(
+                'H3Style',
+                parent=styles['Heading3'],
+                fontSize=12,
+                textColor=text_color,
+                alignment=TA_LEFT,
+                spaceAfter=6,
+                spaceBefore=10,
+                fontName='Helvetica-Bold'
+            )
+
             for section_type, content in sections:
                 if section_type == 'title':
                     level = content['level']
                     if level == 1:
-                        elements.append(Paragraph(content['text'], ParagraphStyle(
-                            'SeccionStyle',
-                            parent=styles['Heading1'],
-                            fontSize=16,
-                            textColor=turquoise_color,
-                            alignment=TA_LEFT,
-                            spaceAfter=10,
-                            fontName='Helvetica-Bold'
-                        )))
+                        elements.append(Paragraph(content['text'], h1_style))
                     elif level == 2:
-                        elements.append(Paragraph(content['text'], ParagraphStyle(
-                            'SeccionStyle',
-                            parent=styles['Heading2'],
-                            fontSize=14,
-                            textColor=turquoise_color,
-                            alignment=TA_LEFT,
-                            spaceAfter=10,
-                            fontName='Helvetica-Bold'
-                        )))
+                        elements.append(Paragraph(content['text'], h2_style))
                     else:
-                        elements.append(Paragraph(content['text'], ParagraphStyle(
-                            'SeccionStyle',
-                            parent=styles['Heading3'],
-                            fontSize=12,
-                            textColor=turquoise_color,
-                            alignment=TA_LEFT,
-                            spaceAfter=10,
-                            fontName='Helvetica-Bold'
-                        )))
-                    elements.append(Spacer(1, 0.1*inch))
+                        elements.append(Paragraph(content['text'], h3_style))
                 elif section_type == 'content':
                     elements.append(Paragraph(content, normal_style))
-                    elements.append(Spacer(1, 0.2*inch))
+                    elements.append(Spacer(1, 0.15*inch))
                 elif section_type == 'list':
-                    list_content = " - ".join(content)
-                    elements.append(Paragraph(list_content, normal_style))
-                    elements.append(Spacer(1, 0.2*inch))
-        
-        # Construir el PDF
-        doc.build(elements, onFirstPage=page_background, onLaterPages=page_background)
-        
+                    for item in content:
+                        bullet_text = f"• {item}"
+                        elements.append(Paragraph(bullet_text, ParagraphStyle(
+                            'ListStyle',
+                            parent=normal_style,
+                            leftIndent=20,
+                            spaceAfter=4
+                        )))
+                    elements.append(Spacer(1, 0.15*inch))
+
+        # Construir el PDF con fondo moderno
+        doc.build(elements, onFirstPage=modern_page_background, onLaterPages=modern_page_background)
+
         # Devolver el buffer posicionado al inicio
         buffer.seek(0)
         return buffer
-    
+
     except Exception as e:
         logger.error(f"Error al generar PDF en buffer: {str(e)}")
         raise
@@ -288,16 +421,51 @@ def generar_pdf_propuesta(request, pk):
 
 def page_background(canvas, doc):
     """
-    Función para agregar el fondo azul a todas las páginas
+    Función para agregar el fondo azul a todas las páginas (versión legacy)
     """
     # Color de fondo azul
     canvas.setFillColor(colors.HexColor('#0e3559'))
     canvas.rect(0, 0, doc.width + 2*doc.leftMargin, doc.height + 2*doc.bottomMargin, fill=1)
-    
+
     # Agregar un pie de página o elementos adicionales si se desea
     canvas.setFillColor(colors.white)
     canvas.setFont("Helvetica", 8)
     canvas.drawString(inch, 0.5*inch, "ForgeApp - www.forgeapp.cl")
+
+def modern_page_background(canvas, doc):
+    """
+    Función moderna para agregar fondo y elementos decorativos a todas las páginas
+    """
+    # Fondo blanco limpio
+    canvas.setFillColor(colors.white)
+    canvas.rect(0, 0, doc.width + 2*doc.leftMargin, doc.height + 2*doc.bottomMargin, fill=1)
+
+    # Barra decorativa superior con gradiente simulado
+    canvas.setFillColor(colors.HexColor('#64C5E8'))
+    canvas.rect(0, doc.height + 2*doc.bottomMargin - 5, doc.width + 2*doc.leftMargin, 5, fill=1)
+
+    # Barra decorativa inferior
+    canvas.setFillColor(colors.HexColor('#f1f5f9'))
+    canvas.rect(0, 0, doc.width + 2*doc.leftMargin, 0.6*inch, fill=1)
+
+    # Pie de página moderno
+    canvas.setFillColor(colors.HexColor('#64748b'))
+    canvas.setFont("Helvetica", 9)
+    canvas.drawString(0.75*inch, 0.35*inch, "ForgeApp")
+
+    canvas.setFont("Helvetica", 8)
+    canvas.setFillColor(colors.HexColor('#94a3b8'))
+    canvas.drawString(0.75*inch, 0.22*inch, "www.forgeapp.cl")
+
+    # Número de página en la esquina derecha
+    page_num = canvas.getPageNumber()
+    canvas.setFont("Helvetica", 8)
+    canvas.setFillColor(colors.HexColor('#64748b'))
+    canvas.drawRightString(doc.width + 1.25*inch, 0.28*inch, f"Página {page_num}")
+
+    # Elemento decorativo en la esquina superior derecha
+    canvas.setFillColor(colors.HexColor('#e0f2fe'))
+    canvas.circle(doc.width + 1.5*inch, doc.height + 1.7*inch, 40, fill=1, stroke=0)
 
 def generar_pdf_recibo_buffer(payment, buffer=None):
     """
@@ -439,7 +607,7 @@ def generar_pdf_recibo_buffer(payment, buffer=None):
                 servicio_info.append([Paragraph("<b>Tipo de Pago:</b>", label_style), Paragraph(subscription.get_payment_type_display(), normal_style)])
         
         # Agregar monto
-        servicio_info.append([Paragraph("<b>Monto:</b>", label_style), Paragraph(f"${payment.amount:,.0f}", normal_style)])
+        servicio_info.append([Paragraph("<b>Monto:</b>", label_style), Paragraph(f"${format_currency(payment.amount)}", normal_style)])
         
         # Agregar estado
         servicio_info.append([Paragraph("<b>Estado:</b>", label_style), Paragraph(payment.get_status_display(), normal_style)])

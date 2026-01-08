@@ -1,110 +1,103 @@
-<!-- forgeapp/templates/forgeapp/client_list.html -->
 {% extends 'base.html' %}
 
 {% block title %}Clientes - ForgeApp{% endblock %}
-
-{% block window_title %}Listado de Clientes{% endblock %}
+{% block page_title %}Clientes{% endblock %}
+{% block page_subtitle %}Gestión de clientes y sus suscripciones{% endblock %}
 
 {% block content %}
-<div class="space-y-8">
-    <div class="flex justify-between items-center">
-        <h2 class="text-2xl text-white font-medium">Clientes</h2>
-        <a href="{% url 'forgeapp:client_create' %}" 
-           class="glass-btn px-6 py-2.5 text-white hover:text-forge-bright">
-            Nuevo Cliente
-        </a>
+<!-- Header con botón de crear -->
+<div class="flex justify-between items-center mb-6">
+    <div class="flex items-center space-x-4">
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center">
+            <i class="fas fa-users text-white text-xl"></i>
+        </div>
+        <div>
+            <h3 class="text-xl font-display font-bold text-dark-800">Listado de Clientes</h3>
+            <p class="text-sm text-dark-500">{{ clients|length }} cliente{{ clients|length|pluralize }}</p>
+        </div>
     </div>
+    <a href="{% url 'forgeapp:client_create' %}"
+       class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-primary-400 to-primary-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200">
+        <i class="fas fa-plus-circle mr-2"></i>
+        Nuevo Cliente
+    </a>
+</div>
 
-    <div class="glass-panel p-6">
-        <div class="overflow-x-auto">
-            <table class="w-full">
-                <thead>
-                    <tr class="border-b border-forge-light border-opacity-10">
-                        <th class="p-4 text-left text-white font-medium">Nombre</th>
-                        <th class="p-4 text-left text-white font-medium">Email</th>
-                        <th class="p-4 text-left text-white font-medium">Teléfono</th>
-                        <th class="p-4 text-left text-white font-medium">Empresa</th>
-                        <th class="p-4 text-left text-white font-medium">Estado</th>
-                        <th class="p-4 text-left text-white font-medium">Contrato</th>
-                        <th class="p-4 text-left text-white font-medium">Suscripciones</th>
-                        <th class="p-4 text-left text-white font-medium">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for client in clients %}
-                    <tr class="border-b border-forge-light border-opacity-5 hover:bg-forge-primary hover:bg-opacity-5 transition-colors">
-                        <td class="p-4 text-white">
-                            <a href="{% url 'forgeapp:client_detail' client.pk %}" 
-                               class="hover:text-forge-bright transition-colors">
+<!-- Tabla de clientes -->
+<div class="card-premium overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead class="bg-gray-50 border-b border-gray-200">
+                <tr>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-dark-600 uppercase tracking-wider">Cliente</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-dark-600 uppercase tracking-wider">Contacto</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-dark-600 uppercase tracking-wider">Empresa</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-dark-600 uppercase tracking-wider">Estado</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-dark-600 uppercase tracking-wider">Contrato</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-dark-600 uppercase tracking-wider">Suscripciones</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for client in clients %}
+                <tr class="hover:bg-gray-50 transition-colors cursor-pointer" onclick="window.location='{% url 'forgeapp:client_detail' client.pk %}'">
+                    <td class="px-6 py-4">
+                        <div>
+                            <a href="{% url 'forgeapp:client_detail' client.pk %}"
+                               class="text-sm font-semibold text-dark-800 hover:text-primary-600 transition-colors">
                                 {{ client.name }}
                             </a>
-                        </td>
-                        <td class="p-4 text-white">{{ client.email }}</td>
-                        <td class="p-4 text-white">
-                            {% if client.phone %}
-                                {{ client.phone }}
-                            {% else %}
-                                <span class="text-forge-light opacity-60">-</span>
-                            {% endif %}
-                        </td>
-                        <td class="p-4 text-white">
-                            {% if client.company %}
-                                {{ client.company }}
-                            {% else %}
-                                <span class="text-forge-light opacity-60">-</span>
-                            {% endif %}
-                        </td>
-                        <td class="p-4">
-                            <span class="glass-btn px-3 py-1 text-sm
-                                {% if client.status == 'active' %}text-green-400 bg-green-900 bg-opacity-20
-                                {% elif client.status == 'pending' %}text-yellow-400 bg-yellow-900 bg-opacity-20
-                                {% else %}text-red-400 bg-red-900 bg-opacity-20{% endif %}">
-                                {{ client.get_status_display }}
-                            </span>
-                        </td>
-                        <td class="p-4">
-                            <span class="glass-btn px-3 py-1 text-sm
-                                {% if client.contract_status == 'accepted' %}text-green-400 bg-green-900 bg-opacity-20
-                                {% elif client.contract_status == 'pending' %}text-yellow-400 bg-yellow-900 bg-opacity-20
-                                {% elif client.contract_status == 'rejected' %}text-red-400 bg-red-900 bg-opacity-20
-                                {% else %}text-gray-400 bg-gray-900 bg-opacity-20{% endif %}">
-                                {{ client.get_contract_status_display }}
-                            </span>
-                        </td>
-                        <td class="p-4">
-                            <span class="px-3 py-1 rounded-full bg-forge-primary bg-opacity-20 backdrop-blur-sm text-white">
-                                {{ client.active_subscriptions }}/{{ client.total_subscriptions }}
-                            </span>
-                        </td>
-                        <td class="p-4">
-                            <div class="flex space-x-3">
-                                <a href="{% url 'forgeapp:client_update' client.pk %}" 
-                                   class="glass-btn px-4 py-1.5 text-white hover:text-forge-bright" title="Editar">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                <a href="{% url 'forgeapp:subscription_create' %}?client={{ client.pk }}" 
-                                   class="glass-btn px-4 py-1.5 text-white hover:text-forge-bright" title="Nueva Suscripción">
-                                    <i class="fas fa-plus-circle"></i>
-                                </a>
-                                <a href="{% url 'forgeapp:client_payment_history' client.pk %}" 
-                                   class="glass-btn px-4 py-1.5 text-white hover:text-forge-bright" title="Historial de Pagos">
-                                    <i class="fas fa-history"></i>
-                                </a>
-                                <a href="{% url 'forgeapp:service_contract' client.pk %}" 
-                                   class="glass-btn px-4 py-1.5 text-white hover:text-forge-bright" title="Contrato de Servicio">
-                                    <i class="fas fa-file-contract"></i>
-                                </a>
-                            </div>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="8" class="p-4 text-white text-center opacity-60">No hay clientes registrados</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+                            <p class="text-xs text-dark-500">{{ client.rut|default:"-" }}</p>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="text-sm text-dark-700">{{ client.email }}</div>
+                        <div class="text-xs text-dark-500">{{ client.phone|default:"-" }}</div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="text-sm text-dark-700">{{ client.company|default:"-" }}</div>
+                        <div class="text-xs text-dark-500">{{ client.position|default:"-" }}</div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                            {% if client.status == 'active' %}bg-green-100 text-green-800
+                            {% elif client.status == 'pending' %}bg-yellow-100 text-yellow-800
+                            {% else %}bg-red-100 text-red-800{% endif %}">
+                            {{ client.get_status_display }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                            {% if client.contract_status == 'accepted' %}bg-green-100 text-green-800
+                            {% elif client.contract_status == 'pending' %}bg-yellow-100 text-yellow-800
+                            {% elif client.contract_status == 'rejected' %}bg-red-100 text-red-800
+                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                            {{ client.get_contract_status_display }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-primary-50 text-primary-700">
+                            {{ client.active_subscriptions|default:0 }}/{{ client.total_subscriptions|default:0 }}
+                        </span>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="px-6 py-12">
+                        <div class="text-center">
+                            <i class="fas fa-users text-5xl text-gray-200 mb-4"></i>
+                            <p class="text-dark-500 font-medium">No hay clientes registrados</p>
+                            <p class="text-sm text-dark-400 mt-1">Comienza agregando tu primer cliente</p>
+                            <a href="{% url 'forgeapp:client_create' %}"
+                               class="inline-flex items-center mt-4 px-4 py-2 bg-primary-400 text-white text-sm font-semibold rounded-lg hover:bg-primary-600 transition-colors">
+                                <i class="fas fa-plus mr-2"></i>
+                                Crear Cliente
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 {% endblock %}

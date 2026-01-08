@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Mensajes de Contacto - ForgeApp{% endblock %}
+{% block page_title %}Mensajes de Contacto{% endblock %}
+{% block page_subtitle %}Consultas recibidas desde el formulario de contacto{% endblock %}
+
+{% block content %}
+<!-- Header con estadísticas -->
+<div class="flex justify-between items-center mb-6">
+    <div class="flex items-center space-x-4">
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center">
+            <i class="fas fa-envelope text-white text-xl"></i>
+        </div>
+        <div>
+            <h3 class="text-xl font-display font-bold text-dark-800">Bandeja de Entrada</h3>
+            <p class="text-sm text-dark-500">{{ messages_list|length }} mensaje{{ messages_list|length|pluralize:"s" }}</p>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros de estado -->
+<div class="card-premium p-2 mb-6">
+    <div class="flex space-x-2">
+        <a href="{% url 'forgeapp:message_list' %}"
+           class="flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all {% if status_filter == 'all' %}bg-primary-100 text-primary-700{% else %}text-dark-500 hover:bg-gray-100{% endif %}">
+            <i class="fas fa-inbox mr-2"></i>
+            Todos
+            <span class="ml-2 px-2 py-0.5 rounded-full text-xs bg-gray-200 text-dark-600">{{ new_count|add:read_count }}</span>
+        </a>
+        <a href="{% url 'forgeapp:message_list' %}?status=new"
+           class="flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all {% if status_filter == 'new' %}bg-green-100 text-green-700{% else %}text-dark-500 hover:bg-gray-100{% endif %}">
+            <i class="fas fa-circle text-xs mr-2 text-green-500"></i>
+            Nuevos
+            {% if new_count > 0 %}
+            <span class="ml-2 px-2 py-0.5 rounded-full text-xs bg-green-500 text-white">{{ new_count }}</span>
+            {% endif %}
+        </a>
+        <a href="{% url 'forgeapp:message_list' %}?status=read"
+           class="flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all {% if status_filter == 'read' %}bg-blue-100 text-blue-700{% else %}text-dark-500 hover:bg-gray-100{% endif %}">
+            <i class="fas fa-envelope-open mr-2"></i>
+            Leídos
+            <span class="ml-2 px-2 py-0.5 rounded-full text-xs bg-gray-200 text-dark-600">{{ read_count }}</span>
+        </a>
+        <a href="{% url 'forgeapp:message_list' %}?status=archived"
+           class="flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all {% if status_filter == 'archived' %}bg-amber-100 text-amber-700{% else %}text-dark-500 hover:bg-gray-100{% endif %}">
+            <i class="fas fa-archive mr-2"></i>
+            Archivados
+            <span class="ml-2 px-2 py-0.5 rounded-full text-xs bg-gray-200 text-dark-600">{{ archived_count }}</span>
+        </a>
+    </div>
+</div>
+
+<!-- Lista de mensajes -->
+<div class="card-premium overflow-hidden">
+    <div class="divide-y divide-gray-100">
+        {% for msg in messages_list %}
+        <div class="p-4 hover:bg-gray-50 transition-colors cursor-pointer {% if msg.status == 'new' %}bg-green-50 border-l-4 border-green-500{% endif %}"
+             onclick="window.location='{% url 'forgeapp:message_detail' msg.pk %}'">
+            <div class="flex items-start justify-between">
+                <div class="flex items-start space-x-4">
+                    <!-- Avatar -->
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+                        {{ msg.name|first|upper }}
+                    </div>
+                    <!-- Contenido -->
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center space-x-2">
+                            <h4 class="text-sm font-semibold text-dark-800 truncate">{{ msg.name }}</h4>
+                            {% if msg.status == 'new' %}
+                            <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">Nuevo</span>
+                            {% elif msg.status == 'archived' %}
+                            <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">Archivado</span>
+                            {% endif %}
+                        </div>
+                        <p class="text-sm text-dark-500 truncate">{{ msg.email }}</p>
+                        <p class="text-sm text-dark-600 mt-1 line-clamp-2">{{ msg.message|truncatewords:30 }}</p>
+                    </div>
+                </div>
+                <!-- Fecha y acciones -->
+                <div class="flex flex-col items-end space-y-2 ml-4">
+                    <span class="text-xs text-dark-400">{{ msg.created_at|date:"d/m/Y H:i" }}</span>
+                    <div class="flex items-center space-x-2">
+                        {% if msg.status == 'archived' %}
+                        <a href="{% url 'forgeapp:message_unarchive' msg.pk %}"
+                           class="text-amber-600 hover:text-amber-700 transition-colors"
+                           onclick="event.stopPropagation();"
+                           title="Desarchivar">
+                            <i class="fas fa-box-open"></i>
+                        </a>
+                        {% else %}
+                        <a href="{% url 'forgeapp:message_archive' msg.pk %}"
+                           class="text-gray-400 hover:text-amber-600 transition-colors"
+                           onclick="event.stopPropagation();"
+                           title="Archivar">
+                            <i class="fas fa-archive"></i>
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="p-12 text-center">
+            <i class="fas fa-envelope-open-text text-5xl text-gray-200 mb-4"></i>
+            <p class="text-dark-500 font-medium">No hay mensajes {% if status_filter == 'new' %}nuevos{% elif status_filter == 'archived' %}archivados{% endif %}</p>
+            <p class="text-sm text-dark-400 mt-1">Los mensajes del formulario de contacto aparecerán aquí</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

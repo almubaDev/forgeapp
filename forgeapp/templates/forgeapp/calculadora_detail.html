@@ -1,199 +1,262 @@
-<!-- templates/forgeapp/calculadora_detail.html -->
 {% extends 'base.html' %}
 {% load static %}
 {% load forgeapp_extras %}
 
 {% block title %}{{ calculadora.nombre }} - Calculadora{% endblock %}
+{% block page_title %}Detalle de Calculadora{% endblock %}
+{% block page_subtitle %}{{ calculadora.nombre }}{% endblock %}
 
 {% block content %}
-<div class="space-y-8">
-    <!-- Encabezado -->
-    <div class="flex justify-between items-center">
-        <div class="flex items-center space-x-4">
-            <h2 class="text-2xl text-white font-medium">{{ calculadora.nombre }}</h2>
-            <a href="{% url 'forgeapp:client_detail' calculadora.client.pk %}" 
-               class="glass-btn px-3 py-1.5 text-sm hover:text-forge-bright">
-                Cliente: {{ calculadora.client.name }}
-            </a>
-            {% if calculadora.application %}
-            <a href="{% url 'forgeapp:application_detail' calculadora.application.pk %}" 
-               class="glass-btn px-3 py-1.5 text-sm hover:text-forge-bright">
-                App: {{ calculadora.application.name }}
-            </a>
-            {% endif %}
+<!-- Header con acciones -->
+<div class="flex justify-between items-center mb-6">
+    <div class="flex items-center space-x-3">
+        <a href="{% url 'forgeapp:client_detail' calculadora.client.pk %}"
+           class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary-50 text-primary-700 hover:bg-primary-100 transition-colors">
+            <i class="fas fa-user mr-1"></i>
+            {{ calculadora.client.name }}
+        </a>
+        {% if calculadora.application %}
+        <a href="{% url 'forgeapp:application_detail' calculadora.application.pk %}"
+           class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors">
+            <i class="fas fa-laptop-code mr-1"></i>
+            {{ calculadora.application.name }}
+        </a>
+        {% endif %}
+        <span class="text-sm text-dark-500">Creada {{ calculadora.created_at|date:"d/m/Y" }}</span>
+    </div>
+    <div class="flex items-center space-x-3">
+        <a href="{% url 'forgeapp:calculadora_pdf' calculadora.pk %}" target="_blank"
+           class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 text-dark-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors">
+            <i class="fas fa-file-pdf mr-2"></i>
+            Generar PDF
+        </a>
+        {% if calculadora.client and calculadora.client.email %}
+        <a href="{% url 'forgeapp:enviar_cotizacion_email' calculadora.pk %}"
+           class="inline-flex items-center px-4 py-2 bg-green-50 border border-green-200 text-green-700 font-semibold rounded-lg hover:bg-green-100 transition-colors">
+            <i class="fas fa-envelope mr-2"></i>
+            Enviar Cotización
+        </a>
+        {% endif %}
+        <a href="{% url 'forgeapp:calculadora_update' calculadora.pk %}"
+           class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 text-dark-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors">
+            <i class="fas fa-edit mr-2"></i>
+            Editar
+        </a>
+        <button onclick="confirmDelete()"
+                class="inline-flex items-center px-4 py-2 bg-red-50 border border-red-200 text-red-700 font-semibold rounded-lg hover:bg-red-100 transition-colors">
+            <i class="fas fa-trash-alt mr-2"></i>
+            Eliminar
+        </button>
+    </div>
+</div>
+
+<!-- Resumen Financiero -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+    <!-- Subtotal -->
+    <div class="card-premium p-6">
+        <div class="flex items-center justify-between mb-3">
+            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
+                <i class="fas fa-receipt text-white"></i>
+            </div>
         </div>
-        <div class="flex space-x-3">
-            <a href="{% url 'forgeapp:calculadora_update' calculadora.pk %}" 
-               class="glass-btn px-6 py-2.5 text-white hover:text-forge-bright">
-                Editar
-            </a>
-            <a href="{% url 'forgeapp:calculadora_pdf' calculadora.pk %}" 
-               class="glass-btn px-6 py-2.5 text-white hover:text-forge-bright"
-               target="_blank">
-                Generar PDF
-            </a>
-            {% if calculadora.client and calculadora.client.email %}
-            <a href="{% url 'forgeapp:enviar_cotizacion_email' calculadora.pk %}" 
-               class="glass-btn px-6 py-2.5 text-green-400 hover:text-green-300">
-                Enviar cotización
-            </a>
-            {% endif %}
-            <button onclick="confirmDelete()" 
-                    class="glass-btn px-6 py-2.5 text-red-400 hover:text-red-300 bg-red-900 bg-opacity-20">
-                Eliminar
-            </button>
-        </div>
+        <p class="text-sm font-medium text-dark-500 mb-1">Subtotal Items</p>
+        <h3 class="text-2xl font-display font-bold text-dark-800">{{ calculadora.get_formatted_subtotal }}</h3>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <!-- Panel de Items -->
-        <div class="lg:col-span-2">
-            <div class="glass-panel p-6">
-                <h3 class="text-white font-medium text-lg mb-6">Items</h3>
-                
-                <!-- Formulario de nuevo item -->
-                <form method="post" class="mb-8 space-y-4">
-                    {% csrf_token %}
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label class="block text-forge-bright text-sm font-medium mb-2">Descripción</label>
-                            {{ item_form.descripcion }}
-                        </div>
-                        <div>
-                            <label class="block text-forge-bright text-sm font-medium mb-2">Cantidad</label>
-                            {{ item_form.cantidad }}
-                        </div>
-                        <div>
-                            <label class="block text-forge-bright text-sm font-medium mb-2">Precio Unitario</label>
-                            {{ item_form.precio_unitario }}
-                        </div>
-                    </div>
-                    <div class="flex justify-end">
-                        <button type="submit" 
-                                class="glass-btn px-6 py-2.5 text-white hover:text-forge-bright">
-                            Agregar Item
-                        </button>
-                    </div>
-                </form>
+    <!-- Margen -->
+    <div class="card-premium p-6">
+        <div class="flex items-center justify-between mb-3">
+            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center">
+                <i class="fas fa-percentage text-white"></i>
+            </div>
+        </div>
+        <p class="text-sm font-medium text-dark-500 mb-1">Margen Ganancia</p>
+        <h3 class="text-2xl font-display font-bold text-dark-800">{{ calculadora.margen }}%</h3>
+    </div>
 
-                <!-- Lista de items -->
-                <div class="overflow-x-auto">
-                    <table class="w-full">
-                        <thead>
-                            <tr class="border-b border-forge-light border-opacity-10">
-                                <th class="p-4 text-left text-white font-medium">Descripción</th>
-                                <th class="p-4 text-right text-white font-medium">Cantidad</th>
-                                <th class="p-4 text-right text-white font-medium">Precio Unit.</th>
-                                <th class="p-4 text-right text-white font-medium">Subtotal</th>
-                                <th class="p-4 text-center text-white font-medium">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for item in items %}
-                            <tr class="border-b border-forge-light border-opacity-5">
-                                <td class="p-4 text-white">{{ item.descripcion }}</td>
-                                <td class="p-4 text-white text-right">{{ item.cantidad }}</td>
-                                <td class="p-4 text-white text-right">${{ item.precio_unitario|formato_cl:calculadora.client }}</td>
-                                <td class="p-4 text-white text-right">${{ item.subtotal|formato_cl:calculadora.client }}</td>
-                                <td class="p-4 text-center">
-                                    <button onclick="confirmDeleteItem('{{ item.pk }}')"
-                                            class="glass-btn px-4 py-1.5 text-red-400 hover:text-red-300 bg-red-900 bg-opacity-20">
-                                        Eliminar
-                                    </button>
-                                </td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="5" class="p-4 text-white text-center opacity-60">
-                                    No hay items agregados
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+    <!-- Total Anual -->
+    <div class="card-premium p-6">
+        <div class="flex items-center justify-between mb-3">
+            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
+                <i class="fas fa-calendar-alt text-white"></i>
+            </div>
+        </div>
+        <p class="text-sm font-medium text-dark-500 mb-1">Total Anual</p>
+        <h3 class="text-2xl font-display font-bold text-dark-800">{{ calculadora.get_formatted_total_anual }}</h3>
+    </div>
+
+    <!-- Cuota Mensual -->
+    <div class="card-premium p-6">
+        <div class="flex items-center justify-between mb-3">
+            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center">
+                <i class="fas fa-money-bill-wave text-white"></i>
+            </div>
+        </div>
+        <p class="text-sm font-medium text-dark-500 mb-1">Cuota Mensual</p>
+        <h3 class="text-2xl font-display font-bold text-dark-800">{{ calculadora.get_formatted_cuota_mensual }}</h3>
+    </div>
+</div>
+
+<!-- Items y Detalles -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Items -->
+    <div class="lg:col-span-2 card-premium p-6">
+        <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-100">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center">
+                    <i class="fas fa-list text-white"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-display font-bold text-dark-800">Items del Proyecto</h3>
+                    <p class="text-sm text-dark-500">{{ items|length }} item{{ items|length|pluralize:"s" }}</p>
                 </div>
             </div>
         </div>
 
-        <!-- Panel de Totales -->
-        <div class="glass-panel p-6">
-            <h3 class="text-white font-medium text-lg mb-6">Resumen</h3>
-            <div class="space-y-6">
-                <!-- Subtotal de Items -->
-                <div class="glass-panel p-4 mb-4">
-                    <label class="block text-forge-bright text-sm font-medium mb-2">{{ calculadora|verbose_name:'subtotal' }}</label>
-                    <div class="text-white text-2xl font-bold">${{ calculadora.subtotal|formato_cl:calculadora.client }}</div>
+        <!-- Formulario para agregar item -->
+        <form method="post" class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+            {% csrf_token %}
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div>
+                    <label class="block text-xs font-semibold text-dark-700 mb-1">Descripción</label>
+                    {{ item_form.descripcion }}
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-dark-700 mb-1">Cantidad</label>
+                    {{ item_form.cantidad }}
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-dark-700 mb-1">Precio Unitario</label>
+                    {{ item_form.precio_unitario }}
+                </div>
+            </div>
+            <button type="submit"
+                    class="w-full px-4 py-2 bg-primary-400 text-white font-semibold rounded-lg hover:bg-primary-600 transition-colors">
+                <i class="fas fa-plus mr-2"></i>Agregar Item
+            </button>
+        </form>
+
+        <!-- Lista de items -->
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-dark-600 uppercase">Descripción</th>
+                        <th class="px-4 py-3 text-right text-xs font-semibold text-dark-600 uppercase">Cant.</th>
+                        <th class="px-4 py-3 text-right text-xs font-semibold text-dark-600 uppercase">P. Unit.</th>
+                        <th class="px-4 py-3 text-right text-xs font-semibold text-dark-600 uppercase">Subtotal</th>
+                        <th class="px-4 py-3 text-center text-xs font-semibold text-dark-600 uppercase">Acción</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    {% for item in items %}
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="px-4 py-3 text-sm text-dark-800">{{ item.descripcion }}</td>
+                        <td class="px-4 py-3 text-sm text-dark-600 text-right">{{ item.cantidad }}</td>
+                        <td class="px-4 py-3 text-sm text-dark-600 text-right">{{ item.get_formatted_precio_unitario }}</td>
+                        <td class="px-4 py-3 text-sm font-semibold text-dark-800 text-right">{{ item.get_formatted_subtotal }}</td>
+                        <td class="px-4 py-3 text-center">
+                            <button onclick="confirmDeleteItem('{{ item.pk }}')"
+                                    class="text-red-600 hover:text-red-700 transition-colors">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="px-4 py-8 text-center text-dark-500">
+                            <i class="fas fa-inbox text-3xl text-gray-300 mb-2"></i>
+                            <p>No hay items agregados</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Información Adicional -->
+    <div class="space-y-6">
+        <!-- Configuración -->
+        <div class="card-premium p-6">
+            <div class="flex items-center space-x-3 mb-4 pb-4 border-b border-gray-100">
+                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-400 to-violet-600 flex items-center justify-center">
+                    <i class="fas fa-cog text-white"></i>
+                </div>
+                <h3 class="text-lg font-display font-bold text-dark-800">Configuración</h3>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-dark-500 uppercase tracking-wider mb-1">Margen de Ganancia</label>
+                    <p class="text-sm text-dark-800 font-medium">{{ calculadora.margen }}%</p>
                 </div>
 
-                <!-- Cálculo con Margen -->
-                <div class="glass-panel p-4 mb-4">
-                    <div class="mb-4">
-                        <label class="block text-forge-bright text-sm font-medium mb-2">
-                            Margen de Ganancia ({{ calculadora.margen }}%)
-                        </label>
-                        <div class="text-white text-lg">
-                            + ${{ calculadora.subtotal|mul:calculadora.margen|div:100|formato_cl:calculadora.client }}
-                        </div>
-                    </div>
+                <div>
+                    <label class="block text-xs font-semibold text-dark-500 uppercase tracking-wider mb-1">Descuento Anual</label>
+                    <p class="text-sm text-dark-800 font-medium">{{ calculadora.descuento }}%</p>
                 </div>
 
-                <!-- Opciones de Pago -->
-                <div class="glass-panel p-4 mb-4">
-                    <h4 class="text-forge-bright font-medium mb-4">Formas de Pago</h4>
-                    
-                    <!-- Pago Mensual -->
-                    <div class="mb-4">
-                        <label class="block text-forge-bright text-sm font-medium mb-2">
-                            12 Cuotas de:
-                        </label>
-                        <div class="text-white text-2xl">${{ calculadora.cuota_mensual|formato_cl:calculadora.client }}</div>
-                        <div class="text-forge-bright text-sm mt-1">
-                            Total: ${{ calculadora.cuota_mensual|mul:12|formato_cl:calculadora.client }}
-                        </div>
-                    </div>
-
-                    <!-- Pago Anual -->
-                    <div class="pt-4 border-t border-forge-light border-opacity-10">
-                        <label class="block text-forge-bright text-sm font-medium mb-2">
-                            Pago Anual Anticipado
-                            {% if calculadora.descuento > 0 %}
-                            <span class="text-sm opacity-70">({{ calculadora.descuento }}% descuento)</span>
-                            {% endif %}
-                        </label>
-                        <div class="text-white text-3xl font-bold">${{ calculadora.total_anual|formato_cl:calculadora.client }}</div>
-                    </div>
+                {% if calculadora.costo_mercado %}
+                <div>
+                    <label class="block text-xs font-semibold text-dark-500 uppercase tracking-wider mb-1">Costo de Mercado</label>
+                    <p class="text-sm text-dark-800 font-medium">{{ calculadora.get_formatted_costo_mercado }}</p>
                 </div>
+                {% endif %}
 
-                <!-- Botón para generar/actualizar suscripciones -->
-                <div class="mt-6">
-                    <button onclick="showGenerateSubscriptionsModal()" 
-                            class="glass-btn w-full px-6 py-3 text-white hover:text-forge-bright">
-                        {% if calculadora.subscriptions.exists %}
-                            Actualizar Suscripciones
-                        {% else %}
-                            Generar Suscripciones
-                        {% endif %}
-                    </button>
+                <div>
+                    <label class="block text-xs font-semibold text-dark-500 uppercase tracking-wider mb-1">Moneda</label>
+                    <p class="text-sm text-dark-800 font-medium">{{ calculadora.get_currency_display }}</p>
                 </div>
+            </div>
+        </div>
+
+        <!-- Notas -->
+        {% if calculadora.notas %}
+        <div class="card-premium p-6">
+            <div class="flex items-center space-x-3 mb-4 pb-4 border-b border-gray-100">
+                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
+                    <i class="fas fa-sticky-note text-white"></i>
+                </div>
+                <h3 class="text-lg font-display font-bold text-dark-800">Notas</h3>
+            </div>
+            <p class="text-sm text-dark-700 whitespace-pre-wrap">{{ calculadora.notas }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Crear Suscripción -->
+        <div class="card-premium p-6 bg-gradient-to-br from-green-50 to-emerald-50">
+            <div class="text-center">
+                <i class="fas fa-magic text-3xl text-green-600 mb-3"></i>
+                <h4 class="text-sm font-semibold text-dark-800 mb-2">¿Listo para convertir en suscripción?</h4>
+                <p class="text-xs text-dark-600 mb-4">Genera suscripciones automáticamente desde esta calculadora</p>
+                <button onclick="openSubscriptionModal()"
+                        class="w-full px-4 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors">
+                    <i class="fas fa-plus-circle mr-2"></i>Crear Suscripción
+                </button>
             </div>
         </div>
     </div>
 </div>
 
 <!-- Modal de confirmación de eliminación de calculadora -->
-<div id="deleteModal" class="hidden fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center">
-    <div class="glass-panel p-6 max-w-md">
-        <h3 class="text-white font-medium text-lg mb-4">Confirmar Eliminación</h3>
-        <p class="text-white opacity-80 mb-6">¿Estás seguro de que deseas eliminar esta calculadora? Esta acción no se puede deshacer.</p>
-        <form action="{% url 'forgeapp:calculadora_delete' calculadora.pk %}" method="post" 
-              class="flex justify-end space-x-4">
+<div id="deleteModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+        <div class="flex items-center space-x-3 mb-4">
+            <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
+            </div>
+            <h3 class="text-lg font-display font-bold text-dark-800">Confirmar Eliminación</h3>
+        </div>
+        <p class="text-dark-600 mb-6">¿Estás seguro de que deseas eliminar esta calculadora? Se eliminarán todos los items asociados.</p>
+        <form action="{% url 'forgeapp:calculadora_delete' calculadora.pk %}" method="post" class="flex justify-end space-x-3">
             {% csrf_token %}
-            <button type="button" onclick="closeDeleteModal()" 
-                    class="glass-btn px-6 py-2 text-white hover:text-forge-bright opacity-80 hover:opacity-100">
+            <button type="button" onclick="closeDeleteModal()"
+                    class="px-4 py-2 border border-gray-300 text-dark-600 font-semibold rounded-lg hover:bg-gray-50 transition-colors">
                 Cancelar
             </button>
-            <button type="submit" 
-                    class="glass-btn px-6 py-2 text-red-400 hover:text-red-300 bg-red-900 bg-opacity-20">
+            <button type="submit"
+                    class="px-4 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors">
                 Eliminar
             </button>
         </form>
@@ -201,62 +264,105 @@
 </div>
 
 <!-- Modal de confirmación de eliminación de item -->
-<div id="deleteItemModal" class="hidden fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center">
-    <div class="glass-panel p-6 max-w-md">
-        <h3 class="text-white font-medium text-lg mb-4">Confirmar Eliminación de Item</h3>
-        <p class="text-white opacity-80 mb-6">¿Estás seguro de que deseas eliminar este item?</p>
-        <form id="deleteItemForm" method="post" class="flex justify-end space-x-4">
+<div id="deleteItemModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+        <div class="flex items-center space-x-3 mb-4">
+            <div class="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
+                <i class="fas fa-trash-alt text-amber-600 text-xl"></i>
+            </div>
+            <h3 class="text-lg font-display font-bold text-dark-800">Eliminar Item</h3>
+        </div>
+        <p class="text-dark-600 mb-6">¿Eliminar este item de la calculadora?</p>
+        <form id="deleteItemForm" method="post" class="flex justify-end space-x-3">
             {% csrf_token %}
-            <button type="button" onclick="closeDeleteItemModal()" 
-                    class="glass-btn px-6 py-2 text-white hover:text-forge-bright opacity-80 hover:opacity-100">
+            <button type="button" onclick="closeDeleteItemModal()"
+                    class="px-4 py-2 border border-gray-300 text-dark-600 font-semibold rounded-lg hover:bg-gray-50 transition-colors">
                 Cancelar
             </button>
-            <button type="submit" 
-                    class="glass-btn px-6 py-2 text-red-400 hover:text-red-300 bg-red-900 bg-opacity-20">
+            <button type="submit"
+                    class="px-4 py-2 bg-amber-600 text-white font-semibold rounded-lg hover:bg-amber-700 transition-colors">
                 Eliminar
             </button>
         </form>
     </div>
 </div>
 
-<!-- Modal para generar suscripciones -->
-<div id="generateSubscriptionsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center">
-    <div class="glass-panel p-6 max-w-md">
-        <h3 class="text-white font-medium text-lg mb-4">
-            {% if calculadora.subscriptions.exists %}
-                Actualizar Suscripciones
-            {% else %}
-                Generar Suscripciones
-            {% endif %}
-        </h3>
-        <form action="{% url 'forgeapp:generar_suscripciones' calculadora.pk %}" method="post" class="space-y-4">
+<!-- Modal para crear suscripción -->
+<div id="subscriptionModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+        <div class="flex items-center space-x-3 mb-4">
+            <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+                <i class="fas fa-plus-circle text-green-600 text-xl"></i>
+            </div>
+            <h3 class="text-lg font-display font-bold text-dark-800">Crear Suscripción</h3>
+        </div>
+        <p class="text-dark-600 mb-4">Selecciona el tipo de suscripción que deseas crear:</p>
+
+        <form action="{% url 'forgeapp:generar_suscripciones' calculadora.pk %}" method="post">
             {% csrf_token %}
-            <div>
-                <label class="block text-forge-bright text-sm font-medium mb-2">
-                    Fecha de Inicio
-                </label>
-                <input type="date" name="start_date" required
-                       class="w-full bg-opacity-30 focus:bg-opacity-40 backdrop-blur-md">
+
+            <div class="space-y-4 mb-6">
+                <div>
+                    <label class="block text-sm font-semibold text-dark-700 mb-3">
+                        <i class="fas fa-list mr-1 text-primary-600"></i>
+                        Tipo de Suscripción
+                    </label>
+                    <div class="space-y-2">
+                        <label class="flex items-center p-3 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer">
+                            <input type="radio" name="subscription_type" value="both" checked
+                                   class="w-4 h-4 text-primary-600 border-gray-300 focus:ring-primary-500">
+                            <span class="ml-3 flex-1">
+                                <span class="block text-sm font-medium text-dark-800">Ambas (Mensual y Anual)</span>
+                                <span class="block text-xs text-dark-500">
+                                    Mensual: {{ calculadora.get_formatted_cuota_mensual }} |
+                                    Anual: {{ calculadora.get_formatted_total_anual }}
+                                </span>
+                            </span>
+                        </label>
+                        <label class="flex items-center p-3 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer">
+                            <input type="radio" name="subscription_type" value="monthly"
+                                   class="w-4 h-4 text-primary-600 border-gray-300 focus:ring-primary-500">
+                            <span class="ml-3 flex-1">
+                                <span class="block text-sm font-medium text-dark-800">Solo Mensual</span>
+                                <span class="block text-xs text-dark-500">{{ calculadora.get_formatted_cuota_mensual }}/mes</span>
+                            </span>
+                        </label>
+                        <label class="flex items-center p-3 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer">
+                            <input type="radio" name="subscription_type" value="annual"
+                                   class="w-4 h-4 text-primary-600 border-gray-300 focus:ring-primary-500">
+                            <span class="ml-3 flex-1">
+                                <span class="block text-sm font-medium text-dark-800">Solo Anual</span>
+                                <span class="block text-xs text-dark-500">{{ calculadora.get_formatted_total_anual }}/año</span>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="flex items-center p-3 bg-gray-50 rounded-lg">
+                    <input type="checkbox" name="auto_renewal" id="auto_renewal" checked
+                           class="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500">
+                    <label for="auto_renewal" class="ml-2 text-sm text-dark-700">
+                        <i class="fas fa-sync-alt mr-1 text-green-600"></i>
+                        Habilitar renovación automática
+                    </label>
+                </div>
             </div>
-            <div class="flex items-center space-x-2">
-                <input type="checkbox" name="auto_renewal" id="auto_renewal"
-                       class="bg-opacity-30 focus:bg-opacity-40 backdrop-blur-md">
-                <label for="auto_renewal" class="text-white">
-                    Habilitar Autorenovación
-                </label>
+
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                <p class="text-xs text-blue-800">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Las suscripciones se crearán en estado PENDIENTE. La fecha de inicio se asignará cuando las actives.
+                </p>
             </div>
-            <div class="flex justify-end space-x-4 mt-6">
-                <button type="button" onclick="closeGenerateSubscriptionsModal()" 
-                        class="glass-btn px-6 py-2 text-white hover:text-forge-bright opacity-80 hover:opacity-100">
+
+            <div class="flex justify-end space-x-3">
+                <button type="button" onclick="closeSubscriptionModal()"
+                        class="px-4 py-2 border border-gray-300 text-dark-600 font-semibold rounded-lg hover:bg-gray-50 transition-colors">
                     Cancelar
                 </button>
-                <button type="submit" 
-                        class="glass-btn px-6 py-2 text-forge-bright hover:text-white bg-forge-primary bg-opacity-20">
-                    {% if calculadora.subscriptions.exists %}
-                        Actualizar
-                    {% else %}
-                        Generar
-                    {% endif %}
+                <button type="submit"
+                        class="px-4 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors">
+                    <i class="fas fa-check mr-2"></i>Crear Suscripción
                 </button>
             </div>
         </form>
@@ -266,15 +372,6 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
-function showGenerateSubscriptionsModal() {
-    document.getElementById('generateSubscriptionsModal').classList.remove('hidden');
-}
-
-function closeGenerateSubscriptionsModal() {
-    document.getElementById('generateSubscriptionsModal').classList.add('hidden');
-}
-</script>
 <script>
 function confirmDelete() {
     document.getElementById('deleteModal').classList.remove('hidden');
@@ -286,11 +383,19 @@ function closeDeleteModal() {
 
 function confirmDeleteItem(itemId) {
     document.getElementById('deleteItemModal').classList.remove('hidden');
-    document.getElementById('deleteItemForm').action = "{% url 'forgeapp:item_delete' 0 %}".replace('0', itemId);
+    document.getElementById('deleteItemForm').action = `/calculadoras/item/${itemId}/delete/`;
 }
 
 function closeDeleteItemModal() {
     document.getElementById('deleteItemModal').classList.add('hidden');
+}
+
+function openSubscriptionModal() {
+    document.getElementById('subscriptionModal').classList.remove('hidden');
+}
+
+function closeSubscriptionModal() {
+    document.getElementById('subscriptionModal').classList.add('hidden');
 }
 </script>
 {% endblock %}

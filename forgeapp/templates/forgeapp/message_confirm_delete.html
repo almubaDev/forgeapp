@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block title %}Eliminar Mensaje - ForgeApp{% endblock %}
+{% block page_title %}Eliminar Mensaje{% endblock %}
+{% block page_subtitle %}Confirmar eliminación del mensaje{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto">
+    <div class="card-premium p-8 text-center">
+        <div class="w-20 h-20 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-6">
+            <i class="fas fa-exclamation-triangle text-red-600 text-3xl"></i>
+        </div>
+
+        <h3 class="text-2xl font-display font-bold text-dark-800 mb-3">¿Eliminar este mensaje?</h3>
+        <p class="text-dark-500 mb-6">
+            Estás a punto de eliminar el mensaje de <strong>{{ contact_message.name }}</strong>.
+            Esta acción no se puede deshacer.
+        </p>
+
+        <div class="bg-gray-50 rounded-xl p-4 mb-6 text-left">
+            <p class="text-sm text-dark-600">
+                <strong>De:</strong> {{ contact_message.name }} ({{ contact_message.email }})<br>
+                <strong>Fecha:</strong> {{ contact_message.created_at|date:"d/m/Y H:i" }}<br>
+                <strong>Mensaje:</strong> {{ contact_message.message|truncatewords:20 }}
+            </p>
+        </div>
+
+        <div class="flex space-x-4">
+            <a href="{% url 'forgeapp:message_detail' contact_message.pk %}"
+               class="flex-1 px-6 py-3 border border-gray-300 text-dark-600 font-semibold rounded-xl hover:bg-gray-50 transition-colors">
+                Cancelar
+            </a>
+            <form action="{% url 'forgeapp:message_delete' contact_message.pk %}" method="post" class="flex-1">
+                {% csrf_token %}
+                <button type="submit"
+                        class="w-full px-6 py-3 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 transition-colors">
+                    <i class="fas fa-trash-alt mr-2"></i>
+                    Eliminar
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

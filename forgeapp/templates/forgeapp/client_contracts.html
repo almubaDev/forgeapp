@@ -1,101 +1,330 @@
-<!-- templates/forgeapp/client_contracts.html -->
 {% extends 'base.html' %}
+{% load forgeapp_extras %}
 
 {% block title %}Contratos de {{ client.name }}{% endblock %}
-
-{% block window_title %}Contratos Firmados: {{ client.name }}{% endblock %}
+{% block page_title %}Contratos de Servicio{% endblock %}
+{% block page_subtitle %}Gestión de contratos de {{ client.name }}{% endblock %}
 
 {% block content %}
-<div class="space-y-8">
-    <div class="flex justify-between items-center">
-        <div class="flex items-center space-x-4">
-            <h2 class="text-2xl text-white font-medium">Contratos Firmados</h2>
-            <span class="glass-btn px-3 py-1.5 text-sm text-green-400 bg-green-900 bg-opacity-20">
-                {{ contracts|length }} Contrato{{ contracts|length|pluralize }}
-            </span>
-        </div>
-        <div class="flex space-x-3">
-            <a href="{% url 'forgeapp:client_detail' client.pk %}" 
-               class="glass-btn px-6 py-2.5 text-white hover:text-forge-bright">
-                Volver al Cliente
-            </a>
+<!-- Header con acciones -->
+<div class="flex justify-between items-center mb-6">
+    <div class="flex items-center space-x-3">
+        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
+            {% if client.contract_status == 'accepted' %}bg-green-100 text-green-800
+            {% elif client.contract_status == 'pending' %}bg-yellow-100 text-yellow-800
+            {% elif client.contract_status == 'rejected' %}bg-red-100 text-red-800
+            {% else %}bg-gray-100 text-gray-800{% endif %}">
+            {{ client.get_contract_status_display }}
+        </span>
+        <p class="text-sm text-dark-500">{{ contracts|length }} contrato{{ contracts|length|pluralize:"s" }}</p>
+    </div>
+    <div class="flex items-center space-x-3">
+        <a href="{% url 'forgeapp:service_contract' client.pk %}"
+           class="inline-flex items-center px-4 py-2 bg-primary-400 text-white font-semibold rounded-lg hover:bg-primary-600 transition-colors">
+            <i class="fas fa-plus mr-2"></i>
+            Nuevo Contrato
+        </a>
+        <a href="{% url 'forgeapp:client_detail' client.pk %}"
+           class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 text-dark-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors">
+            <i class="fas fa-arrow-left mr-2"></i>
+            Volver
+        </a>
+    </div>
+</div>
+
+<!-- Stats cards -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+    <div class="card-premium p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-dark-500 mb-1">Total Contratos</p>
+                <p class="text-3xl font-display font-bold text-dark-800">{{ contracts|length }}</p>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center">
+                <i class="fas fa-file-contract text-white text-xl"></i>
+            </div>
         </div>
     </div>
 
-    <!-- Información del Cliente -->
-    <div class="glass-panel p-6">
-        <h3 class="text-white font-medium text-lg mb-6">Cliente</h3>
-        <dl class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="card-premium p-6">
+        <div class="flex items-center justify-between">
             <div>
-                <dt class="text-forge-bright text-sm font-medium mb-1">Nombre</dt>
-                <dd class="text-white opacity-90">{{ client.name }}</dd>
+                <p class="text-sm font-medium text-dark-500 mb-1">Pendientes</p>
+                <p class="text-3xl font-display font-bold text-yellow-600">
+                    {% with pending=0 %}
+                        {% for c in contracts %}{% if c.status == 'pending' %}{% with pending=pending|add:1 %}{% endwith %}{% endif %}{% endfor %}
+                        {{ pending_count }}
+                    {% endwith %}
+                </p>
             </div>
-            
-            <div>
-                <dt class="text-forge-bright text-sm font-medium mb-1">RUT</dt>
-                <dd class="text-white opacity-90">{{ client.rut }}</dd>
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center">
+                <i class="fas fa-clock text-white text-xl"></i>
             </div>
-            
-            <div>
-                <dt class="text-forge-bright text-sm font-medium mb-1">Email</dt>
-                <dd class="text-white opacity-90">{{ client.email }}</dd>
-            </div>
-        </dl>
+        </div>
     </div>
 
-    <!-- Lista de Contratos -->
-    <div class="glass-panel p-6">
-        <h3 class="text-white font-medium text-lg mb-6">Contratos Firmados</h3>
-        <div class="overflow-x-auto">
-            <table class="w-full">
-                <thead>
-                    <tr class="border-b border-forge-light border-opacity-10">
-                        <th class="p-4 text-left text-white font-medium">Aplicación</th>
-                        <th class="p-4 text-left text-white font-medium">Tipo</th>
-                        <th class="p-4 text-left text-white font-medium">Precio</th>
-                        <th class="p-4 text-left text-white font-medium">Fecha de Firma</th>
-                        <th class="p-4 text-left text-white font-medium">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for contract in contracts %}
-                    <tr class="border-b border-forge-light border-opacity-5 hover:bg-forge-primary hover:bg-opacity-5 transition-colors">
-                        <td class="p-4 text-white">
-                            <a href="{% url 'forgeapp:application_detail' contract.application.pk %}" 
-                               class="hover:text-forge-bright transition-colors">
-                                {{ contract.application.name }}
-                            </a>
-                        </td>
-                        <td class="p-4">
-                            <span class="glass-btn px-3 py-1 text-sm
-                                {% if contract.subscription_type == 'Mensual' %}text-blue-400 bg-blue-900 bg-opacity-20
-                                {% else %}text-purple-400 bg-purple-900 bg-opacity-20{% endif %}">
-                                {{ contract.subscription_type }}
-                            </span>
-                        </td>
-                        <td class="p-4">
-                            <span class="px-3 py-1 rounded-full bg-forge-primary bg-opacity-20 backdrop-blur-sm text-white">
-                                ${{ contract.price|default:"0"|stringformat:"d"|slice:"-3:" }}
-                            </span>
-                        </td>
-                        <td class="p-4 text-white">{{ contract.used_at|date:"d/m/Y H:i" }}</td>
-                        <td class="p-4">
-                            <div class="flex space-x-3">
-                                <a href="{% url 'forgeapp:view_client_contract' client.pk contract.token.id %}" 
-                                   class="glass-btn px-4 py-1.5 text-white hover:text-forge-bright" title="Ver Contrato">
-                                    <i class="fas fa-file-signature"></i> Ver
-                                </a>
-                            </div>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="5" class="p-4 text-white text-center opacity-60">No hay contratos firmados</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <div class="card-premium p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-dark-500 mb-1">Firmados</p>
+                <p class="text-3xl font-display font-bold text-green-600">{{ signed_count }}</p>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center">
+                <i class="fas fa-check-circle text-white text-xl"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="card-premium p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-dark-500 mb-1">Expirados</p>
+                <p class="text-3xl font-display font-bold text-red-600">{{ expired_count }}</p>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center">
+                <i class="fas fa-times-circle text-white text-xl"></i>
+            </div>
         </div>
     </div>
 </div>
+
+<!-- Lista de contratos -->
+<div class="card-premium overflow-hidden">
+    <div class="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
+                <i class="fas fa-file-signature text-white"></i>
+            </div>
+            <div>
+                <h3 class="text-lg font-display font-bold text-dark-800">Contratos</h3>
+                <p class="text-sm text-dark-500">Lista de todos los contratos generados</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead class="bg-gray-50 border-b border-gray-200">
+                <tr>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-dark-600 uppercase tracking-wider">Aplicación</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-dark-600 uppercase tracking-wider">Tipo</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-dark-600 uppercase tracking-wider">Precio</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-dark-600 uppercase tracking-wider">Estado</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-dark-600 uppercase tracking-wider">Código</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-dark-600 uppercase tracking-wider">Expira</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-dark-600 uppercase tracking-wider">Acciones</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for contract in contracts %}
+                <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="px-6 py-4">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 rounded-lg bg-primary-100 flex items-center justify-center mr-3">
+                                <i class="fas fa-cube text-primary-600"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-semibold text-dark-800">{{ contract.application.name }}</p>
+                                <p class="text-xs text-dark-500">{{ contract.created_at|date:"d/m/Y H:i" }}</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                            {% if contract.subscription_type == 'monthly' %}bg-blue-100 text-blue-800
+                            {% else %}bg-purple-100 text-purple-800{% endif %}">
+                            {% if contract.subscription_type == 'monthly' %}Mensual{% else %}Anual{% endif %}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="text-sm font-semibold text-dark-800">{{ contract.get_formatted_price }}</span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium
+                            {% if contract.status == 'signed' %}bg-green-100 text-green-800
+                            {% elif contract.status == 'pending' %}bg-yellow-100 text-yellow-800
+                            {% else %}bg-red-100 text-red-800{% endif %}">
+                            <i class="fas {% if contract.status == 'signed' %}fa-check-circle{% elif contract.status == 'pending' %}fa-clock{% else %}fa-times-circle{% endif %} mr-1"></i>
+                            {{ contract.get_status_display }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4">
+                        {% if contract.status == 'pending' %}
+                        <div class="flex items-center space-x-2">
+                            <code class="px-2 py-1 bg-gray-100 text-dark-800 font-mono text-sm rounded">{{ contract.authorization_code }}</code>
+                            <button onclick="copyCode('{{ contract.authorization_code }}')" class="p-1 text-dark-400 hover:text-primary-600" title="Copiar código">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                        {% else %}
+                        <span class="text-sm text-dark-400">-</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4">
+                        {% if contract.status == 'pending' %}
+                        <span class="text-sm text-dark-600">{{ contract.expires_at|date:"d/m/Y H:i" }}</span>
+                        {% elif contract.status == 'signed' %}
+                        <span class="text-sm text-green-600">Firmado {{ contract.signed_at|date:"d/m/Y" }}</span>
+                        {% else %}
+                        <span class="text-sm text-red-600">Expirado</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center space-x-2">
+                            {% if contract.status == 'pending' %}
+                            <button onclick="copyLink('{{ request.scheme }}://{{ request.get_host }}{% url 'forgeapp:public_contract' contract.token %}')"
+                                    class="p-2 text-dark-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all"
+                                    title="Copiar link público">
+                                <i class="fas fa-link"></i>
+                            </button>
+                            {% endif %}
+                            {% if contract.status == 'signed' and contract.signed_pdf %}
+                            <a href="{% url 'forgeapp:download_contract_pdf' client.pk contract.id %}"
+                               class="p-2 text-dark-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all"
+                               title="Descargar PDF firmado">
+                                <i class="fas fa-file-pdf"></i>
+                            </a>
+                            {% endif %}
+                            <a href="{% url 'forgeapp:public_contract' contract.token %}"
+                               target="_blank"
+                               class="p-2 text-dark-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                               title="Ver contrato">
+                                <i class="fas fa-external-link-alt"></i>
+                            </a>
+                            <button onclick="confirmDeleteContract('{{ contract.id }}', '{{ contract.application.name }}')"
+                                    class="p-2 text-dark-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                                    title="Eliminar contrato">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="px-6 py-12">
+                        <div class="text-center">
+                            <i class="fas fa-file-contract text-5xl text-gray-200 mb-4"></i>
+                            <p class="text-dark-500 font-medium">No hay contratos generados</p>
+                            <p class="text-sm text-dark-400 mt-1">Genera un nuevo contrato para este cliente</p>
+                            <a href="{% url 'forgeapp:service_contract' client.pk %}"
+                               class="inline-flex items-center mt-4 px-4 py-2 bg-primary-400 text-white text-sm font-semibold rounded-lg hover:bg-primary-600 transition-colors">
+                                <i class="fas fa-plus mr-2"></i>
+                                Nuevo Contrato
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal de confirmación de eliminación con contraseña -->
+<div id="deleteContractModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 transform transition-all">
+        <div class="flex items-center space-x-3 mb-4">
+            <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
+            </div>
+            <div>
+                <h3 class="text-lg font-display font-bold text-dark-800">Eliminar Contrato</h3>
+                <p class="text-sm text-dark-500" id="contractAppName"></p>
+            </div>
+        </div>
+
+        <p class="text-dark-600 mb-4">Esta acción eliminará permanentemente el contrato. Para confirmar, ingresa tu contraseña:</p>
+
+        <form id="deleteContractForm" method="post" class="space-y-4">
+            {% csrf_token %}
+            <div>
+                <label for="password" class="block text-sm font-medium text-dark-700 mb-1">Contraseña</label>
+                <input type="password"
+                       name="password"
+                       id="deletePassword"
+                       required
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-transparent"
+                       placeholder="Ingresa tu contraseña">
+                <p id="passwordError" class="hidden text-sm text-red-600 mt-1">Contraseña incorrecta</p>
+            </div>
+
+            <div class="flex justify-end space-x-3 pt-2">
+                <button type="button" onclick="closeDeleteContractModal()"
+                        class="px-4 py-2 border border-gray-300 text-dark-600 font-semibold rounded-lg hover:bg-gray-50 transition-colors">
+                    Cancelar
+                </button>
+                <button type="submit"
+                        class="px-4 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors">
+                    Eliminar Contrato
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Toast de copiado -->
+<div id="copyToast" class="fixed bottom-4 right-4 bg-dark-800 text-white px-4 py-2 rounded-lg shadow-lg hidden transition-all transform translate-y-2 opacity-0">
+    <i class="fas fa-check-circle mr-2 text-green-400"></i>
+    <span id="copyToastText">Copiado al portapapeles</span>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentContractId = null;
+
+function confirmDeleteContract(contractId, appName) {
+    currentContractId = contractId;
+    document.getElementById('contractAppName').textContent = 'Contrato: ' + appName;
+    document.getElementById('deleteContractForm').action = "{% url 'forgeapp:delete_contract' client.pk 0 %}".replace('/0/', '/' + contractId + '/');
+    document.getElementById('deletePassword').value = '';
+    document.getElementById('passwordError').classList.add('hidden');
+    document.getElementById('deleteContractModal').classList.remove('hidden');
+}
+
+function closeDeleteContractModal() {
+    document.getElementById('deleteContractModal').classList.add('hidden');
+    currentContractId = null;
+}
+
+function copyCode(code) {
+    navigator.clipboard.writeText(code).then(() => {
+        showToast('Código copiado al portapapeles');
+    });
+}
+
+function copyLink(link) {
+    navigator.clipboard.writeText(link).then(() => {
+        showToast('Link copiado al portapapeles');
+    });
+}
+
+function showToast(message) {
+    const toast = document.getElementById('copyToast');
+    const toastText = document.getElementById('copyToastText');
+    toastText.textContent = message;
+    toast.classList.remove('hidden', 'translate-y-2', 'opacity-0');
+    setTimeout(() => {
+        toast.classList.add('translate-y-2', 'opacity-0');
+        setTimeout(() => {
+            toast.classList.add('hidden');
+        }, 300);
+    }, 2000);
+}
+
+// Cerrar modal con Escape
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeDeleteContractModal();
+    }
+});
+
+// Cerrar modal al hacer clic fuera
+document.getElementById('deleteContractModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeDeleteContractModal();
+    }
+});
+</script>
 {% endblock %}

@@ -125,7 +125,7 @@ class Client(models.Model):
     email = models.EmailField('Correo Electrónico')
     phone = models.CharField('Teléfono', max_length=20, blank=True)
     company = models.CharField('Empresa', max_length=200, blank=True)
-    company_rut = models.CharField('RUT Empresa', max_length=12, blank=True, validators=[validate_rut])
+    company_rut = models.CharField('RUT Empresa', max_length=12, blank=True)
     position = models.CharField('Cargo', max_length=100, blank=True)
     status = models.CharField('Estado', max_length=20, choices=STATUS_CHOICES, default='active')
     nationality = models.CharField('Nacionalidad', max_length=20, choices=NATIONALITY_CHOICES, default='chilena')
@@ -202,21 +202,86 @@ class Payment(models.Model):
         """Marca el pago como completado y actualiza las fechas de la suscripción"""
         self.status = 'completed'
         self.save()
-        
+
         # Actualizar la suscripción
         self.subscription.last_payment_date = self.payment_date
         self.subscription.update_payment_dates()
-        
+
+        return True
+
+class PaymentEvent(models.Model):
+    """
+    Modelo para eventos de pago de suscripciones.
+    Representa pagos esperados que se generan automáticamente para cada período de suscripción.
+    """
+    STATUS_CHOICES = [
+        ('pending', 'Pendiente'),
+        ('paid', 'Pagado'),
+    ]
+
+    subscription = models.ForeignKey(
+        'Subscription',
+        on_delete=models.CASCADE,
+        related_name='payment_events',
+        verbose_name='Suscripción'
+    )
+    expected_date = models.DateField('Fecha Esperada de Pago')
+    paid_date = models.DateField('Fecha de Pago Real', null=True, blank=True)
+    amount = models.DecimalField('Monto', max_digits=10, decimal_places=2)
+    status = models.CharField('Estado', max_length=20, choices=STATUS_CHOICES, default='pending')
+    notes = models.TextField('Notas', blank=True)
+    created_at = models.DateTimeField('Fecha de Creación', auto_now_add=True)
+    updated_at = models.DateTimeField('Última Actualización', auto_now=True)
+
+    class Meta:
+        verbose_name = 'Evento de Pago'
+        verbose_name_plural = 'Eventos de Pago'
+        ordering = ['-expected_date']
+
+    def __str__(self):
+        return f"Evento {self.subscription.reference_id} - {self.expected_date} ({self.get_status_display()})"
+
+    def mark_as_paid(self, paid_date=None):
+        """
+        Marca el evento como pagado y actualiza la suscripción.
+        Si auto_renewal está activo, se genera automáticamente el siguiente evento mediante signals.
+        """
+        from datetime import date
+        from dateutil.relativedelta import relativedelta
+
+        if self.status == 'paid':
+            logger.warning(f"Evento {self.id} ya está marcado como pagado")
+            return False
+
+        # Si no se proporciona fecha de pago, usar hoy
+        if paid_date is None:
+            paid_date = date.today()
+
+        self.status = 'paid'
+        self.paid_date = paid_date
+        self.save()
+
+        # Actualizar start_date de la suscripción para reflejar el nuevo período
+        subscription = self.subscription
+
+        # Calcular nueva fecha de inicio basada en la fecha esperada de este evento
+        # La nueva fecha de inicio es la fecha esperada de este pago
+        subscription.start_date = self.expected_date
+        subscription.save()
+
+        logger.info(f"Evento {self.id} marcado como pagado. Suscripción {subscription.reference_id} actualizada")
+
+        # El siguiente evento se genera automáticamente mediante signals si auto_renewal=True
         return True
 
 class Subscription(models.Model):
-    """Modelo para las suscripciones"""
+    """Modelo para las suscripciones con máquina de estados"""
     STATUS_CHOICES = [
+        ('pending', 'Pendiente'),
         ('active', 'Activa'),
         ('inactive', 'Inactiva'),
         ('cancelled', 'Cancelada'),
         ('expired', 'Expirada'),
-        ('pending', 'Pendiente'),
     ]
 
     PAYMENT_TYPE_CHOICES = [
@@ -226,11 +291,9 @@ class Subscription(models.Model):
 
     client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='subscriptions')
     application = models.ForeignKey(Application, on_delete=models.CASCADE)
-    status = models.CharField('Estado', max_length=20, choices=STATUS_CHOICES, default='inactive')
+    status = models.CharField('Estado', max_length=20, choices=STATUS_CHOICES, default='pending')
     reference_id = models.CharField('ID de Referencia', max_length=20, unique=True, default='TEMP000000')
     payment_type = models.CharField('Tipo de Pago', max_length=20, choices=PAYMENT_TYPE_CHOICES, default='monthly')
-    next_payment_date = models.DateField('Fecha Próximo Pago', null=True, blank=True)
-    last_payment_date = models.DateField('Fecha Último Pago', null=True, blank=True)
     accept_marketing = models.BooleanField('Acepta Marketing', default=False)
 
     @staticmethod
@@ -288,19 +351,19 @@ class Subscription(models.Model):
     price = models.DecimalField('Precio', max_digits=10, decimal_places=2, validators=[
         MinValueValidator(1, message='El precio debe ser mayor a 0')
     ])
-    start_date = models.DateField('Fecha de Inicio')
-    end_date = models.DateField('Fecha de Fin')
-    auto_renewal = models.BooleanField('Autorenovación', default=False)
+    start_date = models.DateField('Fecha de Inicio', null=True, blank=True)
+    auto_renewal = models.BooleanField('Autorenovación', default=True)
     renewal_notes = models.TextField('Notas de Renovación', blank=True)
+    cancelled_at = models.DateField('Fecha de Cancelación', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     # Campos para detalles de items
     items_detail = models.JSONField('Detalles de Items', default=dict, blank=True)
     calculadora = models.ForeignKey(
-        'Calculadora', 
-        on_delete=models.SET_NULL, 
-        null=True, 
+        'Calculadora',
+        on_delete=models.SET_NULL,
+        null=True,
         blank=True,
         related_name='subscriptions'
     )
@@ -312,150 +375,181 @@ class Subscription(models.Model):
 
     def __str__(self):
         return f"{self.client.name} - {self.application.name} ({self.get_payment_type_display()})"
-    
-    def has_pending_payment(self):
-        """Verifica si hay pagos pendientes para esta suscripción"""
-        return self.forgeapp_payments.filter(status='pending').exists()
 
-    def can_register_payment(self):
-        """Verifica si se puede registrar un nuevo pago"""
-        return self.status == 'active'
-        
-    def register_payment(self, amount=None, payment_date=None, notes=''):
+    @property
+    def current_period_end(self):
         """
-        Registra un nuevo pago para la suscripción.
+        Calcula dinámicamente la fecha de renovación basándose en start_date y payment_type.
+        Esta es la fecha esperada del próximo pago.
+        Retorna None si la suscripción no tiene fecha de inicio (está en PENDING).
         """
-        if amount is None:
-            amount = self.price
-            
-        if payment_date is None:
-            payment_date = timezone.now().date()
-            
-        # Crear un nuevo pago
-        payment = Payment.objects.create(
-            subscription=self,
-            amount=amount,
-            payment_date=payment_date,
-            status='completed',
-            reference=f"PAY-{self.reference_id}-{timezone.now().strftime('%Y%m%d%H%M%S')}",
-            notes=notes
-        )
-        
-        # Actualizar fechas de la suscripción
-        self.last_payment_date = payment_date
-        self.update_payment_dates()
-        self.status = 'active'  # Asegurar que la suscripción esté activa después del pago
-        self.save()
-        
-        return payment
+        from dateutil.relativedelta import relativedelta
 
-    def update_payment_dates(self):
-        """Actualiza las fechas de pago basado en el último pago"""
-        today = timezone.now().date()
-        self.last_payment_date = today
-        
-        # Calcular próxima fecha de pago
+        if not self.start_date:
+            return None
+
         if self.payment_type == 'monthly':
-            # Si es mensual, el próximo pago es en un mes
-            # Usar la fecha de inicio como referencia para mantener el mismo día del mes
-            reference_date = self.start_date
-            if self.last_payment_date:
-                # Si ya hubo un pago, usar esa fecha como referencia
-                reference_date = self.last_payment_date
-            
-            # Calcular próxima fecha manteniendo el mismo día del mes
-            # Crear una nueva fecha con el mismo día pero el mes siguiente
-            next_month = reference_date.month + 1
-            next_year = reference_date.year
-            
-            # Si el mes es diciembre, avanzar al año siguiente
-            if next_month > 12:
-                next_month = 1
-                next_year += 1
-            
-            # Obtener el último día del próximo mes
-            last_day = self._last_day_of_month(next_year, next_month)
-            
-            # Asegurarse de que el día no exceda el último día del mes
-            next_day = min(reference_date.day, last_day)
-            
-            # Crear la fecha del próximo pago
-            next_date = datetime(next_year, next_month, next_day).date()
-            
-            # Si la fecha calculada ya pasó, avanzar otro mes
-            if next_date <= today:
-                next_month = next_date.month + 1
-                next_year = next_date.year
-                
-                # Si el mes es diciembre, avanzar al año siguiente
-                if next_month > 12:
-                    next_month = 1
-                    next_year += 1
-                
-                # Obtener el último día del próximo mes
-                last_day = self._last_day_of_month(next_year, next_month)
-                
-                # Asegurarse de que el día no exceda el último día del mes
-                next_day = min(reference_date.day, last_day)
-                
-                # Crear la fecha del próximo pago
-                next_date = datetime(next_year, next_month, next_day).date()
-            
-            self.next_payment_date = next_date
-        else:
-            # Si es anual, el próximo pago es en un año
-            # Usar la fecha de inicio como referencia para mantener el mismo día del año
-            reference_date = self.start_date
-            if self.last_payment_date:
-                # Si ya hubo un pago, usar esa fecha como referencia
-                reference_date = self.last_payment_date
-            
-            # Calcular próxima fecha manteniendo el mismo día del año
-            next_year = reference_date.year + 1
-            
-            # Intentar mantener el mismo día del año que la fecha de inicio
-            try:
-                next_date = datetime(next_year, reference_date.month, reference_date.day).date()
-            except ValueError:
-                # En caso de 29 de febrero en año no bisiesto
-                if reference_date.month == 2 and reference_date.day == 29:
-                    next_date = datetime(next_year, 2, 28).date()
-                else:
-                    # Otro error, usar el último día del mes
-                    last_day = self._last_day_of_month(next_year, reference_date.month)
-                    next_date = datetime(next_year, reference_date.month, last_day).date()
-            
-            # Si la fecha calculada ya pasó, avanzar otro año
-            if next_date <= today:
-                next_year = next_date.year + 1
-                
-                # Intentar mantener el mismo día del año que la fecha de inicio
-                try:
-                    next_date = datetime(next_year, reference_date.month, reference_date.day).date()
-                except ValueError:
-                    # En caso de 29 de febrero en año no bisiesto
-                    if reference_date.month == 2 and reference_date.day == 29:
-                        next_date = datetime(next_year, 2, 28).date()
-                    else:
-                        # Otro error, usar el último día del mes
-                        last_day = self._last_day_of_month(next_year, reference_date.month)
-                        next_date = datetime(next_year, reference_date.month, last_day).date()
-            
-            self.next_payment_date = next_date
-        
-        logger.info(f"Fechas de pago actualizadas para suscripción {self.reference_id}: último={self.last_payment_date}, próximo={self.next_payment_date}")
+            return self.start_date + relativedelta(months=1)
+        else:  # annual
+            return self.start_date + relativedelta(years=1)
+
+    @property
+    def grace_period_end(self):
+        """
+        Calcula la fecha de fin del período de gracia (15 días después de current_period_end).
+        Solo después de esta fecha la suscripción se marca como EXPIRED.
+        Retorna None si la suscripción no tiene fecha de inicio (está en PENDING).
+        """
+        from dateutil.relativedelta import relativedelta
+
+        if not self.current_period_end:
+            return None
+
+        return self.current_period_end + relativedelta(days=15)
+
+    @property
+    def is_expired(self):
+        """
+        Verifica si la suscripción ha expirado (pasó el período de gracia de 15 días).
+        Retorna False si la suscripción no tiene fecha de inicio (está en PENDING).
+        """
+        from datetime import date
+
+        if not self.grace_period_end:
+            return False
+
+        today = date.today()
+        return self.status == 'active' and today > self.grace_period_end
+
+    @property
+    def days_until_renewal(self):
+        """
+        Días hasta la próxima renovación.
+        Retorna None si la suscripción no tiene fecha de inicio (está en PENDING).
+        """
+        from datetime import date
+
+        if not self.current_period_end:
+            return None
+
+        today = date.today()
+        delta = self.current_period_end - today
+        return delta.days
+
+    @property
+    def days_in_grace_period(self):
+        """
+        Días restantes en el período de gracia (si está en gracia).
+        Retorna None si la suscripción no tiene fecha de inicio (está en PENDING).
+        """
+        from datetime import date
+
+        if not self.current_period_end or not self.grace_period_end:
+            return None
+
+        today = date.today()
+
+        if today <= self.current_period_end:
+            return None  # No está en período de gracia
+
+        if today > self.grace_period_end:
+            return 0  # Período de gracia expirado
+
+        delta = self.grace_period_end - today
+        return delta.days
+
+    def activate(self):
+        """
+        Activa la suscripción y genera el primer evento de pago.
+        Actualiza la fecha de inicio al día actual.
+        Transición: PENDING -> ACTIVE
+        """
+        from datetime import date
+
+        if self.status != 'pending':
+            logger.warning(f"Intentando activar suscripción {self.reference_id} que no está en estado PENDING")
+            return False
+
+        # Actualizar fecha de inicio al día actual
+        self.start_date = date.today()
+        self.status = 'active'
         self.save()
-    
-    def _last_day_of_month(self, year, month):
-        """Retorna el último día del mes especificado"""
-        import calendar
-        return calendar.monthrange(year, month)[1]
+
+        # El evento de pago se genera automáticamente mediante signals
+        logger.info(f"Suscripción {self.reference_id} activada exitosamente con fecha de inicio {self.start_date}")
+        return True
+
+    def deactivate(self):
+        """
+        Desactiva la suscripción y elimina eventos de pago pendientes.
+        Transición: ACTIVE/EXPIRED -> INACTIVE
+        """
+        if self.status not in ['active', 'expired']:
+            logger.warning(f"Intentando desactivar suscripción {self.reference_id} desde estado {self.status}")
+            return False
+
+        # Eliminar eventos de pago pendientes
+        pending_events = self.payment_events.filter(status='pending')
+        count = pending_events.count()
+        pending_events.delete()
+
+        self.status = 'inactive'
+        self.save()
+
+        logger.info(f"Suscripción {self.reference_id} desactivada. Eliminados {count} eventos pendientes")
+        return True
+
+    def cancel(self):
+        """
+        Cancela la suscripción y elimina eventos de pago pendientes.
+        Transición: ACTIVE/INACTIVE/EXPIRED -> CANCELLED
+        """
+        if self.status == 'cancelled':
+            logger.warning(f"Suscripción {self.reference_id} ya está cancelada")
+            return False
+
+        # Eliminar eventos de pago pendientes
+        pending_events = self.payment_events.filter(status='pending')
+        count = pending_events.count()
+        pending_events.delete()
+
+        self.status = 'cancelled'
+        self.cancelled_at = timezone.now().date()
+        self.save()
+
+        logger.info(f"Suscripción {self.reference_id} cancelada. Eliminados {count} eventos pendientes")
+        return True
+
+    def renew(self):
+        """
+        Renueva la suscripción actualizando start_date al momento actual y generando nuevo evento.
+        Se usa cuando se reactiva una suscripción INACTIVE o CANCELLED.
+        """
+        if self.status not in ['inactive', 'cancelled', 'expired']:
+            logger.warning(f"Intentando renovar suscripción {self.reference_id} desde estado {self.status}")
+            return False
+
+        # Actualizar fecha de inicio al día actual
+        from datetime import date
+        self.start_date = date.today()
+        self.status = 'active'
+        self.cancelled_at = None
+        self.save()
+
+        # El evento de pago se genera automáticamente mediante signals
+        logger.info(f"Suscripción {self.reference_id} renovada exitosamente con nueva fecha de inicio")
+        return True
     
 class Calculadora(models.Model):
+    CURRENCY_CHOICES = [
+        ('CLP', 'Pesos Chilenos (CLP)'),
+        ('USD', 'Dólares (USD)'),
+    ]
+
     nombre = models.CharField('Nombre/Referencia', max_length=200)
     client = models.ForeignKey(
-        Client, 
-        on_delete=models.CASCADE, 
+        Client,
+        on_delete=models.CASCADE,
         related_name='calculadoras',
         verbose_name='Cliente'
     )
@@ -467,6 +561,7 @@ class Calculadora(models.Model):
         related_name='calculadoras',
         verbose_name='Aplicación'
     )
+    currency = models.CharField('Moneda', max_length=3, choices=CURRENCY_CHOICES, default='CLP')
     created_at = models.DateTimeField('Fecha de Creación', auto_now_add=True)
     subtotal = models.DecimalField('Suma Total de Items', max_digits=10, decimal_places=2, default=0)
     margen = models.DecimalField('Margen de Ganancia', max_digits=5, decimal_places=2, default=0)
@@ -519,11 +614,48 @@ class Calculadora(models.Model):
             self.recalcular_totales()
         super().save(*args, **kwargs)
 
-    def generar_suscripciones(self, start_date, auto_renewal=False):
+    def format_price(self, value):
+        """Formatea un valor según la moneda de la calculadora"""
+        if value is None:
+            return "0"
+        price_int = int(value)
+        if self.currency == 'USD':
+            # Formato USD: USD$12,000
+            formatted = f"{price_int:,}".replace(",", ",")
+            return f"USD${formatted}"
+        else:
+            # Formato CLP: CLP$12.000
+            formatted = f"{price_int:,}".replace(",", ".")
+            return f"CLP${formatted}"
+
+    def get_formatted_subtotal(self):
+        """Retorna el subtotal formateado según la moneda"""
+        return self.format_price(self.subtotal)
+
+    def get_formatted_total_anual(self):
+        """Retorna el total anual formateado según la moneda"""
+        return self.format_price(self.total_anual)
+
+    def get_formatted_cuota_mensual(self):
+        """Retorna la cuota mensual formateada según la moneda"""
+        return self.format_price(self.cuota_mensual)
+
+    def get_formatted_costo_mercado(self):
+        """Retorna el costo de mercado formateado según la moneda"""
+        return self.format_price(self.costo_mercado)
+
+    def generar_suscripciones(self, subscription_type='both', auto_renewal=False):
         """
         Genera o actualiza suscripciones basadas en la calculadora.
-        Solo crea nuevas suscripciones si no existen.
+        Las suscripciones se crean en estado PENDING sin fecha de inicio.
+        La fecha de inicio se asigna cuando se activan.
+
+        Args:
+            subscription_type: 'monthly', 'annual', o 'both'
+            auto_renewal: Si se habilita la renovación automática
         """
+        from datetime import date
+
         # Preparar detalles de items
         items_json = {
             'items': [
@@ -539,61 +671,59 @@ class Calculadora(models.Model):
             'descuento_anual': str(self.descuento)
         }
 
-        # Calcular fecha fin (1 año después)
-        from datetime import date, timedelta
-        end_date = start_date + timedelta(days=365)
-
         # Buscar suscripciones existentes
         sub_mensual = self.subscriptions.filter(payment_type='monthly').first()
         sub_anual = self.subscriptions.filter(payment_type='annual').first()
 
-        # Actualizar o crear suscripción mensual
-        if sub_mensual:
-            # Actualizar suscripción existente
-            sub_mensual.price = self.cuota_mensual
-            sub_mensual.items_detail = items_json
-            sub_mensual.auto_renewal = auto_renewal
-            sub_mensual.save()
-        elif not self.subscriptions.filter(payment_type='monthly').exists():
-            # Crear nueva suscripción solo si no existe ninguna mensual
-            sub_mensual = Subscription(
-                client=self.client,
-                application=self.application,
-                payment_type='monthly',
-                price=self.cuota_mensual,
-                start_date=start_date,
-                end_date=end_date,
-                auto_renewal=auto_renewal,
-                items_detail=items_json,
-                calculadora=self,
-                renewal_notes=f"Generado desde calculadora: {self.nombre}"
-            )
-            sub_mensual.reference_id = Subscription.generate_reference_id('monthly')
-            sub_mensual.save()
+        # Crear/actualizar suscripción mensual si se solicita
+        if subscription_type in ['monthly', 'both']:
+            if sub_mensual:
+                # Actualizar suscripción existente
+                sub_mensual.price = self.cuota_mensual
+                sub_mensual.items_detail = items_json
+                sub_mensual.auto_renewal = auto_renewal
+                sub_mensual.save()
+            else:
+                # Crear nueva suscripción PENDING sin fecha de inicio
+                sub_mensual = Subscription(
+                    client=self.client,
+                    application=self.application,
+                    payment_type='monthly',
+                    price=self.cuota_mensual,
+                    start_date=None,  # Sin fecha de inicio, se asigna al activar
+                    status='pending',
+                    auto_renewal=auto_renewal,
+                    items_detail=items_json,
+                    calculadora=self,
+                    renewal_notes=f"Generado desde calculadora: {self.nombre}"
+                )
+                sub_mensual.reference_id = Subscription.generate_reference_id('monthly')
+                sub_mensual.save()
 
-        # Actualizar o crear suscripción anual
-        if sub_anual:
-            # Actualizar suscripción existente
-            sub_anual.price = self.total_anual
-            sub_anual.items_detail = items_json
-            sub_anual.auto_renewal = auto_renewal
-            sub_anual.save()
-        elif not self.subscriptions.filter(payment_type='annual').exists():
-            # Crear nueva suscripción solo si no existe ninguna anual
-            sub_anual = Subscription(
-                client=self.client,
-                application=self.application,
-                payment_type='annual',
-                price=self.total_anual,
-                start_date=start_date,
-                end_date=end_date,
-                auto_renewal=auto_renewal,
-                items_detail=items_json,
-                calculadora=self,
-                renewal_notes=f"Generado desde calculadora: {self.nombre}"
-            )
-            sub_anual.reference_id = Subscription.generate_reference_id('annual')
-            sub_anual.save()
+        # Crear/actualizar suscripción anual si se solicita
+        if subscription_type in ['annual', 'both']:
+            if sub_anual:
+                # Actualizar suscripción existente
+                sub_anual.price = self.total_anual
+                sub_anual.items_detail = items_json
+                sub_anual.auto_renewal = auto_renewal
+                sub_anual.save()
+            else:
+                # Crear nueva suscripción PENDING sin fecha de inicio
+                sub_anual = Subscription(
+                    client=self.client,
+                    application=self.application,
+                    payment_type='annual',
+                    price=self.total_anual,
+                    start_date=None,  # Sin fecha de inicio, se asigna al activar
+                    status='pending',
+                    auto_renewal=auto_renewal,
+                    items_detail=items_json,
+                    calculadora=self,
+                    renewal_notes=f"Generado desde calculadora: {self.nombre}"
+                )
+                sub_anual.reference_id = Subscription.generate_reference_id('annual')
+                sub_anual.save()
 
         return sub_mensual, sub_anual
 
@@ -611,6 +741,14 @@ class ItemCalculo(models.Model):
     def __str__(self):
         return f"{self.descripcion} - {self.calculadora.nombre}"
 
+    def get_formatted_precio_unitario(self):
+        """Retorna el precio unitario formateado según la moneda de la calculadora"""
+        return self.calculadora.format_price(self.precio_unitario)
+
+    def get_formatted_subtotal(self):
+        """Retorna el subtotal formateado según la moneda de la calculadora"""
+        return self.calculadora.format_price(self.subtotal)
+
     def save(self, *args, **kwargs):
         # Calcular subtotal del item
         self.subtotal = (self.cantidad * self.precio_unitario).quantize(Decimal('1'), rounding=ROUND_UP)
@@ -621,15 +759,37 @@ class ItemCalculo(models.Model):
 
 class ServiceContractToken(models.Model):
     """Modelo para almacenar tokens de contratos de servicio"""
+    STATUS_CHOICES = [
+        ('pending', 'Pendiente de Firma'),
+        ('signed', 'Firmado'),
+        ('expired', 'Expirado'),
+    ]
+
+    CURRENCY_CHOICES = [
+        ('CLP', 'Pesos Chilenos (CLP)'),
+        ('USD', 'Dólares (USD)'),
+    ]
+
     client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='contract_tokens')
     application_id = models.IntegerField('ID de Aplicación')
     subscription_type = models.CharField('Tipo de Suscripción', max_length=20, choices=Subscription.PAYMENT_TYPE_CHOICES)
     token = models.CharField('Token', max_length=100, unique=True)
+    authorization_code = models.CharField('Código de Autorización', max_length=8, blank=True)
     created_at = models.DateTimeField('Fecha de Creación', auto_now_add=True)
     expires_at = models.DateTimeField('Fecha de Expiración')
+    status = models.CharField('Estado', max_length=20, choices=STATUS_CHOICES, default='pending')
     used = models.BooleanField('Usado', default=False)
     used_at = models.DateTimeField('Fecha de Uso', null=True, blank=True)
     price = models.DecimalField('Precio', max_digits=10, decimal_places=2, null=True, blank=True)
+    currency = models.CharField('Moneda', max_length=3, choices=CURRENCY_CHOICES, default='CLP')
+
+    # Datos de firma del cliente
+    signed_rut = models.CharField('RUT Firmante', max_length=12, blank=True)
+    signed_name = models.CharField('Nombre Firmante', max_length=200, blank=True)
+    signed_at = models.DateTimeField('Fecha de Firma', null=True, blank=True)
+
+    # PDF del contrato firmado
+    signed_pdf = models.FileField('PDF Firmado', upload_to='contracts/signed/', null=True, blank=True)
 
     class Meta:
         verbose_name = 'Token de Contrato'
@@ -639,6 +799,20 @@ class ServiceContractToken(models.Model):
     def __str__(self):
         return f"Token para {self.client.name} - {self.token[:8]}..."
 
+    @staticmethod
+    def generate_authorization_code():
+        """Genera un código de autorización único de 8 caracteres alfanuméricos"""
+        import random
+        import string
+        chars = string.ascii_uppercase + string.digits
+        return ''.join(random.choices(chars, k=8))
+
+    def save(self, *args, **kwargs):
+        # Generar código de autorización si no existe
+        if not self.authorization_code:
+            self.authorization_code = self.generate_authorization_code()
+        super().save(*args, **kwargs)
+
     def is_expired(self):
         """Verifica si el token ha expirado"""
         return self.expires_at < timezone.now()
@@ -646,5 +820,166 @@ class ServiceContractToken(models.Model):
     def is_valid(self):
         """Verifica si el token es válido (no expirado y no usado)"""
         return not self.used and not self.is_expired()
-            
-            
+
+    def get_public_url(self):
+        """Retorna la URL pública para firmar el contrato"""
+        from django.urls import reverse
+        return reverse('forgeapp:public_contract', kwargs={'token': self.token})
+
+    def get_formatted_price(self):
+        """Retorna el precio formateado según la moneda"""
+        if self.price is None:
+            return "0"
+
+        price_int = int(self.price)
+
+        if self.currency == 'USD':
+            # Formato USD: USD$12,000
+            formatted = f"{price_int:,}".replace(",", ",")
+            return f"USD${formatted}"
+        else:
+            # Formato CLP: CLP$12.000
+            formatted = f"{price_int:,}".replace(",", ".")
+            return f"CLP${formatted}"
+
+
+class Appointment(models.Model):
+    """Modelo para citas/reuniones en la agenda"""
+    STATUS_CHOICES = [
+        ('scheduled', 'Agendada'),
+        ('completed', 'Completada'),
+        ('cancelled', 'Cancelada'),
+    ]
+
+    date = models.DateField('Fecha')
+    start_time = models.TimeField('Hora de Inicio')
+    end_time = models.TimeField('Hora de Fin')
+    name = models.CharField('Nombre del Cliente', max_length=200)
+    email = models.EmailField('Correo Electrónico')
+    description = models.TextField('Descripción', blank=True)
+    meeting_link = models.URLField('Link de Reunión', max_length=500, blank=True)
+    status = models.CharField('Estado', max_length=20, choices=STATUS_CHOICES, default='scheduled')
+    is_blocked = models.BooleanField('Bloqueado', default=False, help_text='Horario bloqueado manualmente')
+    created_at = models.DateTimeField('Fecha de Creación', auto_now_add=True)
+    updated_at = models.DateTimeField('Fecha de Actualización', auto_now=True)
+
+    class Meta:
+        verbose_name = 'Cita'
+        verbose_name_plural = 'Citas'
+        ordering = ['date', 'start_time']
+
+    def __str__(self):
+        return f"{self.name} - {self.date} {self.start_time.strftime('%H:%M')}"
+
+    @classmethod
+    def get_default_blocked_slots(cls):
+        """Retorna los slots bloqueados por defecto (00:00-08:00 y 20:00-23:00)
+        Horario laboral: 9:00 a 20:00 - Slots de 1 hora
+        """
+        from datetime import time
+        blocked = []
+        # Bloqueados de 00:00 a 08:00 (antes de las 9:00)
+        for hour in range(0, 9):
+            blocked.append(time(hour, 0))
+        # Bloqueados de 20:00 a 23:00 (después de las 20:00)
+        for hour in range(20, 24):
+            blocked.append(time(hour, 0))
+        return blocked
+
+    @classmethod
+    def is_slot_available(cls, date, start_time):
+        """Verifica si un slot está disponible"""
+        from datetime import time as time_type, timedelta, datetime as dt
+
+        # Calcular hora de fin (1 hora después)
+        start_dt = dt.combine(date, start_time)
+        end_dt = start_dt + timedelta(minutes=60)
+        end_time = end_dt.time()
+
+        # Verificar si hay citas o bloqueos que se solapan
+        overlapping = cls.objects.filter(
+            date=date,
+            status='scheduled'
+        ).filter(
+            models.Q(start_time__lt=end_time, end_time__gt=start_time)
+        ).exists()
+
+        if overlapping:
+            return False
+
+        # Verificar si está en horario bloqueado por defecto
+        default_blocked = cls.get_default_blocked_slots()
+        is_default_blocked = start_time in default_blocked
+
+        # Si está bloqueado por defecto, verificar si fue habilitado manualmente
+        if is_default_blocked:
+            manually_enabled = cls.objects.filter(
+                date=date,
+                start_time=start_time,
+                status='cancelled',
+                is_blocked=False
+            ).exists()
+            return manually_enabled
+
+        return True
+
+    @classmethod
+    def get_appointments_for_date(cls, date):
+        """Retorna todas las citas para una fecha específica"""
+        return cls.objects.filter(date=date, status='scheduled')
+
+
+class ContactMessage(models.Model):
+    """Modelo para almacenar mensajes del formulario de contacto"""
+    STATUS_CHOICES = [
+        ('new', 'Nuevo'),
+        ('read', 'Leído'),
+        ('archived', 'Archivado'),
+    ]
+
+    name = models.CharField('Nombre', max_length=200)
+    email = models.EmailField('Correo Electrónico')
+    message = models.TextField('Mensaje')
+    status = models.CharField('Estado', max_length=20, choices=STATUS_CHOICES, default='new')
+    created_at = models.DateTimeField('Fecha de Recepción', auto_now_add=True)
+    read_at = models.DateTimeField('Fecha de Lectura', null=True, blank=True)
+    archived_at = models.DateTimeField('Fecha de Archivo', null=True, blank=True)
+    notes = models.TextField('Notas internas', blank=True)
+    # Campos para la cita agendada
+    appointment = models.OneToOneField(
+        Appointment,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='contact_message',
+        verbose_name='Cita Agendada'
+    )
+    meeting_link = models.URLField('Link de Reunión', max_length=500, blank=True)
+
+    class Meta:
+        verbose_name = 'Mensaje de Contacto'
+        verbose_name_plural = 'Mensajes de Contacto'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.name} - {self.email} ({self.get_status_display()})"
+
+    def mark_as_read(self):
+        """Marca el mensaje como leído"""
+        if self.status == 'new':
+            self.status = 'read'
+            self.read_at = timezone.now()
+            self.save()
+
+    def archive(self):
+        """Archiva el mensaje"""
+        self.status = 'archived'
+        self.archived_at = timezone.now()
+        self.save()
+
+    def unarchive(self):
+        """Desarchiva el mensaje"""
+        self.status = 'read'
+        self.archived_at = None
+        self.save()
+

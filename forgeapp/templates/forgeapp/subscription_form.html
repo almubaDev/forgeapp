@@ -1,5 +1,4 @@
-<!-- templates/forgeapp/subscription_form.html -->
-{% extends 'forgeapp/form_base.html' %}
+{% extends 'base.html' %}
 
 {% block title %}
     {% if form.instance.pk %}
@@ -9,10 +8,255 @@
     {% endif %}
 {% endblock %}
 
-{% block window_title %}
+{% block page_title %}
     {% if form.instance.pk %}
         Editar Suscripción
     {% else %}
         Nueva Suscripción
     {% endif %}
+{% endblock %}
+
+{% block page_subtitle %}
+    {% if form.instance.pk %}
+        Actualiza los datos de la suscripción
+    {% else %}
+        Completa los datos para registrar una nueva suscripción
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl">
+    <form method="post" class="space-y-6">
+        {% csrf_token %}
+
+        <!-- Errores generales del formulario -->
+        {% if form.non_field_errors %}
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+            <div class="flex items-start">
+                <i class="fas fa-exclamation-circle text-red-500 mt-0.5 mr-3"></i>
+                <div>
+                    <h4 class="text-sm font-semibold text-red-800 mb-1">Error en el formulario</h4>
+                    {% for error in form.non_field_errors %}
+                    <p class="text-sm text-red-700">{{ error }}</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Información Básica -->
+        <div class="card-premium p-6">
+            <div class="flex items-center space-x-3 mb-6 pb-4 border-b border-gray-100">
+                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center">
+                    <i class="fas fa-file-contract text-white"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-display font-bold text-dark-800">Información Básica</h3>
+                    <p class="text-sm text-dark-500">Cliente y aplicación</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Cliente -->
+                <div>
+                    <label class="block text-sm font-semibold text-dark-700 mb-2">
+                        {{ form.client.label }}
+                        {% if form.client.field.required %}<span class="text-red-500">*</span>{% endif %}
+                    </label>
+                    {{ form.client }}
+                    {% if form.client.help_text %}
+                        <p class="mt-1 text-xs text-dark-500">{{ form.client.help_text }}</p>
+                    {% endif %}
+                    {% if form.client.errors %}
+                        {% for error in form.client.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+
+                <!-- Aplicación -->
+                <div>
+                    <label class="block text-sm font-semibold text-dark-700 mb-2">
+                        {{ form.application.label }}
+                        {% if form.application.field.required %}<span class="text-red-500">*</span>{% endif %}
+                    </label>
+                    {{ form.application }}
+                    {% if form.application.help_text %}
+                        <p class="mt-1 text-xs text-dark-500">{{ form.application.help_text }}</p>
+                    {% endif %}
+                    {% if form.application.errors %}
+                        {% for error in form.application.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Detalles de Suscripción -->
+        <div class="card-premium p-6">
+            <div class="flex items-center space-x-3 mb-6 pb-4 border-b border-gray-100">
+                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center">
+                    <i class="fas fa-cog text-white"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-display font-bold text-dark-800">Detalles de Suscripción</h3>
+                    <p class="text-sm text-dark-500">Configuración y precios</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Estado -->
+                <div>
+                    <label class="block text-sm font-semibold text-dark-700 mb-2">
+                        {{ form.status.label }}
+                        {% if form.status.field.required %}<span class="text-red-500">*</span>{% endif %}
+                    </label>
+                    {{ form.status }}
+                    {% if form.status.help_text %}
+                        <p class="mt-1 text-xs text-dark-500">{{ form.status.help_text }}</p>
+                    {% endif %}
+                    {% if form.status.errors %}
+                        {% for error in form.status.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+
+                <!-- Tipo de Pago -->
+                <div>
+                    <label class="block text-sm font-semibold text-dark-700 mb-2">
+                        {{ form.payment_type.label }}
+                        {% if form.payment_type.field.required %}<span class="text-red-500">*</span>{% endif %}
+                    </label>
+                    {{ form.payment_type }}
+                    {% if form.payment_type.help_text %}
+                        <p class="mt-1 text-xs text-dark-500">{{ form.payment_type.help_text }}</p>
+                    {% endif %}
+                    {% if form.payment_type.errors %}
+                        {% for error in form.payment_type.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+
+                <!-- Precio -->
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-semibold text-dark-700 mb-2">
+                        {{ form.price.label }}
+                        {% if form.price.field.required %}<span class="text-red-500">*</span>{% endif %}
+                    </label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-dark-500">$</span>
+                        <input type="number" name="{{ form.price.name }}" value="{{ form.price.value|default:'' }}"
+                               class="w-full pl-8 pr-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all"
+                               step="0.01" min="1" placeholder="0.00">
+                    </div>
+                    {% if form.price.help_text %}
+                        <p class="mt-1 text-xs text-dark-500">{{ form.price.help_text }}</p>
+                    {% endif %}
+                    {% if form.price.errors %}
+                        {% for error in form.price.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Fechas y Renovación -->
+        <div class="card-premium p-6">
+            <div class="flex items-center space-x-3 mb-6 pb-4 border-b border-gray-100">
+                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-400 to-violet-600 flex items-center justify-center">
+                    <i class="fas fa-calendar-alt text-white"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-display font-bold text-dark-800">Fecha de Inicio y Renovación</h3>
+                    <p class="text-sm text-dark-500">La fecha de expiración se calcula automáticamente</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Fecha de Inicio -->
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-semibold text-dark-700 mb-2">
+                        {{ form.start_date.label }}
+                        {% if form.start_date.field.required %}<span class="text-red-500">*</span>{% endif %}
+                    </label>
+                    {{ form.start_date }}
+                    {% if form.start_date.help_text %}
+                        <p class="mt-1 text-xs text-dark-500">{{ form.start_date.help_text }}</p>
+                    {% endif %}
+                    {% if form.start_date.errors %}
+                        {% for error in form.start_date.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                        {% endfor %}
+                    {% endif %}
+                    <div class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div class="flex items-start">
+                            <i class="fas fa-info-circle text-blue-500 mt-0.5 mr-2"></i>
+                            <div class="text-sm text-blue-700">
+                                <p class="font-semibold mb-1">Cálculo automático de expiración:</p>
+                                <ul class="list-disc list-inside space-y-1 text-xs">
+                                    <li><strong>Mensual:</strong> Vence en 1 mes (30 días) desde la fecha de inicio</li>
+                                    <li><strong>Anual:</strong> Vence en 1 año (12 meses) desde la fecha de inicio</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Renovación Automática -->
+                <div class="md:col-span-2">
+                    <div class="flex items-center">
+                        {{ form.auto_renewal }}
+                        <label for="{{ form.auto_renewal.id_for_label }}" class="ml-3 text-sm font-semibold text-dark-700">
+                            {{ form.auto_renewal.label }}
+                        </label>
+                    </div>
+                    {% if form.auto_renewal.help_text %}
+                        <p class="mt-1 text-xs text-dark-500 ml-7">{{ form.auto_renewal.help_text }}</p>
+                    {% endif %}
+                    {% if form.auto_renewal.errors %}
+                        {% for error in form.auto_renewal.errors %}
+                        <p class="mt-1 text-sm text-red-600 ml-7">{{ error }}</p>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+
+                <!-- Notas de Renovación -->
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-semibold text-dark-700 mb-2">
+                        {{ form.renewal_notes.label }}
+                    </label>
+                    {{ form.renewal_notes }}
+                    {% if form.renewal_notes.help_text %}
+                        <p class="mt-1 text-xs text-dark-500">{{ form.renewal_notes.help_text }}</p>
+                    {% endif %}
+                    {% if form.renewal_notes.errors %}
+                        {% for error in form.renewal_notes.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones de acción -->
+        <div class="flex justify-end space-x-4">
+            <a href="{% url 'forgeapp:subscription_list' %}"
+               class="px-6 py-3 border border-gray-300 text-dark-600 font-semibold rounded-xl hover:bg-gray-50 transition-colors">
+                Cancelar
+            </a>
+            <button type="submit"
+                    class="px-6 py-3 bg-gradient-to-r from-emerald-400 to-emerald-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200">
+                {% if form.instance.pk %}
+                    <i class="fas fa-save mr-2"></i>Guardar Cambios
+                {% else %}
+                    <i class="fas fa-plus-circle mr-2"></i>Crear Suscripción
+                {% endif %}
+            </button>
+        </div>
+    </form>
+</div>
 {% endblock %}

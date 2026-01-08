@@ -1,138 +1,76 @@
-<!-- forgeapp/templates/forgeapp/dashboard.html -->
 {% extends 'base.html' %}
 
 {% block title %}Dashboard - ForgeApp{% endblock %}
-
-{% block window_title %}Panel de Control{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block page_subtitle %}Visión general del rendimiento y métricas clave{% endblock %}
 
 {% block content %}
-<div class="space-y-10">
-    <!-- Tarjetas de Estadísticas -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-        <!-- Tarjeta de Clientes -->
-        <div class="glass-panel p-6 hover:scale-105 transition-all duration-300 group">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-white font-medium text-lg">Clientes</h3>
-                <span class="text-4xl text-forge-bright font-bold group-hover:scale-110 transition-transform">{{ total_clients }}</span>
+<!-- Stats Grid -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <!-- Total Clientes Card -->
+    <div class="card-premium p-6 group">
+        <div class="flex items-start justify-between mb-4">
+            <div class="flex-1">
+                <p class="text-sm font-medium text-dark-500 mb-1">Total Clientes</p>
+                <h3 class="text-4xl font-display font-bold text-dark-800 mb-2">{{ total_clients|default:0 }}</h3>
+                <div class="flex items-center text-sm">
+                    <span class="text-dark-400">
+                        {% if total_clients %}Clientes registrados{% else %}Sin clientes aún{% endif %}
+                    </span>
+                </div>
             </div>
-            <a href="{% url 'forgeapp:client_list' %}" 
-               class="glass-btn py-2.5 w-full text-center text-white hover:text-forge-bright flex items-center justify-center space-x-2 mt-2">
-                <span>Ver Clientes</span>
-            </a>
-        </div>
-
-        <!-- Tarjeta de Suscripciones -->
-        <div class="glass-panel p-6 hover:scale-105 transition-all duration-300 group">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-white font-medium text-lg">Suscripciones Activas</h3>
-                <span class="text-4xl text-forge-bright font-bold group-hover:scale-110 transition-transform">{{ active_subscriptions }}</span>
+            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <i class="fas fa-users text-white text-2xl"></i>
             </div>
-            <a href="{% url 'forgeapp:subscription_list' %}" 
-               class="glass-btn py-2.5 w-full text-center text-white hover:text-forge-bright flex items-center justify-center space-x-2 mt-2">
-                <span>Ver Suscripciones</span>
-            </a>
         </div>
-
-        <!-- Tarjeta de Aplicaciones -->
-        <div class="glass-panel p-6 hover:scale-105 transition-all duration-300 group">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-white font-medium text-lg">Aplicaciones</h3>
-                <span class="text-4xl text-forge-bright font-bold group-hover:scale-110 transition-transform">{{ total_applications }}</span>
-            </div>
-            <a href="{% url 'forgeapp:application_list' %}" 
-               class="glass-btn py-2.5 w-full text-center text-white hover:text-forge-bright flex items-center justify-center space-x-2 mt-2">
-                <span>Ver Aplicaciones</span>
-            </a>
-        </div>
-
+        <a href="{% url 'forgeapp:client_list' %}" class="text-primary-400 text-sm font-semibold hover:text-primary-600 inline-flex items-center group">
+            <span>Ver todos los clientes</span>
+            <i class="fas fa-arrow-right ml-2 transform group-hover:translate-x-1 transition-transform"></i>
+        </a>
     </div>
 
-    <!-- Acciones Rápidas -->
-    <div class="glass-panel p-6">
-        <h3 class="text-white font-medium text-lg mb-6">Acciones Rápidas</h3>
-        <div class="flex flex-wrap gap-4">
-            <a href="{% url 'forgeapp:client_create' %}" 
-               class="glass-btn px-6 py-2.5 text-white hover:text-forge-bright">
-                Nuevo Cliente
-            </a>
-            <a href="{% url 'forgeapp:subscription_create' %}" 
-               class="glass-btn px-6 py-2.5 text-white hover:text-forge-bright">
-                Nueva Suscripción
-            </a>
-            <a href="{% url 'forgeapp:application_create' %}" 
-               class="glass-btn px-6 py-2.5 text-white hover:text-forge-bright">
-                Nueva Aplicación
-            </a>
-            <a href="{% url 'forgeapp:calculadora_create' %}" 
-                class="glass-btn px-6 py-2.5 text-white hover:text-forge-bright">
-                Nueva Calculadora
-            </a>
+    <!-- Suscripciones Activas Card -->
+    <div class="card-premium p-6 group">
+        <div class="flex items-start justify-between mb-4">
+            <div class="flex-1">
+                <p class="text-sm font-medium text-dark-500 mb-1">Suscripciones Activas</p>
+                <h3 class="text-4xl font-display font-bold text-dark-800 mb-2">{{ active_subscriptions|default:0 }}</h3>
+                <div class="flex items-center text-sm">
+                    <span class="text-dark-400">
+                        {% if active_subscriptions %}Contratos activos{% else %}Sin suscripciones activas{% endif %}
+                    </span>
+                </div>
+            </div>
+            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <i class="fas fa-sync-alt text-white text-2xl"></i>
+            </div>
         </div>
+        <a href="{% url 'forgeapp:subscription_list' %}" class="text-primary-400 text-sm font-semibold hover:text-primary-600 inline-flex items-center group">
+            <span>Gestionar suscripciones</span>
+            <i class="fas fa-arrow-right ml-2 transform group-hover:translate-x-1 transition-transform"></i>
+        </a>
     </div>
 
-    <!-- Tablas de Información -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <!-- Clientes Recientes -->
-        <div class="glass-panel p-6">
-            <h3 class="text-white font-medium text-lg mb-6">Clientes Recientes</h3>
-            <div class="overflow-x-auto">
-                <table class="w-full">
-                    <thead>
-                        <tr class="border-b border-forge-light border-opacity-10">
-                            <th class="p-4 text-left text-white font-medium">Cliente</th>
-                            <th class="p-4 text-left text-white font-medium">Email</th>
-                            <th class="p-4 text-left text-white font-medium">Estado</th>
-                            <th class="p-4 text-left text-white font-medium">Fecha</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for client in recent_clients %}
-                        <tr class="border-b border-forge-light border-opacity-5 hover:bg-forge-primary hover:bg-opacity-5 transition-colors">
-                            <td class="p-4 text-white">{{ client.name }}</td>
-                            <td class="p-4 text-white">{{ client.email }}</td>
-                            <td class="p-4 text-white">{{ client.get_status_display }}</td>
-                            <td class="p-4 text-white">{{ client.created_at|date:"d/m/Y" }}</td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="4" class="p-4 text-white text-center">No hay clientes registrados</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+    <!-- Aplicaciones Card -->
+    <div class="card-premium p-6 group">
+        <div class="flex items-start justify-between mb-4">
+            <div class="flex-1">
+                <p class="text-sm font-medium text-dark-500 mb-1">Aplicaciones Registradas</p>
+                <h3 class="text-4xl font-display font-bold text-dark-800 mb-2">{{ total_applications|default:0 }}</h3>
+                <div class="flex items-center text-sm">
+                    <span class="text-dark-400">
+                        {% if total_applications %}Productos en la plataforma{% else %}Sin aplicaciones aún{% endif %}
+                    </span>
+                </div>
+            </div>
+            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-400 to-violet-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <i class="fas fa-laptop-code text-white text-2xl"></i>
             </div>
         </div>
-
-        <!-- Suscripciones Recientes -->
-        <div class="glass-panel p-6">
-            <h3 class="text-white font-medium text-lg mb-6">Suscripciones Recientes</h3>
-            <div class="overflow-x-auto">
-                <table class="w-full">
-                    <thead>
-                        <tr class="border-b border-forge-light border-opacity-10">
-                            <th class="p-4 text-left text-white font-medium">Cliente</th>
-                            <th class="p-4 text-left text-white font-medium">Aplicación</th>
-                            <th class="p-4 text-left text-white font-medium">Estado</th>
-                            <th class="p-4 text-left text-white font-medium">Precio</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for subscription in recent_subscriptions %}
-                        <tr class="border-b border-forge-light border-opacity-5 hover:bg-forge-primary hover:bg-opacity-5 transition-colors">
-                            <td class="p-4 text-white">{{ subscription.client.name }}</td>
-                            <td class="p-4 text-white">{{ subscription.application.name }}</td>
-                            <td class="p-4 text-white">{{ subscription.get_status_display }}</td>
-                            <td class="p-4 text-white">${{ subscription.price }}</td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="4" class="p-4 text-white text-center">No hay suscripciones registradas</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+        <a href="{% url 'forgeapp:application_list' %}" class="text-primary-400 text-sm font-semibold hover:text-primary-600 inline-flex items-center group">
+            <span>Ver aplicaciones</span>
+            <i class="fas fa-arrow-right ml-2 transform group-hover:translate-x-1 transition-transform"></i>
+        </a>
     </div>
 </div>
 {% endblock %}

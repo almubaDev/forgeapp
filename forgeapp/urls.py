@@ -32,12 +32,18 @@ urlpatterns = [
     path('clients/<int:pk>/payment-history/', views.client_payment_history, name='client_payment_history'),
     path('clients/<int:pk>/contracts/', views.client_contracts, name='client_contracts'),
     path('clients/<int:pk>/contracts/<int:token_id>/', views.view_client_contract, name='view_client_contract'),
+    path('clients/<int:pk>/contracts/<int:token_id>/delete/', views.delete_contract, name='delete_contract'),
     path('clients/<int:pk>/service-contract/', views.service_contract, name='service_contract'),
+    path('clients/<int:pk>/service-contract/create/', views.create_contract, name='create_contract'),
+    path('clients/<int:pk>/service-contract/preview/', views.preview_contract_pdf, name='preview_contract_pdf'),
+    path('clients/<int:pk>/contracts/<int:token_id>/download/', views.download_contract_pdf, name='download_contract_pdf'),
     path('clients/<int:pk>/send-service-contract/', views.send_service_contract, name='send_service_contract'),
-    
-    # Service Contract URLs
+
+    # Service Contract URLs (públicas)
     path('contracts/<str:token>/', views.view_service_contract, name='view_service_contract'),
     path('contracts/<str:token>/accept/', views.accept_service_contract, name='accept_service_contract'),
+    path('contract/<str:token>/', views.public_contract, name='public_contract'),
+    path('contract/<str:token>/sign/', views.sign_contract, name='sign_contract'),
     
     # Subscriptions URLs
     path('subscriptions/', views.subscription_list, name='subscription_list'),
@@ -50,7 +56,8 @@ urlpatterns = [
     path('subscriptions/<int:pk>/cancel/', views.subscription_cancel, name='subscription_cancel'),
     path('subscriptions/<int:pk>/deactivate/', views.subscription_deactivate, name='subscription_deactivate'),
     path('subscriptions/<int:pk>/renew/', views.subscription_renew, name='subscription_renew'),
-    
+    path('subscriptions/<int:subscription_pk>/events/<int:event_pk>/pay/', views.mark_payment_event_paid, name='mark_payment_event_paid'),
+
     # Calculadora URLs
     path('calculadoras/', views.calculadora_list, name='calculadora_list'),
     path('calculadoras/create/', views.calculadora_create, name='calculadora_create'),
@@ -61,4 +68,23 @@ urlpatterns = [
     path('calculadoras/<int:pk>/enviar-cotizacion/', views.enviar_cotizacion_email, name='enviar_cotizacion_email'),
     path('items/<int:pk>/delete/', views.item_delete, name='item_delete'),
     path('calculadora/<int:pk>/generar-suscripciones/', views.generar_suscripciones, name='generar_suscripciones'),
+
+    # Contact Messages URLs
+    path('messages/', views.message_list, name='message_list'),
+    path('messages/<int:pk>/', views.message_detail, name='message_detail'),
+    path('messages/<int:pk>/archive/', views.message_archive, name='message_archive'),
+    path('messages/<int:pk>/unarchive/', views.message_unarchive, name='message_unarchive'),
+    path('messages/<int:pk>/delete/', views.message_delete, name='message_delete'),
+    path('messages/<int:pk>/notes/', views.message_update_notes, name='message_update_notes'),
+    path('messages/<int:pk>/meeting-link/', views.message_update_meeting_link, name='message_update_meeting_link'),
+
+    # Agenda URLs
+    path('agenda/', views.agenda_view, name='agenda_view'),
+    path('agenda/appointments/<int:pk>/', views.appointment_detail, name='appointment_detail'),
+    path('agenda/appointments/<int:pk>/cancel/', views.appointment_cancel, name='appointment_cancel'),
+    path('agenda/appointments/<int:pk>/complete/', views.appointment_complete, name='appointment_complete'),
+    path('agenda/toggle-block/', views.toggle_slot_block, name='toggle_slot_block'),
+    path('agenda/block-full-day/', views.block_full_day, name='block_full_day'),
+    path('agenda/unblock-full-day/', views.unblock_full_day, name='unblock_full_day'),
+    path('agenda/available-slots/', views.get_available_slots, name='get_available_slots'),
 ]

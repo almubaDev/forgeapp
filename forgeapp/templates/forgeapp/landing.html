@@ -14,12 +14,11 @@
     <nav class="navbar glass-effect">
         <div class='brandnav'>
             <h3>ForgeApp</h3>
-        </div>    
+        </div>
         <div class="nav-links">
             <a href="#inicio">Inicio</a>
-            <a href="#servicios">Servicios</a>
-            <a href="#soporte">Soporte</a>
-            <a href="#proceso">Proceso</a>
+            <a href="#como-funciona">Cómo Funciona</a>
+            <a href="#ventajas">Ventajas</a>
             <a href="#contacto" class="cta-button">Contactar</a>
         </div>
         <button class="mobile-menu-button">☰</button>
@@ -33,125 +32,162 @@
             <div class="logo-container">
                 <img src="{% static "img/logo.png" %}" alt="ForgeApp Logo" class="hero-logo">
             </div>
-            
+
             <div>
-                <h1>Emprender en el Mundo Digital ahora es fácil y económico</h1>
-                <p>Facilitamos el desarrollo tecnológico para emprendedores y PYMES mediante soluciones web profesionales.</p>
-                <p class="hero-description">Planes de suscripción personalizados que se adaptan a tu presupuesto.</p>
+                <h1>Software a tu medida, al alcance de todos</h1>
+                <p>¿Tienes una idea o necesitas resolver un problema? Desarrollamos la solución perfecta para ti con suscripciones accesibles.</p>
                 <a href="#contacto" class="cta-button glow-effect">Haz realidad tu Proyecto con ForgeApp</a>
             </div>
         </div>
     </section>
 
-    <!-- Servicios -->
-<section id="servicios" class="py-16 bg-[#002D4A]">
-  <div class="circuit-lines"></div>
-  <h2 class="text-center text-3xl font-bold text-white mb-8">Nuestros Servicios</h2>
-
-  <div class="cards-container max-w-3xl mx-auto">
-    <div class="card glass-effect text-center p-6 rounded-lg shadow-lg backdrop-blur bg-white/10 text-white">
-      <h3 class="text-lg font-bold text-cyan-400 mb-4">
-        Desarrollo de soluciones Web + Formalización de tu empresa
-      </h3>
-      <p class="text-white text-base">
-        Creamos juntos el proyecto que necesitas, te acompañamos en todo momento, soporte técnico asegurado
-      </p>
-    </div>
-  </div>
-</section>
-
-
-    <!-- Niveles de Soporte -->
-    <section id="soporte" class="support">
+    <!-- Propuesta de Valor -->
+    <section id="propuesta" class="value-proposition">
         <div class="circuit-lines"></div>
-        <h2>Niveles de Soporte</h2>
-        <div class="cards-container">
-            <div class="card glass-effect">
-                <div class="card-header basic">
-                    <h3>Soporte Básico</h3>
-                    <p>Incluido en tu suscripción.</p>
+        <div class="value-container">
+            <div class="value-card glass-effect">
+                <div class="value-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                    </svg>
                 </div>
-                <ul>
-                    <li>Soporte técnico permanente.</li>
-                    <li>Capacitación inicial completa.</li>
-                    <li>Mantenimiento básico mensual.</li>
-                </ul>
+                <h3>Sin Grandes Inversiones</h3>
+                <p>No necesitas capital inicial. Tu software se paga con pequeñas cuotas mensuales o anuales, y está disponible mientras mantengas tu suscripción.</p>
             </div>
-            <div class="card glass-effect">
-                <div class="card-header premium">
-                    <h3>Servicios Adicionales</h3>
-                    <p>Complementa tu suscripción según tus necesidades.</p>
+            <div class="value-card glass-effect">
+                <div class="value-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+                    </svg>
                 </div>
-                <ul>
-                    <li>Ampliación de usuarios.</li>
-                    <li>Nuevas funcionalidades.</li>
-                    <li>Mayor potencia de servidores.</li>
-                    <li>Gestión de dominios personalizados.</li>
-                    <li>Administración delegada completa.</li>
-                </ul>
+                <h3>Desarrollo Personalizado</h3>
+                <p>Cada solución es única y adaptada 100% a las necesidades de tu negocio.</p>
             </div>
-            <div class="card glass-effect">
-                <div class="card-header enterprise">
-                    <h3>Servicios Extra</h3>
-                    <p>Servicios especializados independientes.</p>
+            <div class="value-card glass-effect">
+                <div class="value-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                    </svg>
                 </div>
-                <ul>
-                    <li>Capacitaciones específicas avanzadas.</li>
-                    <li>Asesoría contable especializada.</li>
-                    <li>Consultoría tributaria profesional.</li>
-                </ul>
+                <h3>Soporte Permanente</h3>
+                <p>Tu suscripción incluye mantenimiento, actualizaciones y soporte técnico continuo.</p>
             </div>
         </div>
     </section>
 
-    <!-- Proceso -->
-    <section id="proceso" class="process">
+    <!-- Cómo Funciona -->
+    <section id="como-funciona" class="how-it-works">
         <div class="circuit-lines"></div>
-        <h2>Nuestro Proceso</h2>
-        <div class="cards-container">
-            <div class="card glass-effect">
-                <div class="step-number">1</div>
-                <h3>Consulta Inicial</h3>
-                <p>Comparte tu visión y requerimientos específicos. Analizamos tus necesidades para ofrecer la mejor solución.</p>
+        <h2>¿Cómo Funciona?</h2>
+        <p class="section-subtitle">De la idea a tu software en línea en solo 4 semanas</p>
+
+        <div class="timeline-container">
+            <div class="timeline-item glass-effect">
+                <div class="timeline-number">1</div>
+                <div class="timeline-content">
+                    <h3>Conversemos</h3>
+                    <p>Nos cuentas tu idea y las necesidades de tu negocio. Analizamos juntos la mejor solución tecnológica para ti.</p>
+                </div>
             </div>
-            <div class="card glass-effect">
-                <div class="step-number">2</div>
-                <h3>Propuesta Detallada</h3>
-                <p>Recibirás un informe completo con los costos de suscripción y un plan de implementación personalizado.</p>
+
+            <div class="timeline-connector"></div>
+
+            <div class="timeline-item glass-effect">
+                <div class="timeline-number">2</div>
+                <div class="timeline-content">
+                    <h3>Propuesta Clara</h3>
+                    <p>Recibes un análisis detallado con el costo de tu suscripción mensual o anual. Sin sorpresas, sin costos ocultos.</p>
+                </div>
             </div>
-            <div class="card glass-effect">
-                <div class="step-number">3</div>
-                <h3>Desarrollo Ágil</h3>
-                <p>Implementamos tu proyecto en 4 semanas o menos, manteniéndote informado en cada etapa del proceso.</p>
+
+            <div class="timeline-connector"></div>
+
+            <div class="timeline-item glass-effect">
+                <div class="timeline-number">3</div>
+                <div class="timeline-content">
+                    <h3>Desarrollo Ágil</h3>
+                    <p>Una vez confirmada tu suscripción, comenzamos el desarrollo. En máximo 4 semanas tienes tu sistema funcionando.</p>
+                </div>
+            </div>
+
+            <div class="timeline-connector"></div>
+
+            <div class="timeline-item glass-effect">
+                <div class="timeline-number">4</div>
+                <div class="timeline-content">
+                    <h3>En Línea + Soporte</h3>
+                    <p>Tu software queda operativo en la nube mientras mantengas tu suscripción activa. Nosotros nos encargamos del hosting, mantenimiento y soporte técnico.</p>
+                </div>
             </div>
         </div>
     </section>
 
-    <!-- Proyecto Destacado -->
-    <section id="proyecto" class="project">
+    <!-- Ventajas del Modelo -->
+    <section id="ventajas" class="advantages">
         <div class="circuit-lines"></div>
-        <h2>Proyecto Destacado</h2>
-        <div class="project-container glass-effect">
-            <h3>Sistema de Gestión para Consultoras</h3>
-            <div class="video-container">
-                <iframe 
-                    width="560" 
-                    height="315" 
-                    src="https://www.youtube.com/embed/VIDEO_ID" 
-                    frameborder="0" 
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                    allowfullscreen>
-                </iframe>
-            </div>
-            <div class="project-description">
-                <h4>Características Principales</h4>
-                <div class="tags-container">
-                    <span class="tag">Sistema avanzado de usuarios y roles <sup>x</sup></span>
-                    <span class="tag">Gestión integral de tareas <sup>x</sup></span>
-                    <span class="tag">Calendario de eventos <sup>x</sup></span>
-                    <span class="tag">Control de actividades <sup>x</sup></span>
-                    <span class="tag">Reportes en tiempo real <sup>x</sup></span>
+        <h2>¿Por qué elegir el modelo MicroSaaS?</h2>
+
+        <div class="comparison-container">
+            <div class="comparison-card traditional glass-effect">
+                <div class="comparison-header">
+                    <h3>Desarrollo Tradicional</h3>
+                    <span class="comparison-badge negative">Modelo Antiguo</span>
                 </div>
+                <ul class="comparison-list">
+                    <li class="negative">
+                        <span class="icon">✗</span>
+                        Alta inversión de dinero inicial
+                    </li>
+                    <li class="negative">
+                        <span class="icon">✗</span>
+                        Meses o años de desarrollo
+                    </li>
+                    <li class="negative">
+                        <span class="icon">✗</span>
+                        Costos adicionales por mantenimiento
+                    </li>
+                    <li class="negative">
+                        <span class="icon">✗</span>
+                        Debes contratar hosting por separado
+                    </li>
+                    <li class="negative">
+                        <span class="icon">✗</span>
+                        Soporte técnico con costo extra
+                    </li>
+                </ul>
+            </div>
+
+            <div class="comparison-card forgeapp glass-effect featured">
+                <div class="comparison-header">
+                    <h3>ForgeApp MicroSaaS</h3>
+                    <span class="comparison-badge positive">Nuestro Modelo</span>
+                </div>
+                <ul class="comparison-list">
+                    <li class="positive">
+                        <span class="icon">✓</span>
+                        Suscripción mensual accesible
+                    </li>
+                    <li class="positive">
+                        <span class="icon">✓</span>
+                        Tu software listo en 4 semanas
+                    </li>
+                    <li class="positive">
+                        <span class="icon">✓</span>
+                        Mantenimiento incluido
+                    </li>
+                    <li class="positive">
+                        <span class="icon">✓</span>
+                        Hosting y dominio gestionado
+                    </li>
+                    <li class="positive">
+                        <span class="icon">✓</span>
+                        Soporte técnico permanente
+                    </li>
+                    <li class="positive">
+                        <span class="icon">✓</span>
+                        Servicio activo mientras estés suscrito
+                    </li>
+                </ul>
             </div>
         </div>
     </section>
@@ -160,27 +196,98 @@
     <section id="contacto" class="contact">
         <div class="circuit-lines"></div>
         <h2>Comienza tu Proyecto</h2>
+        <p class="section-subtitle">Cuéntanos tu idea y agenda una reunión con nosotros</p>
         <div class="form-container glass-effect">
             <form id="contact-form" action="{% url 'forgeapp:contact_form' %}" method="post">
                 {% csrf_token %}
-                <div class="form-group">
-                    <input type="text" name="name" id="nombre" placeholder="Nombre completo" required>
+
+                <!-- Indicador de pasos -->
+                <div class="steps-indicator">
+                    <div class="step-item active" data-step="1">
+                        <div class="step-number">1</div>
+                        <span class="step-label">Tu información</span>
+                    </div>
+                    <div class="step-connector"></div>
+                    <div class="step-item" data-step="2">
+                        <div class="step-number">2</div>
+                        <span class="step-label">Agendar reunión</span>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <input type="email" name="email" id="email" placeholder="Correo electrónico" required>
+
+                <!-- Paso 1: Información de contacto -->
+                <div id="step-1" class="form-step active">
+                    <div class="form-group">
+                        <input type="text" name="name" id="nombre" placeholder="Nombre completo" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="email" name="email" id="email" placeholder="Correo electrónico" required>
+                    </div>
+                    <div class="form-group">
+                        <textarea
+                            name="message"
+                            id="mensaje"
+                            placeholder="Cuéntanos sobre tu proyecto: ¿Qué problema quieres resolver? ¿Qué funcionalidades necesitas?"
+                            required
+                        ></textarea>
+                    </div>
+                    <button type="button" id="next-step" class="cta-button">
+                        Siguiente <span style="margin-left: 8px;">→</span>
+                    </button>
                 </div>
-                <div class="form-group">
-                    <input type="tel" name="phone" id="telefono" placeholder="Teléfono de contacto (opcional)">
+
+                <!-- Paso 2: Agendar reunión -->
+                <div id="step-2" class="form-step">
+                    <div class="schedule-container">
+                        <p class="schedule-title">Selecciona fecha y hora para tu reunión</p>
+
+                        <!-- Calendario Visual -->
+                        <div class="calendar-wrapper">
+                            <div class="calendar-header">
+                                <button type="button" id="prev-month" class="calendar-nav">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                                </button>
+                                <span id="calendar-month-year" class="calendar-title">Enero 2025</span>
+                                <button type="button" id="next-month" class="calendar-nav">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                </button>
+                            </div>
+                            <div class="calendar-weekdays">
+                                <span>Lun</span>
+                                <span>Mar</span>
+                                <span>Mié</span>
+                                <span>Jue</span>
+                                <span>Vie</span>
+                                <span>Sáb</span>
+                                <span>Dom</span>
+                            </div>
+                            <div id="calendar-days" class="calendar-days">
+                                <!-- Los días se generan dinámicamente -->
+                            </div>
+                        </div>
+
+                        <input type="hidden" name="appointment_date" id="appointment_date" required>
+
+                        <!-- Selector de Horarios -->
+                        <div id="time-slots-container" class="time-slots-container" style="display: none;">
+                            <p class="time-slots-title">Horarios disponibles para <span id="selected-date-display"></span></p>
+                            <div id="time-slots" class="time-slots-grid">
+                                <!-- Los horarios se generan dinámicamente -->
+                            </div>
+                            <p id="no-slots-message" class="no-slots-message" style="display: none;">
+                                No hay horarios disponibles para esta fecha. Por favor selecciona otra fecha.
+                            </p>
+                        </div>
+
+                        <input type="hidden" name="appointment_time" id="appointment_time" required>
+                    </div>
+
+                    <div class="form-buttons">
+                        <button type="button" id="prev-step" class="cta-button secondary">
+                            <span style="margin-right: 8px;">←</span> Anterior
+                        </button>
+                        <button type="submit" id="submit-btn" class="cta-button" disabled>Enviar y Agendar</button>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <textarea 
-                        name="message" 
-                        id="mensaje" 
-                        placeholder="Cuéntanos sobre tu proyecto y necesidades específicas" 
-                        required
-                    ></textarea>
-                </div>
-                <button type="submit" class="cta-button">Enviar Mensaje</button>
             </form>
         </div>
     </section>
@@ -193,13 +300,13 @@
             </div>
             <div class="footer-links">
                 <a href="#inicio">Inicio</a>
-                <a href="#servicios">Servicios</a>
-                <a href="#soporte">Soporte</a>
+                <a href="#como-funciona">Cómo Funciona</a>
+                <a href="#ventajas">Ventajas</a>
                 <a href="#contacto">Contacto</a>
             </div>
         </div>
         <div class="footer-bottom">
-            <p>&copy; 2025 ForgeApp. Transformando negocios digitalmente.</p>
+            <p>&copy; 2025 ForgeApp. Software a tu medida, sin grandes inversiones.</p>
         </div>
     </footer>
 

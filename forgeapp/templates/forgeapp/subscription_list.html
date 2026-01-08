@@ -1,112 +1,135 @@
-<!-- templates/forgeapp/subscription_list.html -->
 {% extends 'base.html' %}
 {% load static %}
 {% load forgeapp_extras %}
 
-{% block title %}Suscripciones{% endblock %}
+{% block title %}Suscripciones - ForgeApp{% endblock %}
+{% block page_title %}Suscripciones{% endblock %}
+{% block page_subtitle %}Gestión de contratos y suscripciones{% endblock %}
 
 {% block content %}
-<div class="space-y-8">
-    <!-- Encabezado -->
-    <div class="flex justify-between items-center">
-        <h2 class="text-2xl text-white font-medium">Suscripciones</h2>
-        <a href="{% url 'forgeapp:subscription_create' %}" 
-           class="glass-btn px-6 py-2.5 text-white hover:text-forge-bright">
-            Nueva Suscripción
-        </a>
-    </div>
-
-    <!-- Lista de suscripciones -->
-    <div class="glass-panel p-6">
-        <div class="overflow-x-auto">
-            <table class="w-full">
-                <thead>
-                    <tr class="border-b border-forge-light border-opacity-10">
-                        <th class="p-4 text-left text-white font-medium">ID</th>
-                        <th class="p-4 text-left text-white font-medium">Cliente</th>
-                        <th class="p-4 text-left text-white font-medium">Aplicación</th>
-                        <th class="p-4 text-center text-white font-medium">Estado</th>
-                        <th class="p-4 text-center text-white font-medium">Tipo</th>
-                        <th class="p-4 text-right text-white font-medium">Precio</th>
-                        <th class="p-4 text-center text-white font-medium">Renovación</th>
-                        <th class="p-4 text-center text-white font-medium">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for subscription in subscriptions %}
-                    <tr class="border-b border-forge-light border-opacity-5">
-                        <td class="p-4 text-white">
-                            {{ subscription.reference_id }}
-                        </td>
-                        <td class="p-4">
-                            <a href="{% url 'forgeapp:client_detail' subscription.client.pk %}" 
-                               class="text-white hover:text-forge-bright">
-                                {{ subscription.client.name }}
-                            </a>
-                        </td>
-                        <td class="p-4">
-                            <a href="{% url 'forgeapp:application_detail' subscription.application.pk %}" 
-                               class="text-white hover:text-forge-bright">
-                                {{ subscription.application.name }}
-                            </a>
-                        </td>
-                        <td class="p-4 text-center">
-                            {% if subscription.status == 'active' %}
-                                {% if subscription.last_payment_date %}
-                                    <span class="glass-btn px-3 py-1 text-sm text-green-400 bg-green-900 bg-opacity-20">
-                                        {{ subscription.get_status_display }}
-                                    </span>
-                                {% else %}
-                                    <span class="glass-btn px-3 py-1 text-sm text-yellow-400 bg-yellow-900 bg-opacity-20">
-                                        {{ subscription.get_status_display }} (Sin pago)
-                                    </span>
-                                {% endif %}
-                            {% elif subscription.status == 'pending' %}
-                                <span class="glass-btn px-3 py-1 text-sm text-yellow-400 bg-yellow-900 bg-opacity-20">
-                                    {{ subscription.get_status_display }}
-                                </span>
-                            {% elif subscription.status == 'cancelled' %}
-                                <span class="glass-btn px-3 py-1 text-sm text-red-400 bg-red-900 bg-opacity-20">
-                                    {{ subscription.get_status_display }}
-                                </span>
-                            {% else %}
-                                <span class="glass-btn px-3 py-1 text-sm text-gray-400 bg-gray-900 bg-opacity-20">
-                                    {{ subscription.get_status_display }}
-                                </span>
-                            {% endif %}
-                        </td>
-                        <td class="p-4 text-center text-white">
-                            {% if subscription.payment_type == 'monthly' %}
-                                Mensual
-                            {% else %}
-                                Anual
-                            {% endif %}
-                        </td>
-                        <td class="p-4 text-right text-white">${{ subscription.price|formato_cl:subscription.client }}</td>
-                        <td class="p-4 text-center">
-                            {% if subscription.auto_renewal %}
-                            <span class="text-green-400">Auto</span>
-                            {% else %}
-                            <span class="text-red-400">Manual</span>
-                            {% endif %}
-                        </td>
-                        <td class="p-4 text-center">
-                            <a href="{% url 'forgeapp:subscription_detail' subscription.pk %}" 
-                               class="glass-btn px-4 py-1.5 text-white hover:text-forge-bright">
-                                Ver
-                            </a>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="7" class="p-4 text-white text-center opacity-60">
-                            No hay suscripciones registradas
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+<!-- Header con botón de crear -->
+<div class="flex justify-between items-center mb-6">
+    <div class="flex items-center space-x-4">
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center">
+            <i class="fas fa-sync-alt text-white text-xl"></i>
         </div>
+        <div>
+            <h3 class="text-xl font-display font-bold text-dark-800">Listado de Suscripciones</h3>
+            <p class="text-sm text-dark-500">{{ subscriptions|length }} suscripción{{ subscriptions|length|pluralize:"es" }}</p>
+        </div>
+    </div>
+    <a href="{% url 'forgeapp:subscription_create' %}"
+       class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-emerald-400 to-emerald-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200">
+        <i class="fas fa-plus-circle mr-2"></i>
+        Nueva Suscripción
+    </a>
+</div>
+
+<!-- Tabla de suscripciones -->
+<div class="card-premium overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead class="bg-gray-50 border-b border-gray-200">
+                <tr>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-dark-600 uppercase tracking-wider">ID</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-dark-600 uppercase tracking-wider">Cliente</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-dark-600 uppercase tracking-wider">Aplicación</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-dark-600 uppercase tracking-wider">Estado</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-dark-600 uppercase tracking-wider">Tipo</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-dark-600 uppercase tracking-wider">Precio</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-dark-600 uppercase tracking-wider">Renovación</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for subscription in subscriptions %}
+                <tr class="{% if subscription.status == 'expired' or subscription.is_expired_calc %}bg-red-50 border-l-4 border-red-500{% else %}hover:bg-gray-50{% endif %} transition-colors cursor-pointer" onclick="window.location='{% url 'forgeapp:subscription_detail' subscription.pk %}'">
+                    <td class="px-6 py-4">
+                        <span class="text-sm font-mono text-dark-600">{{ subscription.reference_id }}</span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <a href="{% url 'forgeapp:client_detail' subscription.client.pk %}"
+                           class="text-sm font-semibold text-dark-800 hover:text-primary-600 transition-colors"
+                           onclick="event.stopPropagation();">
+                            {{ subscription.client.name }}
+                        </a>
+                    </td>
+                    <td class="px-6 py-4">
+                        <a href="{% url 'forgeapp:application_detail' subscription.application.pk %}"
+                           class="text-sm font-semibold text-dark-800 hover:text-emerald-600 transition-colors"
+                           onclick="event.stopPropagation();">
+                            {{ subscription.application.name }}
+                        </a>
+                    </td>
+                    <td class="px-6 py-4">
+                        {% if subscription.status == 'expired' or subscription.is_expired_calc %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-300">
+                                <i class="fas fa-exclamation-triangle mr-1"></i>
+                                EXPIRADA
+                            </span>
+                        {% elif subscription.status == 'active' %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                {{ subscription.get_status_display }}
+                            </span>
+                        {% elif subscription.status == 'pending' %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                {{ subscription.get_status_display }}
+                            </span>
+                        {% elif subscription.status == 'cancelled' %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                {{ subscription.get_status_display }}
+                            </span>
+                        {% elif subscription.status == 'inactive' %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                {{ subscription.get_status_display }}
+                            </span>
+                        {% else %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                {{ subscription.get_status_display }}
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-50 text-primary-700">
+                            {{ subscription.get_payment_type_display }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="text-sm font-semibold text-dark-800">
+                            ${{ subscription.price|formato_cl:subscription.client }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4">
+                        {% if subscription.auto_renewal %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                <i class="fas fa-check mr-1"></i>
+                                Auto
+                            </span>
+                        {% else %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                                <i class="fas fa-hand-paper mr-1"></i>
+                                Manual
+                            </span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="px-6 py-12">
+                        <div class="text-center">
+                            <i class="fas fa-file-contract text-5xl text-gray-200 mb-4"></i>
+                            <p class="text-dark-500 font-medium">No hay suscripciones registradas</p>
+                            <p class="text-sm text-dark-400 mt-1">Comienza agregando tu primera suscripción</p>
+                            <a href="{% url 'forgeapp:subscription_create' %}"
+                               class="inline-flex items-center mt-4 px-4 py-2 bg-emerald-400 text-white text-sm font-semibold rounded-lg hover:bg-emerald-600 transition-colors">
+                                <i class="fas fa-plus mr-2"></i>
+                                Crear Suscripción
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 {% endblock %}

@@ -19,6 +19,9 @@ logger = logging.getLogger('finance')
 @login_required
 def dashboard(request):
     """Dashboard financiero con KPIs y gráficos"""
+    from forgeapp.models import PaymentEvent
+    from datetime import date, timedelta
+
     # Obtener todas las suscripciones y activas
     total_subscriptions = Subscription.objects.count()
     active_subscriptions = Subscription.objects.filter(status='active')
@@ -35,7 +38,7 @@ def dashboard(request):
         payment_type='monthly',
         created_at__lt=last_month
     ).aggregate(total=Sum('price'))['total'] or 0
-    
+
     if mrr_last_month > 0:
         mrr_change = ((mrr - mrr_last_month) / mrr_last_month) * 100
     else:
@@ -46,7 +49,7 @@ def dashboard(request):
     retained_clients = active_subscriptions.filter(
         created_at__lt=last_month
     ).values('client').distinct().count()
-    
+
     retention_rate = (retained_clients / total_clients * 100) if total_clients > 0 else 0
 
     # Obtener clientes activos y nuevos
@@ -58,19 +61,19 @@ def dashboard(request):
     # Calcular valor promedio por cliente
     avg_client_value = mrr / active_clients if active_clients > 0 else 0
 
-    # Datos para gráficos
+    # Datos para gráficos - usando PaymentEvent con status='paid'
     monthly_data = []
     monthly_labels = []
     for i in range(6):
         month_start = timezone.now() - timezone.timedelta(days=30 * i)
         month_end = month_start - timezone.timedelta(days=30)
-        month_total = Payment.objects.filter(
-            status='completed',
-            payment_date__range=[month_end, month_start]
+        month_total = PaymentEvent.objects.filter(
+            status='paid',
+            paid_date__range=[month_end.date(), month_start.date()]
         ).aggregate(total=Sum('amount'))['total'] or 0
         monthly_data.append(float(month_total))
         monthly_labels.append(month_end.strftime('%B'))
-    
+
     monthly_data.reverse()
     monthly_labels.reverse()
 
@@ -79,19 +82,14 @@ def dashboard(request):
     annual_count = active_subscriptions.filter(payment_type='annual').count()
     payment_distribution = [monthly_count, annual_count]
 
-    # Identificar suscripciones que necesitan pago
-    today = timezone.now().date()
-    start_of_month = today.replace(day=1)
-    
-    # Obtener suscripciones activas que necesitan pago este mes
-    # Filtramos por suscripciones cuya fecha de próximo pago es hoy o anterior
-    # Y que no tienen pagos completados este mes
-    subscriptions_needing_payment = active_subscriptions.filter(
-        Q(next_payment_date__lte=today) | Q(next_payment_date__isnull=True)
-    ).exclude(
-        finance_payments__payment_date__gte=start_of_month,  # Cambiado de payments a finance_payments
-        finance_payments__status='completed'  # Cambiado de payments a finance_payments
-    ).distinct()
+    # Identificar eventos de pago pendientes (vencidos o próximos)
+    today = date.today()
+
+    # Eventos de pago pendientes vencidos o que vencen hoy
+    pending_payment_events = PaymentEvent.objects.filter(
+        status='pending',
+        expected_date__lte=today
+    ).select_related('subscription', 'subscription__client', 'subscription__application')
 
     return render(request, 'finance/dashboard.html', {
         'total_subscriptions': total_subscriptions,
@@ -105,7 +103,7 @@ def dashboard(request):
         'monthly_data': monthly_data,
         'monthly_labels': monthly_labels,
         'payment_distribution': payment_distribution,
-        'pending_payments': subscriptions_needing_payment
+        'pending_payments': pending_payment_events
     })
 
 @login_required
@@ -333,76 +331,68 @@ def receipt_send(request, pk):
 
 @login_required
 def register_subscription_payment(request, subscription_id):
-    """Registra un pago manual para una suscripción"""
+    """
+    Registra un pago manual para una suscripción.
+    NOTA: Esta función está deprecada. Usa la vista mark_payment_event_paid en forgeapp
+    que maneja PaymentEvent en lugar de Payment.
+    """
+    from forgeapp.models import PaymentEvent
+    from datetime import date
+
     subscription = get_object_or_404(Subscription, pk=subscription_id)
-    
+
     try:
         with transaction.atomic():
-            # Obtener el pago pendiente más antiguo
-            payment = Payment.objects.filter(
+            # Obtener el evento de pago pendiente más antiguo
+            payment_event = PaymentEvent.objects.filter(
                 subscription=subscription,
                 status='pending'
-            ).order_by('due_date').first()
-            
-            if not payment:
-                messages.error(request, 'No hay pagos pendientes para esta suscripción')
+            ).order_by('expected_date').first()
+
+            if not payment_event:
+                messages.error(request, 'No hay eventos de pago pendientes para esta suscripción')
                 return redirect('forgeapp:subscription_detail', pk=subscription_id)
-            
-            # Actualizar el pago existente a completado
-            payment.status = 'completed'
-            payment.payment_date = timezone.now()
-            payment.save()
-            
-            # Crear transacción manualmente (no confiar en el signal)
-            Transaction.objects.create(
-                type='income',
-                category=subscription.reference_id,
-                description=f"Pago de suscripción - Cliente: {subscription.client.name} - App: {subscription.application.name}",
-                amount=payment.amount,
-                date=timezone.now().date(),
-                payment=payment,
-                notes='Pago registrado manualmente'
-            )
 
-            # Actualizar fechas de pago en la suscripción
-            subscription.last_payment_date = timezone.now().date()
-            if subscription.payment_type == 'monthly':
-                subscription.next_payment_date = subscription.last_payment_date + timezone.timedelta(days=30)
+            # Marcar el evento como pagado
+            if payment_event.mark_as_paid(paid_date=date.today()):
+                messages.success(request, 'Pago registrado exitosamente')
             else:
-                subscription.next_payment_date = subscription.last_payment_date + timezone.timedelta(days=365)
-            subscription.save()
+                messages.warning(request, 'El evento ya estaba marcado como pagado')
 
-            messages.success(request, 'Pago registrado exitosamente')
     except Exception as e:
+        logger.error(f"Error al registrar pago: {str(e)}")
         messages.error(request, f'Error al registrar el pago: {str(e)}')
-        
+
     return redirect('forgeapp:subscription_detail', pk=subscription_id)
 
 @login_required
 def monthly_report(request):
     """Reporte mensual de ingresos y pagos"""
+    from forgeapp.models import PaymentEvent
+
     # Filtros de fecha
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
-    
+
     if not start_date or not end_date:
         # Por defecto, mostrar el mes actual
         today = timezone.now()
         start_date = today.replace(day=1).date()
         end_date = (start_date + timezone.timedelta(days=32)).replace(day=1) - timezone.timedelta(days=1)
-    
-    # Obtener pagos del período
-    payments = Payment.objects.filter(
-        payment_date__range=[start_date, end_date]
+
+    # Obtener eventos de pago del período (pagados)
+    payment_events = PaymentEvent.objects.filter(
+        paid_date__range=[start_date, end_date],
+        status='paid'
     ).select_related('subscription__client', 'subscription__application')
 
     # Calcular totales
-    total = payments.filter(status='completed').aggregate(
+    total = payment_events.aggregate(
         total=Sum('amount')
     )['total'] or 0
 
     return render(request, 'finance/reports/monthly.html', {
-        'payments': payments,
+        'payment_events': payment_events,
         'total': total,
         'start_date': start_date,
         'end_date': end_date,
@@ -411,22 +401,24 @@ def monthly_report(request):
 @login_required
 def annual_report(request):
     """Reporte anual con tendencias y comparativas"""
+    from forgeapp.models import PaymentEvent
+
     # Obtener año del reporte
     year = int(request.GET.get('year', timezone.now().year))
-    
+
     # Calcular totales mensuales
     monthly_totals = []
     total_year = 0
-    
+
     for month in range(1, 13):
-        month_payments = Payment.objects.filter(
-            payment_date__year=year,
-            payment_date__month=month,
-            status='completed'
+        month_payment_events = PaymentEvent.objects.filter(
+            paid_date__year=year,
+            paid_date__month=month,
+            status='paid'
         )
-        month_total = month_payments.aggregate(total=Sum('amount'))['total'] or 0
+        month_total = month_payment_events.aggregate(total=Sum('amount'))['total'] or 0
         total_year += month_total
-        
+
         if month_total > 0:
             monthly_totals.append({
                 'month': month,

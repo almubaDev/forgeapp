@@ -14,4 +14,4 @@ urlpatterns = [
     path('pdf/', include('pdf_generator.urls')),
     # Ruta directa para verificación de comprobantes
     path('comprobante/verificar/<str:receipt_number>/<str:verification_code>/', verificar_comprobante, name='verificar_comprobante')
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + static(settings.STATIC_URL, document_root=settings.STATICFILES_DIRS[0])

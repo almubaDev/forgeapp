@@ -9,7 +9,16 @@ import logging
 logger = logging.getLogger(__name__)
 
 def register_signals():
-    """Registra los signals una vez que la aplicación está lista"""
+    """
+    Registra los signals una vez que la aplicación está lista.
+
+    NOTA: Los signals de Payment están DESACTIVADOS porque ahora usamos PaymentEvent
+    en forgeapp que maneja todo automáticamente mediante signals propios.
+    El modelo Payment de finance está deprecado.
+    """
+    return  # Signals desactivados - usar PaymentEvent en forgeapp
+
+    # CÓDIGO DEPRECADO - NO SE EJECUTA
     Subscription = apps.get_model('forgeapp', 'Subscription')
     Payment = apps.get_model('finance', 'Payment')
     Transaction = apps.get_model('finance', 'Transaction')

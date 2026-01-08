@@ -9,23 +9,33 @@ import logging
 logger = logging.getLogger(__name__)
 
 def check_expired_subscriptions():
-    """Verifica y actualiza suscripciones vencidas"""
+    """
+    Verifica y actualiza suscripciones vencidas.
+    Una suscripción se marca como EXPIRED solo si pasaron más de 15 días desde su fecha de renovación esperada.
+    Requiere que la suscripción tenga start_date (no sea PENDING).
+    """
     try:
         from forgeapp.models import Subscription
-        
+        from datetime import date
+
         with transaction.atomic():
-            # Obtener suscripciones activas que han expirado
-            expired_subscriptions = Subscription.objects.select_for_update().filter(
+            # Obtener todas las suscripciones activas con fecha de inicio
+            active_subscriptions = Subscription.objects.select_for_update().filter(
                 status='active',
-                end_date__lt=timezone.now().date()
+                start_date__isnull=False  # Solo suscripciones con fecha de inicio
             )
 
-            # Marcar como expiradas
+            # Verificar cuáles han expirado (pasó el período de gracia de 15 días)
             count = 0
-            for subscription in expired_subscriptions:
-                subscription.status = 'expired'
-                subscription.save()
-                count += 1
+            today = date.today()
+
+            for subscription in active_subscriptions:
+                # Verificar si pasó el período de gracia
+                if subscription.grace_period_end and today > subscription.grace_period_end:
+                    subscription.status = 'expired'
+                    subscription.save()
+                    count += 1
+                    logger.info(f"Suscripción {subscription.reference_id} marcada como expirada (venció el {subscription.grace_period_end})")
 
             if count > 0:
                 logger.info(f"Se marcaron {count} suscripciones como expiradas")
@@ -33,30 +43,16 @@ def check_expired_subscriptions():
     except Exception as e:
         logger.error(f"Error al verificar suscripciones: {e}")
 
-def generate_monthly_payments():
-    """Genera pagos pendientes para todas las suscripciones activas"""
-    try:
-        # Verificar si ya se generaron los pagos este mes
-        today = timezone.now().date()
-        cache_key = f'monthly_payments_generated_{today.year}_{today.month}'
-        
-        if not cache.get(cache_key):
-            call_command('generate_pending_payments')
-            cache.set(cache_key, True, timeout=60*60*24*28)  # Expira en 28 días
-            logger.info("Pagos mensuales generados exitosamente")
-    except Exception as e:
-        logger.error(f"Error al generar pagos mensuales: {e}")
-
 def daily_tasks():
-    """Ejecuta las tareas diarias"""
+    """
+    Ejecuta las tareas diarias.
+    NOTA: La generación de eventos de pago se hace automáticamente mediante signals
+    cuando se activa una suscripción o se marca un evento como pagado.
+    """
     try:
         # Verificar suscripciones vencidas
         check_expired_subscriptions()
-        
-        # Si es el primer día del mes, generar pagos
-        if timezone.now().date().day == 1:
-            generate_monthly_payments()
-            
+
     except Exception as e:
         logger.error(f"Error en tareas diarias: {e}")
 

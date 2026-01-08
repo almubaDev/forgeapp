@@ -1,473 +1,469 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load forgeapp_extras %}
 
 {% block title %}Contrato de Servicio - ForgeApp{% endblock %}
-
-{% block window_title %}Contrato de Servicio{% endblock %}
+{% block page_title %}Contrato de Servicio{% endblock %}
+{% block page_subtitle %}{% if is_preview %}Generar nuevo contrato para {{ client.name }}{% else %}Visualización del contrato{% endif %}{% endblock %}
 
 {% block content %}
-<div class="space-y-8">
-    <div class="flex justify-between items-center">
-        <h2 class="text-2xl text-white font-medium">Contrato de Servicio</h2>
-        {% if is_preview %}
-        <a href="{% url 'forgeapp:client_detail' client.pk %}" 
-           class="glass-btn px-6 py-2.5 text-white hover:text-forge-bright">
-            Volver al Cliente
+{% if is_preview %}
+<!-- Vista de preparación para el administrador -->
+<div class="flex justify-between items-center mb-6">
+    <div class="flex items-center space-x-3">
+        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+            Nuevo Contrato
+        </span>
+    </div>
+    <div class="flex items-center space-x-3">
+        <a href="{% url 'forgeapp:client_contracts' client.pk %}"
+           class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 text-dark-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors">
+            <i class="fas fa-file-contract mr-2"></i>
+            Ver Contratos
         </a>
-        {% endif %}
+        <a href="{% url 'forgeapp:client_detail' client.pk %}"
+           class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 text-dark-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors">
+            <i class="fas fa-arrow-left mr-2"></i>
+            Volver
+        </a>
+    </div>
+</div>
+
+<!-- Información del cliente -->
+<div class="card-premium p-6 mb-6">
+    <div class="flex items-center space-x-3 mb-6 pb-4 border-b border-gray-100">
+        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center">
+            <i class="fas fa-user text-white"></i>
+        </div>
+        <div>
+            <h3 class="text-lg font-display font-bold text-dark-800">Información del Cliente</h3>
+            <p class="text-sm text-dark-500">Datos del cliente para el contrato</p>
+        </div>
     </div>
 
-    <div class="glass-panel p-6">
-        {% if is_preview %}
-        <!-- Vista de preparación para el administrador -->
-        <form method="post" action="{% url 'forgeapp:send_service_contract' client.pk %}" class="space-y-6" data-loading="true">
-            {% csrf_token %}
-            
-            <div class="space-y-4">
-                <h3 class="text-xl text-forge-bright font-medium">Información del Cliente</h3>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-white text-sm font-medium mb-2">Nombre del Cliente</label>
-                        <p class="glass-input px-4 py-2 text-white">{{ client.name }}</p>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-white text-sm font-medium mb-2">RUT</label>
-                        <p class="glass-input px-4 py-2 text-white">{{ client.rut }}</p>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-white text-sm font-medium mb-2">Email</label>
-                        <p class="glass-input px-4 py-2 text-white">{{ client.email }}</p>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-white text-sm font-medium mb-2">Teléfono</label>
-                        <p class="glass-input px-4 py-2 text-white">{{ client.phone }}</p>
-                    </div>
-                    
-                    {% if client.company %}
-                    <div>
-                        <label class="block text-white text-sm font-medium mb-2">Empresa</label>
-                        <p class="glass-input px-4 py-2 text-white">{{ client.company }}</p>
-                    </div>
-                    
-                    {% if client.company_rut %}
-                    <div>
-                        <label class="block text-white text-sm font-medium mb-2">RUT Empresa</label>
-                        <p class="glass-input px-4 py-2 text-white">{{ client.company_rut }}</p>
-                    </div>
-                    {% endif %}
-                    {% endif %}
-                </div>
-            </div>
-            
-            <div class="space-y-4">
-                <h3 class="text-xl text-forge-bright font-medium">Suscripción</h3>
-                
-                <div>
-                    <label class="block text-white text-sm font-medium mb-2">Seleccione una Aplicación</label>
-                    <select name="application" required class="glass-input w-full px-4 py-2 text-white bg-transparent border border-forge-light rounded-md focus:outline-none focus:ring-2 focus:ring-forge-bright">
-                        <option value="">Seleccione una aplicación</option>
-                        {% for application in applications %}
-                        <option value="{{ application.pk }}">{{ application.name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                
-                <div>
-                    <label class="block text-white text-sm font-medium mb-2">Tipo de Suscripción</label>
-                    <select name="subscription_type" required class="glass-input w-full px-4 py-2 text-white bg-transparent border border-forge-light rounded-md focus:outline-none focus:ring-2 focus:ring-forge-bright">
-                        <option value="">Seleccione un tipo de suscripción</option>
-                        <option value="monthly">Mensual</option>
-                        <option value="annual">Anual</option>
-                    </select>
-                </div>
-                
-                <div>
-                    <label class="block text-white text-sm font-medium mb-2">Valor de la Suscripción</label>
-                    <div class="flex items-center glass-input px-4 py-2">
-                        <span class="text-white mr-1">$</span>
-                        <input type="text" name="price" id="price" class="bg-transparent border-none flex-grow text-white focus:outline-none" placeholder="Ingrese el valor" required>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="space-y-4">
-                <h3 class="text-xl text-forge-bright font-medium">Vista Previa del Contrato</h3>
-                
-                <div class="glass-input p-4 h-64 overflow-y-auto text-white text-sm">
-                    <h4 class="font-bold text-forge-bright mb-2">CONTRATO DE SERVICIO FORGEAPP</h4>
-                    
-                    <p class="mb-4">El presente contrato establece los términos y condiciones bajo los cuales ForgeApp proporcionará servicios de Software como Servicio (SaaS) al Cliente. Al aceptar este contrato, el Cliente reconoce haber leído, entendido y aceptado todas las condiciones aquí establecidas.</p>
-                    
-                    <h5 class="font-bold text-forge-bright mb-2">1. DEFINICIONES</h5>
-                    <p class="mb-2">"ForgeApp" se refiere a la empresa proveedora del servicio.</p>
-                    <p class="mb-2">"Cliente" se refiere a la persona natural o jurídica que contrata los servicios de ForgeApp.</p>
-                    <p class="mb-2">"Servicio" se refiere a la aplicación o software proporcionado bajo el modelo SaaS.</p>
-                    <p class="mb-2">"SaaS" (Software as a Service) se refiere al modelo de distribución de software donde el software y los datos se alojan en servidores del proveedor y se accede a ellos a través de internet.</p>
-                    <p class="mb-4">"Suscripción" se refiere al pago periódico que realiza el Cliente para acceder al Servicio.</p>
-                    
-                    <h5 class="font-bold text-forge-bright mb-2">2. DESCRIPCIÓN DEL SERVICIO</h5>
-                    <p class="mb-2">ForgeApp proporcionará al Cliente acceso a la aplicación seleccionada a través de internet, bajo el modelo SaaS.</p>
-                    <p class="mb-2">El servicio incluye alojamiento, mantenimiento, actualizaciones y soporte técnico básico.</p>
-                    <p class="mb-4">ForgeApp se reserva el derecho de realizar mejoras y modificaciones al Servicio sin previo aviso, siempre que no afecten negativamente la funcionalidad principal.</p>
-                    
-                    <h5 class="font-bold text-forge-bright mb-2">3. DURACIÓN DEL CONTRATO</h5>
-                    <p class="mb-2">El presente contrato tendrá una duración inicial según el tipo de suscripción seleccionada.</p>
-                    <p class="mb-4">El contrato se renovará automáticamente por períodos iguales, salvo que el Cliente notifique su intención de no renovar con al menos 15 días de anticipación a la fecha de renovación.</p>
-                    
-                    <h5 class="font-bold text-forge-bright mb-2">4. PRECIO Y FORMA DE PAGO</h5>
-                    <p class="mb-2">El Cliente pagará a ForgeApp el precio correspondiente al tipo de suscripción seleccionada.</p>
-                    <p class="mb-2">Los pagos se realizarán por adelantado, al inicio de cada período de suscripción.</p>
-                    <p class="mb-2">ForgeApp se reserva el derecho de modificar los precios, notificando al Cliente con al menos 30 días de anticipación.</p>
-                    <p class="mb-4">La falta de pago dará lugar a la suspensión del Servicio hasta que se regularice la situación.</p>
-                    
-                    <h5 class="font-bold text-forge-bright mb-2">5. PROPIEDAD INTELECTUAL</h5>
-                    <p class="mb-2">Las aplicaciones creadas y puestas a disposición bajo servicio SaaS serán propiedad de ForgeApp hasta que el Cliente cumpla 48 mensualidades de suscripción, continuas o no.</p>
-                    <p class="mb-2">Después del período mencionado (48 meses), el Cliente podrá solicitar el código de su aplicación para hacer uso del mismo fuera del vínculo con ForgeApp.</p>
-                    <p class="mb-4">Durante los primeros 48 meses de suscripción, la aplicación es propiedad de ForgeApp y el Cliente solo podrá hacer uso de ella mientras mantenga su suscripción al día.</p>
-                    
-                    <h5 class="font-bold text-forge-bright mb-2">6. PROTECCIÓN DE DATOS</h5>
-                    <p class="mb-2">La protección de los datos almacenados por el Cliente en la aplicación proporcionada por ForgeApp es de responsabilidad compartida.</p>
-                    <p class="mb-2">El Cliente debe seguir las siguientes normas de seguridad estándar para la protección de los datos:</p>
-                    <ul class="list-disc pl-6 mb-2">
-                        <li>Utilizar contraseñas seguras y cambiarlas periódicamente.</li>
-                        <li>No compartir credenciales de acceso entre usuarios.</li>
-                        <li>Mantener actualizado el software de los dispositivos desde los que se accede al Servicio.</li>
-                        <li>Utilizar conexiones seguras (HTTPS) para acceder al Servicio.</li>
-                        <li>Realizar copias de seguridad periódicas de los datos críticos.</li>
-                        <li>Notificar inmediatamente a ForgeApp cualquier brecha de seguridad detectada.</li>
-                    </ul>
-                    <p class="mb-2">ForgeApp implementará medidas de seguridad razonables para proteger los datos del Cliente, incluyendo cifrado de datos, copias de seguridad periódicas y controles de acceso.</p>
-                    <p class="mb-4">ForgeApp cumplirá con la legislación aplicable en materia de protección de datos personales.</p>
-                    
-                    <h5 class="font-bold text-forge-bright mb-2">7. PROPIEDAD DE LOS DATOS</h5>
-                    <p class="mb-2">Los datos almacenados en las bases de datos relacionadas a los software y/o aplicaciones web brindadas bajo sistema SaaS por ForgeApp son propiedad del Cliente que contrata los servicios.</p>
-                    <p class="mb-4">El Cliente puede solicitar sus datos cuando estime conveniente para migrarse a otro proveedor de servicio.</p>
-                    
-                    <h5 class="font-bold text-forge-bright mb-2">8. LIMITACIÓN DE RESPONSABILIDAD</h5>
-                    <p class="mb-2">ForgeApp no será responsable por daños indirectos, incidentales, especiales o consecuentes que resulten del uso o la imposibilidad de usar el Servicio.</p>
-                    <p class="mb-2">La responsabilidad total de ForgeApp se limitará al monto pagado por el Cliente durante los últimos 12 meses.</p>
-                    <p class="mb-4">ForgeApp no garantiza que el Servicio esté libre de errores o que su funcionamiento sea ininterrumpido.</p>
-                    
-                    <h5 class="font-bold text-forge-bright mb-2">9. TERMINACIÓN DEL CONTRATO</h5>
-                    <p class="mb-2">Cualquiera de las partes podrá terminar el contrato en caso de incumplimiento grave de la otra parte.</p>
-                    <p class="mb-2">En caso de terminación, el Cliente tendrá acceso al Servicio hasta el final del período pagado.</p>
-                    <p class="mb-4">ForgeApp proporcionará al Cliente una copia de sus datos en un formato estándar, si así lo solicita, dentro de los 30 días siguientes a la terminación.</p>
-                    
-                    <h5 class="font-bold text-forge-bright mb-2">10. DISPOSICIONES GENERALES</h5>
-                    <p class="mb-2">Este contrato constituye el acuerdo completo entre las partes y reemplaza cualquier acuerdo previo.</p>
-                    <p class="mb-2">Las modificaciones a este contrato deberán hacerse por escrito y ser aceptadas por ambas partes.</p>
-                    <p class="mb-2">La invalidez o inaplicabilidad de cualquier disposición de este contrato no afectará la validez o aplicabilidad de las demás disposiciones.</p>
-                    <p class="mb-4">Este contrato se regirá por las leyes de Chile y cualquier controversia será sometida a la jurisdicción de los tribunales de Santiago.</p>
-                </div>
-            </div>
-            
-            <div class="flex justify-end">
-                <button type="submit" class="glass-btn px-6 py-2.5 text-white hover:text-forge-bright">
-                    Enviar al Cliente
-                </button>
-            </div>
-        </form>
-        {% else %}
-        {% if is_error %}
-        <!-- Vista para el cliente cuando hay un error -->
-        <div class="space-y-6">
-            <div class="bg-red-900 bg-opacity-20 p-4 rounded-md">
-                <h3 class="text-xl text-red-400 font-medium mb-2">Error</h3>
-                <p class="text-white">Ha ocurrido un error al cargar el contrato. Por favor contacte a soporte.</p>
-                {% if error_message %}
-                <p class="text-white mt-2">Detalles: {{ error_message }}</p>
-                {% endif %}
-                <div class="mt-4">
-                    <a href="{% url 'forgeapp:landing' %}" class="glass-btn px-6 py-2.5 text-white hover:text-forge-bright inline-block">
-                        Volver al Inicio
-                    </a>
-                </div>
-            </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div>
+            <label class="block text-xs font-semibold text-dark-500 uppercase tracking-wider mb-1">Nombre Completo</label>
+            <p class="text-dark-800 font-medium">{{ client.name }}</p>
         </div>
-        {% elif is_expired %}
-        <!-- Vista para el cliente cuando el token ha expirado -->
-        <div class="space-y-6">
-            <div class="bg-yellow-900 bg-opacity-20 p-4 rounded-md">
-                <h3 class="text-xl text-yellow-400 font-medium mb-2">Enlace Expirado</h3>
-                <p class="text-white">El enlace ha expirado. Por favor solicite un nuevo contrato.</p>
-                <div class="mt-4">
-                    <a href="{% url 'forgeapp:landing' %}" class="glass-btn px-6 py-2.5 text-white hover:text-forge-bright inline-block">
-                        Volver al Inicio
-                    </a>
-                </div>
-            </div>
+        <div>
+            <label class="block text-xs font-semibold text-dark-500 uppercase tracking-wider mb-1">RUT</label>
+            <p class="text-dark-800 font-medium">{{ client.rut }}</p>
         </div>
-        {% elif is_accepted %}
-        <!-- Vista para el cliente cuando el contrato ya ha sido aceptado -->
-        <div class="space-y-6">
-            <div class="bg-green-900 bg-opacity-20 p-4 rounded-md">
-                <h3 class="text-xl text-green-400 font-medium mb-2">Contrato Aceptado</h3>
-                <p class="text-white">Este contrato ya ha sido aceptado. No es necesario volver a aceptarlo.</p>
-                
-                {% if just_accepted or is_accepted %}
-                <div class="bg-green-900 bg-opacity-20 p-4 rounded-md mt-4">
-                    <p class="text-white">Contrato aceptado el {{ token_obj.used_at|date:"d/m/Y H:i" }}</p>
-                    {% if client.accept_marketing %}
-                    <p class="text-white mt-2">El cliente ha aceptado recibir correos electrónicos con ofertas y novedades de ForgeApp.</p>
-                    {% else %}
-                    <p class="text-white mt-2">El cliente no ha aceptado recibir correos electrónicos con ofertas y novedades.</p>
-                    {% endif %}
-                </div>
-                {% endif %}
-
-                {% if subscription %}
-                <div class="mt-4">
-                    <h4 class="text-lg text-forge-bright font-medium mb-2">Detalles de la Suscripción</h4>
-                    <ul class="space-y-2 text-white">
-                        <li><span class="text-forge-bright">Referencia:</span> {{ subscription.reference_id }}</li>
-                        <li><span class="text-forge-bright">Estado:</span> {{ subscription.get_status_display }}</li>
-                        <li><span class="text-forge-bright">Tipo de Pago:</span> 
-                            {% if subscription.payment_type == 'monthly' %}
-                                Mensual
-                            {% else %}
-                                Anual
-                            {% endif %}
-                        </li>
-                        <li><span class="text-forge-bright">Fecha de Creación:</span> {{ subscription.created_at|date:"d/m/Y H:i" }}</li>
-                    </ul>
-                </div>
-                {% endif %}
-                
-                <div class="mt-4">
-                    <a href="{% url 'forgeapp:landing' %}" class="glass-btn px-6 py-2.5 text-white hover:text-forge-bright inline-block">
-                        Volver al Inicio
-                    </a>
-                </div>
-            </div>
-            
-            <div class="space-y-4">
-                <h3 class="text-xl text-forge-bright font-medium">Información del Cliente</h3>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-white text-sm font-medium mb-2">Nombre del Cliente</label>
-                        <p class="glass-input px-4 py-2 text-white">{{ client.name }}</p>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-white text-sm font-medium mb-2">RUT</label>
-                        <p class="glass-input px-4 py-2 text-white">{{ client.rut }}</p>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-white text-sm font-medium mb-2">Email</label>
-                        <p class="glass-input px-4 py-2 text-white">{{ client.email }}</p>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-white text-sm font-medium mb-2">Teléfono</label>
-                        <p class="glass-input px-4 py-2 text-white">{{ client.phone }}</p>
-                    </div>
-                    
-                    {% if client.company %}
-                    <div>
-                        <label class="block text-white text-sm font-medium mb-2">Empresa</label>
-                        <p class="glass-input px-4 py-2 text-white">{{ client.company }}</p>
-                    </div>
-                    
-                    {% if client.company_rut %}
-                    <div>
-                        <label class="block text-white text-sm font-medium mb-2">RUT Empresa</label>
-                        <p class="glass-input px-4 py-2 text-white">{{ client.company_rut }}</p>
-                    </div>
-                    {% endif %}
-                    {% endif %}
-                </div>
-            </div>
-            
-            <div class="space-y-4">
-                <h3 class="text-xl text-forge-bright font-medium">Suscripción</h3>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-white text-sm font-medium mb-2">Aplicación</label>
-                        <p class="glass-input px-4 py-2 text-white">{{ application.name }}</p>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-white text-sm font-medium mb-2">Tipo de Suscripción</label>
-                        <p class="glass-input px-4 py-2 text-white">
-                            {% if subscription_type == 'monthly' %}
-                                Mensual
-                            {% else %}
-                                Anual
-                            {% endif %}
-                        </p>
-                    </div>
-                </div>
-            </div>
+        <div>
+            <label class="block text-xs font-semibold text-dark-500 uppercase tracking-wider mb-1">Email</label>
+            <p class="text-dark-800 font-medium">{{ client.email }}</p>
         </div>
-        {% else %}
-        <!-- Vista para el cliente cuando el contrato aún no ha sido aceptado -->
-        <form method="post" action="{% url 'forgeapp:accept_service_contract' token %}" class="space-y-6" data-loading="true">
-            {% csrf_token %}
-            
-            <div class="space-y-4">
-                <h3 class="text-xl text-forge-bright font-medium">Información del Cliente</h3>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-white text-sm font-medium mb-2">Nombre del Cliente</label>
-                        <p class="glass-input px-4 py-2 text-white">{{ client.name }}</p>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-white text-sm font-medium mb-2">RUT</label>
-                        <p class="glass-input px-4 py-2 text-white">{{ client.rut }}</p>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-white text-sm font-medium mb-2">Email</label>
-                        <p class="glass-input px-4 py-2 text-white">{{ client.email }}</p>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-white text-sm font-medium mb-2">Teléfono</label>
-                        <p class="glass-input px-4 py-2 text-white">{{ client.phone }}</p>
-                    </div>
-                    
-                    {% if client.company %}
-                    <div>
-                        <label class="block text-white text-sm font-medium mb-2">Empresa</label>
-                        <p class="glass-input px-4 py-2 text-white">{{ client.company }}</p>
-                    </div>
-                    
-                    {% if client.company_rut %}
-                    <div>
-                        <label class="block text-white text-sm font-medium mb-2">RUT Empresa</label>
-                        <p class="glass-input px-4 py-2 text-white">{{ client.company_rut }}</p>
-                    </div>
-                    {% endif %}
-                    {% endif %}
-                </div>
-            </div>
-            
-            <div class="space-y-4">
-                <h3 class="text-xl text-forge-bright font-medium">Suscripción</h3>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-white text-sm font-medium mb-2">Aplicación</label>
-                        <p class="glass-input px-4 py-2 text-white">{{ application.name }}</p>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-white text-sm font-medium mb-2">Tipo de Suscripción</label>
-                        <p class="glass-input px-4 py-2 text-white">
-                            {% if subscription_type == 'monthly' %}
-                                Mensual
-                            {% else %}
-                                Anual
-                            {% endif %}
-                        </p>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="space-y-4">
-                <h3 class="text-xl text-forge-bright font-medium">Términos y Condiciones</h3>
-                
-                <div class="glass-input p-4 h-64 overflow-y-auto text-white text-sm">
-                    <h4 class="font-bold text-forge-bright mb-2">CONTRATO DE SERVICIO FORGEAPP</h4>
-                    
-                    <p class="mb-4">El presente contrato establece los términos y condiciones bajo los cuales ForgeApp proporcionará servicios de Software como Servicio (SaaS) al Cliente. Al aceptar este contrato, el Cliente reconoce haber leído, entendido y aceptado todas las condiciones aquí establecidas.</p>
-                    
-                    <h5 class="font-bold text-forge-bright mb-2">1. DEFINICIONES</h5>
-                    <p class="mb-2">"ForgeApp" se refiere a la empresa proveedora del servicio.</p>
-                    <p class="mb-2">"Cliente" se refiere a la persona natural o jurídica que contrata los servicios de ForgeApp.</p>
-                    <p class="mb-2">"Servicio" se refiere a la aplicación o software proporcionado bajo el modelo SaaS.</p>
-                    <p class="mb-2">"SaaS" (Software as a Service) se refiere al modelo de distribución de software donde el software y los datos se alojan en servidores del proveedor y se accede a ellos a través de internet.</p>
-                    <p class="mb-4">"Suscripción" se refiere al pago periódico que realiza el Cliente para acceder al Servicio.</p>
-                    
-                    <h5 class="font-bold text-forge-bright mb-2">2. DESCRIPCIÓN DEL SERVICIO</h5>
-                    <p class="mb-2">ForgeApp proporcionará al Cliente acceso a la aplicación seleccionada a través de internet, bajo el modelo SaaS.</p>
-                    <p class="mb-2">El servicio incluye alojamiento, mantenimiento, actualizaciones y soporte técnico básico.</p>
-                    <p class="mb-4">ForgeApp se reserva el derecho de realizar mejoras y modificaciones al Servicio sin previo aviso, siempre que no afecten negativamente la funcionalidad principal.</p>
-                    
-                    <h5 class="font-bold text-forge-bright mb-2">3. DURACIÓN DEL CONTRATO</h5>
-                    <p class="mb-2">El presente contrato tendrá una duración inicial de 
-                    {% if subscription_type == 'monthly' %}
-                        un mes
-                    {% else %}
-                        un año
-                    {% endif %}
-                    , según el tipo de suscripción seleccionada.</p>
-                    <p class="mb-4">El contrato se renovará automáticamente por períodos iguales, salvo que el Cliente notifique su intención de no renovar con al menos 15 días de anticipación a la fecha de renovación.</p>
-                    
-                    <h5 class="font-bold text-forge-bright mb-2">4. PRECIO Y FORMA DE PAGO</h5>
-                    <p class="mb-2">El Cliente pagará a ForgeApp el precio correspondiente al tipo de suscripción seleccionada.</p>
-                    <p class="mb-2">Los pagos se realizarán por adelantado, al inicio de cada período de suscripción.</p>
-                    <p class="mb-2">ForgeApp se reserva el derecho de modificar los precios, notificando al Cliente con al menos 30 días de anticipación.</p>
-                    <p class="mb-4">La falta de pago dará lugar a la suspensión del Servicio hasta que se regularice la situación.</p>
-                    
-                    <h5 class="font-bold text-forge-bright mb-2">5. PROPIEDAD INTELECTUAL</h5>
-                    <p class="mb-2">Las aplicaciones creadas y puestas a disposición bajo servicio SaaS serán propiedad de ForgeApp hasta que el Cliente cumpla 48 mensualidades de suscripción, continuas o no.</p>
-                    <p class="mb-2">Después del período mencionado (48 meses), el Cliente podrá solicitar el código de su aplicación para hacer uso del mismo fuera del vínculo con ForgeApp.</p>
-                    <p class="mb-4">Durante los primeros 48 meses de suscripción, la aplicación es propiedad de ForgeApp y el Cliente solo podrá hacer uso de ella mientras mantenga su suscripción al día.</p>
-                    
-                    <h5 class="font-bold text-forge-bright mb-2">6. PROTECCIÓN DE DATOS</h5>
-                    <p class="mb-2">La protección de los datos almacenados por el Cliente en la aplicación proporcionada por ForgeApp es de responsabilidad compartida.</p>
-                    <p class="mb-2">El Cliente debe seguir las siguientes normas de seguridad estándar para la protección de los datos:</p>
-                    <ul class="list-disc pl-6 mb-2">
-                        <li>Utilizar contraseñas seguras y cambiarlas periódicamente.</li>
-                        <li>No compartir credenciales de acceso entre usuarios.</li>
-                        <li>Mantener actualizado el software de los dispositivos desde los que se accede al Servicio.</li>
-                        <li>Utilizar conexiones seguras (HTTPS) para acceder al Servicio.</li>
-                        <li>Realizar copias de seguridad periódicas de los datos críticos.</li>
-                        <li>Notificar inmediatamente a ForgeApp cualquier brecha de seguridad detectada.</li>
-                    </ul>
-                    <p class="mb-2">ForgeApp implementará medidas de seguridad razonables para proteger los datos del Cliente, incluyendo cifrado de datos, copias de seguridad periódicas y controles de acceso.</p>
-                    <p class="mb-4">ForgeApp cumplirá con la legislación aplicable en materia de protección de datos personales.</p>
-                    
-                    <h5 class="font-bold text-forge-bright mb-2">7. PROPIEDAD DE LOS DATOS</h5>
-                    <p class="mb-2">Los datos almacenados en las bases de datos relacionadas a los software y/o aplicaciones web brindadas bajo sistema SaaS por ForgeApp son propiedad del Cliente que contrata los servicios.</p>
-                    <p class="mb-4">El Cliente puede solicitar sus datos cuando estime conveniente para migrarse a otro proveedor de servicio.</p>
-                    
-                    <h5 class="font-bold text-forge-bright mb-2">8. LIMITACIÓN DE RESPONSABILIDAD</h5>
-                    <p class="mb-2">ForgeApp no será responsable por daños indirectos, incidentales, especiales o consecuentes que resulten del uso o la imposibilidad de usar el Servicio.</p>
-                    <p class="mb-2">La responsabilidad total de ForgeApp se limitará al monto pagado por el Cliente durante los últimos 12 meses.</p>
-                    <p class="mb-4">ForgeApp no garantiza que el Servicio esté libre de errores o que su funcionamiento sea ininterrumpido.</p>
-                    
-                    <h5 class="font-bold text-forge-bright mb-2">9. TERMINACIÓN DEL CONTRATO</h5>
-                    <p class="mb-2">Cualquiera de las partes podrá terminar el contrato en caso de incumplimiento grave de la otra parte.</p>
-                    <p class="mb-2">En caso de terminación, el Cliente tendrá acceso al Servicio hasta el final del período pagado.</p>
-                    <p class="mb-4">ForgeApp proporcionará al Cliente una copia de sus datos en un formato estándar, si así lo solicita, dentro de los 30 días siguientes a la terminación.</p>
-                    
-                    <h5 class="font-bold text-forge-bright mb-2">10. DISPOSICIONES GENERALES</h5>
-                    <p class="mb-2">Este contrato constituye el acuerdo completo entre las partes y reemplaza cualquier acuerdo previo.</p>
-                    <p class="mb-2">Las modificaciones a este contrato deberán hacerse por escrito y ser aceptadas por ambas partes.</p>
-                    <p class="mb-2">La invalidez o inaplicabilidad de cualquier disposición de este contrato no afectará la validez o aplicabilidad de las demás disposiciones.</p>
-                    <p class="mb-4">Este contrato se regirá por las leyes de Chile y cualquier controversia será sometida a la jurisdicción de los tribunales de Santiago.</p>
-                </div>
-                
-                <div class="flex items-start space-x-2">
-                    <input type="checkbox" name="accept_terms" id="accept_terms" required class="mt-1">
-                    <label for="accept_terms" class="text-white">He leído y acepto los términos y condiciones del servicio</label>
-                </div>
-                
-                <div class="flex items-start space-x-2">
-                    <input type="checkbox" name="accept_marketing" id="accept_marketing" class="mt-1">
-                    <label for="accept_marketing" class="text-white">Acepto recibir correos electrónicos con ofertas y novedades de ForgeApp</label>
-                </div>
-            </div>
-            
-            <div class="flex justify-end">
-                <button type="submit" class="glass-btn px-6 py-2.5 text-white hover:text-forge-bright">
-                    Aceptar y Contratar
-                </button>
-            </div>
-        </form>
+        <div>
+            <label class="block text-xs font-semibold text-dark-500 uppercase tracking-wider mb-1">Teléfono</label>
+            <p class="text-dark-800 font-medium">{{ client.phone|default:"No especificado" }}</p>
+        </div>
+        {% if client.company %}
+        <div>
+            <label class="block text-xs font-semibold text-dark-500 uppercase tracking-wider mb-1">Empresa</label>
+            <p class="text-dark-800 font-medium">{{ client.company }}</p>
+        </div>
+        {% if client.company_rut %}
+        <div>
+            <label class="block text-xs font-semibold text-dark-500 uppercase tracking-wider mb-1">RUT Empresa</label>
+            <p class="text-dark-800 font-medium">{{ client.company_rut }}</p>
+        </div>
         {% endif %}
         {% endif %}
     </div>
 </div>
+
+<!-- Formulario de contrato -->
+<form method="post" action="{% url 'forgeapp:create_contract' client.pk %}" class="space-y-6" data-loading="true" id="contractForm">
+    {% csrf_token %}
+
+    <div class="card-premium p-6">
+        <div class="flex items-center space-x-3 mb-6 pb-4 border-b border-gray-100">
+            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
+                <i class="fas fa-cog text-white"></i>
+            </div>
+            <div>
+                <h3 class="text-lg font-display font-bold text-dark-800">Configuración del Contrato</h3>
+                <p class="text-sm text-dark-500">Selecciona la aplicación y tipo de suscripción</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+                <label for="application" class="block text-sm font-medium text-dark-700 mb-2">
+                    Aplicación <span class="text-red-500">*</span>
+                </label>
+                <select name="application" id="application" required
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-transparent bg-white text-dark-800">
+                    <option value="">Seleccione una aplicación</option>
+                    {% for application in applications %}
+                    <option value="{{ application.pk }}">{{ application.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label for="subscription_type" class="block text-sm font-medium text-dark-700 mb-2">
+                    Tipo de Suscripción <span class="text-red-500">*</span>
+                </label>
+                <select name="subscription_type" id="subscription_type" required
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-transparent bg-white text-dark-800">
+                    <option value="">Seleccione un tipo</option>
+                    <option value="monthly">Mensual</option>
+                    <option value="annual">Anual</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label for="currency" class="block text-sm font-medium text-dark-700 mb-2">
+                    Moneda <span class="text-red-500">*</span>
+                </label>
+                <select name="currency" id="currency" required
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-transparent bg-white text-dark-800">
+                    <option value="CLP" selected>CLP - Pesos Chilenos</option>
+                    <option value="USD">USD - Dólares</option>
+                </select>
+            </div>
+
+            <div>
+                <label for="price" class="block text-sm font-medium text-dark-700 mb-2">
+                    Valor de la Suscripción <span class="text-red-500">*</span>
+                </label>
+                <div class="relative">
+                    <span id="currency_symbol" class="absolute left-4 top-1/2 transform -translate-y-1/2 text-dark-500 font-medium">CLP$</span>
+                    <input type="number" name="price" id="price" required min="0" step="1"
+                           class="w-full pl-14 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-transparent bg-white text-dark-800"
+                           placeholder="0">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vista previa del contrato -->
+    <div class="card-premium p-6">
+        <div class="flex items-center space-x-3 mb-6 pb-4 border-b border-gray-100">
+            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-400 to-violet-600 flex items-center justify-center">
+                <i class="fas fa-file-alt text-white"></i>
+            </div>
+            <div>
+                <h3 class="text-lg font-display font-bold text-dark-800">Vista Previa del Contrato</h3>
+                <p class="text-sm text-dark-500">Términos y condiciones que el cliente aceptará</p>
+            </div>
+        </div>
+
+        <div class="bg-gray-50 rounded-lg p-6 max-h-96 overflow-y-auto text-sm text-dark-700 space-y-4">
+            <h4 class="font-bold text-primary-600 text-base">CONTRATO DE SERVICIO FORGEAPP</h4>
+
+            <p>El presente contrato establece los términos y condiciones bajo los cuales ForgeApp proporcionará servicios de Software como Servicio (SaaS) al Cliente. Al aceptar este contrato, el Cliente reconoce haber leído, entendido y aceptado todas las condiciones aquí establecidas.</p>
+
+            <h5 class="font-bold text-dark-800 mt-4">1. DEFINICIONES</h5>
+            <p>"ForgeApp" se refiere a la empresa proveedora del servicio.</p>
+            <p>"Cliente" se refiere a la persona natural o jurídica que contrata los servicios de ForgeApp.</p>
+            <p>"Servicio" se refiere a la aplicación o software proporcionado bajo el modelo SaaS.</p>
+            <p>"SaaS" (Software as a Service) se refiere al modelo de distribución de software donde el software y los datos se alojan en servidores del proveedor y se accede a ellos a través de internet.</p>
+            <p>"Suscripción" se refiere al pago periódico que realiza el Cliente para acceder al Servicio.</p>
+
+            <h5 class="font-bold text-dark-800 mt-4">2. DESCRIPCIÓN DEL SERVICIO</h5>
+            <p>ForgeApp proporcionará al Cliente acceso a la aplicación seleccionada a través de internet, bajo el modelo SaaS.</p>
+            <p>El servicio incluye alojamiento, mantenimiento, actualizaciones y soporte técnico básico.</p>
+            <p>ForgeApp se reserva el derecho de realizar mejoras y modificaciones al Servicio sin previo aviso, siempre que no afecten negativamente la funcionalidad principal.</p>
+
+            <h5 class="font-bold text-dark-800 mt-4">3. DURACIÓN DEL CONTRATO</h5>
+            <p>El presente contrato tendrá una duración inicial según el tipo de suscripción seleccionada.</p>
+            <p>El contrato se renovará automáticamente por períodos iguales, salvo que el Cliente notifique su intención de no renovar con al menos 15 días de anticipación a la fecha de renovación.</p>
+
+            <h5 class="font-bold text-dark-800 mt-4">4. PRECIO Y FORMA DE PAGO</h5>
+            <p>El Cliente pagará a ForgeApp el precio correspondiente al tipo de suscripción seleccionada.</p>
+            <p>Los pagos se realizarán por adelantado, al inicio de cada período de suscripción.</p>
+            <p>ForgeApp se reserva el derecho de modificar los precios, notificando al Cliente con al menos 30 días de anticipación.</p>
+            <p>La falta de pago dará lugar a la suspensión del Servicio hasta que se regularice la situación.</p>
+
+            <h5 class="font-bold text-dark-800 mt-4">5. PROPIEDAD INTELECTUAL</h5>
+            <p>Las aplicaciones creadas y puestas a disposición bajo servicio SaaS serán propiedad de ForgeApp hasta que el Cliente cumpla 48 mensualidades de suscripción, continuas o no.</p>
+            <p>Después del período mencionado (48 meses), el Cliente podrá solicitar el código de su aplicación para hacer uso del mismo fuera del vínculo con ForgeApp.</p>
+            <p>Durante los primeros 48 meses de suscripción, la aplicación es propiedad de ForgeApp y el Cliente solo podrá hacer uso de ella mientras mantenga su suscripción al día.</p>
+
+            <h5 class="font-bold text-dark-800 mt-4">6. PROTECCIÓN DE DATOS</h5>
+            <p>La protección de los datos almacenados por el Cliente en la aplicación proporcionada por ForgeApp es de responsabilidad compartida.</p>
+            <p>El Cliente debe seguir las siguientes normas de seguridad estándar para la protección de los datos:</p>
+            <ul class="list-disc pl-6 space-y-1">
+                <li>Utilizar contraseñas seguras y cambiarlas periódicamente.</li>
+                <li>No compartir credenciales de acceso entre usuarios.</li>
+                <li>Mantener actualizado el software de los dispositivos desde los que se accede al Servicio.</li>
+                <li>Utilizar conexiones seguras (HTTPS) para acceder al Servicio.</li>
+                <li>Realizar copias de seguridad periódicas de los datos críticos.</li>
+                <li>Notificar inmediatamente a ForgeApp cualquier brecha de seguridad detectada.</li>
+            </ul>
+            <p>ForgeApp implementará medidas de seguridad razonables para proteger los datos del Cliente, incluyendo cifrado de datos, copias de seguridad periódicas y controles de acceso.</p>
+            <p>ForgeApp cumplirá con la legislación aplicable en materia de protección de datos personales.</p>
+
+            <h5 class="font-bold text-dark-800 mt-4">7. PROPIEDAD DE LOS DATOS</h5>
+            <p>Los datos almacenados en las bases de datos relacionadas a los software y/o aplicaciones web brindadas bajo sistema SaaS por ForgeApp son propiedad del Cliente que contrata los servicios.</p>
+            <p>El Cliente puede solicitar sus datos cuando estime conveniente para migrarse a otro proveedor de servicio.</p>
+
+            <h5 class="font-bold text-dark-800 mt-4">8. LIMITACIÓN DE RESPONSABILIDAD</h5>
+            <p>ForgeApp no será responsable por daños indirectos, incidentales, especiales o consecuentes que resulten del uso o la imposibilidad de usar el Servicio.</p>
+            <p>La responsabilidad total de ForgeApp se limitará al monto pagado por el Cliente durante los últimos 12 meses.</p>
+            <p>ForgeApp no garantiza que el Servicio esté libre de errores o que su funcionamiento sea ininterrumpido.</p>
+
+            <h5 class="font-bold text-dark-800 mt-4">9. TERMINACIÓN DEL CONTRATO</h5>
+            <p>Cualquiera de las partes podrá terminar el contrato en caso de incumplimiento grave de la otra parte.</p>
+            <p>En caso de terminación, el Cliente tendrá acceso al Servicio hasta el final del período pagado.</p>
+            <p>ForgeApp proporcionará al Cliente una copia de sus datos en un formato estándar, si así lo solicita, dentro de los 30 días siguientes a la terminación.</p>
+
+            <h5 class="font-bold text-dark-800 mt-4">10. DISPOSICIONES GENERALES</h5>
+            <p>Este contrato constituye el acuerdo completo entre las partes y reemplaza cualquier acuerdo previo.</p>
+            <p>Las modificaciones a este contrato deberán hacerse por escrito y ser aceptadas por ambas partes.</p>
+            <p>La invalidez o inaplicabilidad de cualquier disposición de este contrato no afectará la validez o aplicabilidad de las demás disposiciones.</p>
+            <p>Este contrato se regirá por las leyes de Chile y cualquier controversia será sometida a la jurisdicción de los tribunales de Santiago.</p>
+        </div>
+    </div>
+
+    <!-- Botones de acción -->
+    <div class="flex justify-end space-x-3">
+        <a href="{% url 'forgeapp:client_detail' client.pk %}"
+           class="inline-flex items-center px-6 py-3 bg-white border border-gray-300 text-dark-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors">
+            Cancelar
+        </a>
+        <button type="button" onclick="downloadPDF()"
+                class="inline-flex items-center px-6 py-3 bg-amber-500 text-white font-semibold rounded-lg hover:bg-amber-600 transition-colors">
+            <i class="fas fa-file-pdf mr-2"></i>
+            Vista Previa PDF
+        </button>
+        <button type="submit"
+                class="inline-flex items-center px-6 py-3 bg-primary-400 text-white font-semibold rounded-lg hover:bg-primary-600 transition-colors">
+            <i class="fas fa-plus-circle mr-2"></i>
+            Crear Contrato
+        </button>
+    </div>
+</form>
+
+<script>
+// Cambiar símbolo de moneda al seleccionar
+document.getElementById('currency').addEventListener('change', function() {
+    const symbol = this.value === 'USD' ? 'USD$' : 'CLP$';
+    document.getElementById('currency_symbol').textContent = symbol;
+});
+
+function downloadPDF() {
+    const application = document.getElementById('application').value;
+    const subscriptionType = document.getElementById('subscription_type').value;
+    const price = document.getElementById('price').value;
+    const currency = document.getElementById('currency').value;
+
+    if (!application || !subscriptionType || !price) {
+        alert('Por favor complete todos los campos antes de ver la vista previa.');
+        return;
+    }
+
+    // Construir URL con parámetros
+    const baseUrl = "{% url 'forgeapp:preview_contract_pdf' client.pk %}";
+    const params = new URLSearchParams({
+        application: application,
+        subscription_type: subscriptionType,
+        price: price,
+        currency: currency
+    });
+
+    // Abrir en nueva pestaña para descargar
+    window.open(baseUrl + '?' + params.toString(), '_blank');
+}
+</script>
+
+{% elif is_accepted %}
+<!-- Vista de contrato aceptado -->
+<div class="flex justify-between items-center mb-6">
+    <div class="flex items-center space-x-3">
+        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+            <i class="fas fa-check-circle mr-1"></i>
+            Contrato Aceptado
+        </span>
+        <p class="text-sm text-dark-500">Firmado el {{ token_obj.used_at|date:"d/m/Y" }} a las {{ token_obj.used_at|time:"H:i" }}</p>
+    </div>
+    <div class="flex items-center space-x-3">
+        <a href="{% url 'forgeapp:client_contracts' client.pk %}"
+           class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 text-dark-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors">
+            <i class="fas fa-arrow-left mr-2"></i>
+            Volver a Contratos
+        </a>
+    </div>
+</div>
+
+<!-- Información del contrato aceptado -->
+<div class="card-premium p-6 mb-6 border-l-4 border-green-500">
+    <div class="flex items-center space-x-3 mb-4">
+        <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+            <i class="fas fa-check text-green-600 text-xl"></i>
+        </div>
+        <div>
+            <h3 class="text-lg font-display font-bold text-dark-800">Contrato Firmado Exitosamente</h3>
+            <p class="text-sm text-dark-500">El cliente ha aceptado los términos y condiciones</p>
+        </div>
+    </div>
+
+    {% if client.accept_marketing %}
+    <div class="bg-blue-50 rounded-lg p-3 mt-4">
+        <p class="text-sm text-blue-800">
+            <i class="fas fa-envelope mr-2"></i>
+            El cliente ha aceptado recibir correos electrónicos con ofertas y novedades.
+        </p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Detalles del cliente y contrato -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <div class="card-premium p-6">
+        <div class="flex items-center space-x-3 mb-6 pb-4 border-b border-gray-100">
+            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center">
+                <i class="fas fa-user text-white"></i>
+            </div>
+            <div>
+                <h3 class="text-lg font-display font-bold text-dark-800">Información del Cliente</h3>
+            </div>
+        </div>
+
+        <div class="space-y-4">
+            <div>
+                <label class="block text-xs font-semibold text-dark-500 uppercase tracking-wider mb-1">Nombre</label>
+                <p class="text-dark-800 font-medium">{{ client.name }}</p>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-dark-500 uppercase tracking-wider mb-1">RUT</label>
+                <p class="text-dark-800 font-medium">{{ client.rut }}</p>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-dark-500 uppercase tracking-wider mb-1">Email</label>
+                <p class="text-dark-800 font-medium">{{ client.email }}</p>
+            </div>
+            {% if client.company %}
+            <div>
+                <label class="block text-xs font-semibold text-dark-500 uppercase tracking-wider mb-1">Empresa</label>
+                <p class="text-dark-800 font-medium">{{ client.company }}</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card-premium p-6">
+        <div class="flex items-center space-x-3 mb-6 pb-4 border-b border-gray-100">
+            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
+                <i class="fas fa-file-contract text-white"></i>
+            </div>
+            <div>
+                <h3 class="text-lg font-display font-bold text-dark-800">Detalles del Contrato</h3>
+            </div>
+        </div>
+
+        <div class="space-y-4">
+            <div>
+                <label class="block text-xs font-semibold text-dark-500 uppercase tracking-wider mb-1">Aplicación</label>
+                <p class="text-dark-800 font-medium">{{ application.name }}</p>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-dark-500 uppercase tracking-wider mb-1">Tipo de Suscripción</label>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                    {% if subscription_type == 'monthly' %}bg-blue-100 text-blue-800
+                    {% else %}bg-purple-100 text-purple-800{% endif %}">
+                    {% if subscription_type == 'monthly' %}Mensual{% else %}Anual{% endif %}
+                </span>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-dark-500 uppercase tracking-wider mb-1">Precio</label>
+                <p class="text-dark-800 font-medium text-lg">${{ token_obj.price|default:"0"|formato_cl:client }}</p>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-dark-500 uppercase tracking-wider mb-1">Fecha de Firma</label>
+                <p class="text-dark-800 font-medium">{{ token_obj.used_at|date:"d/m/Y H:i" }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if subscription %}
+<!-- Información de la suscripción -->
+<div class="card-premium p-6">
+    <div class="flex items-center space-x-3 mb-6 pb-4 border-b border-gray-100">
+        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center">
+            <i class="fas fa-sync-alt text-white"></i>
+        </div>
+        <div>
+            <h3 class="text-lg font-display font-bold text-dark-800">Suscripción Asociada</h3>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div>
+            <label class="block text-xs font-semibold text-dark-500 uppercase tracking-wider mb-1">Referencia</label>
+            <p class="text-dark-800 font-medium">{{ subscription.reference_id }}</p>
+        </div>
+        <div>
+            <label class="block text-xs font-semibold text-dark-500 uppercase tracking-wider mb-1">Estado</label>
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                {% if subscription.status == 'active' %}bg-green-100 text-green-800
+                {% elif subscription.status == 'pending' %}bg-yellow-100 text-yellow-800
+                {% else %}bg-red-100 text-red-800{% endif %}">
+                {{ subscription.get_status_display }}
+            </span>
+        </div>
+        <div>
+            <label class="block text-xs font-semibold text-dark-500 uppercase tracking-wider mb-1">Tipo de Pago</label>
+            <p class="text-dark-800 font-medium">{{ subscription.get_payment_type_display }}</p>
+        </div>
+        <div>
+            <label class="block text-xs font-semibold text-dark-500 uppercase tracking-wider mb-1">Fecha de Creación</label>
+            <p class="text-dark-800 font-medium">{{ subscription.created_at|date:"d/m/Y H:i" }}</p>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% elif is_error %}
+<!-- Vista de error -->
+<div class="card-premium p-6 border-l-4 border-red-500">
+    <div class="flex items-center space-x-3">
+        <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+            <i class="fas fa-exclamation-circle text-red-600 text-xl"></i>
+        </div>
+        <div>
+            <h3 class="text-lg font-display font-bold text-dark-800">Error</h3>
+            <p class="text-dark-600">Ha ocurrido un error al cargar el contrato. Por favor contacte a soporte.</p>
+            {% if error_message %}
+            <p class="text-sm text-red-600 mt-2">{{ error_message }}</p>
+            {% endif %}
+        </div>
+    </div>
+    <div class="mt-6">
+        <a href="{% url 'forgeapp:landing' %}"
+           class="inline-flex items-center px-4 py-2 bg-primary-400 text-white font-semibold rounded-lg hover:bg-primary-600 transition-colors">
+            <i class="fas fa-home mr-2"></i>
+            Volver al Inicio
+        </a>
+    </div>
+</div>
+
+{% elif is_expired %}
+<!-- Vista de token expirado -->
+<div class="card-premium p-6 border-l-4 border-yellow-500">
+    <div class="flex items-center space-x-3">
+        <div class="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center">
+            <i class="fas fa-clock text-yellow-600 text-xl"></i>
+        </div>
+        <div>
+            <h3 class="text-lg font-display font-bold text-dark-800">Enlace Expirado</h3>
+            <p class="text-dark-600">El enlace ha expirado. Por favor solicite un nuevo contrato.</p>
+        </div>
+    </div>
+    <div class="mt-6">
+        <a href="{% url 'forgeapp:landing' %}"
+           class="inline-flex items-center px-4 py-2 bg-primary-400 text-white font-semibold rounded-lg hover:bg-primary-600 transition-colors">
+            <i class="fas fa-home mr-2"></i>
+            Volver al Inicio
+        </a>
+    </div>
+</div>
+
+{% endif %}
 {% endblock %}

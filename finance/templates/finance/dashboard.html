@@ -5,130 +5,201 @@
 
 {% block title %}Dashboard Financiero{% endblock %}
 
-{% block content %}
-<div class="space-y-8">
-    <!-- Encabezado -->
-    <div class="flex justify-between items-center">
-        <h2 class="text-2xl text-white font-medium">Dashboard Financiero</h2>
-        <div class="flex space-x-3">
-            <a href="{% url 'finance:transaction_list' %}" 
-               class="glass-btn px-4 py-2 text-white hover:text-forge-bright">
-                Ver Transacciones
-            </a>
-        </div>
-    </div>
+{% block page_title %}Dashboard Financiero{% endblock %}
+{% block page_subtitle %}Métricas y análisis financiero{% endblock %}
 
-    <!-- KPIs -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <!-- Suscripciones -->
-        <div class="glass-panel p-6">
-            <h3 class="text-forge-bright text-sm font-medium mb-2">Suscripciones</h3>
-            <p class="text-white text-2xl font-bold">{{ active_subscriptions }}/{{ total_subscriptions }}</p>
-            <p class="text-forge-light text-sm mt-2">Activas/Total</p>
+{% block content %}
+<div class="space-y-6">
+    <!-- KPIs Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Suscripciones Activas -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 hover:shadow-md transition-shadow">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-sync-alt text-white text-sm"></i>
+                    </div>
+                    <span class="text-xs font-medium text-gray-500">Suscripciones</span>
+                </div>
+                <div class="text-right">
+                    <p class="text-2xl font-bold text-gray-900">{{ active_subscriptions }}</p>
+                    <p class="text-xs text-gray-500">de {{ total_subscriptions }}</p>
+                </div>
+            </div>
         </div>
 
         <!-- MRR -->
-        <div class="glass-panel p-6">
-            <h3 class="text-forge-bright text-sm font-medium mb-2">MRR</h3>
-            <p class="text-white text-2xl font-bold">${{ mrr|floatformat:0|intcomma }}</p>
-            <p class="text-forge-light text-sm mt-2">
-                {% if mrr_change > 0 %}
-                <span class="text-green-400">↑ {{ mrr_change }}%</span>
-                {% else %}
-                <span class="text-red-400">↓ {{ mrr_change|abs_value }}%</span>
-                {% endif %}
-                vs mes anterior
-            </p>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 hover:shadow-md transition-shadow">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-dollar-sign text-white text-sm"></i>
+                    </div>
+                    <span class="text-xs font-medium text-gray-500">MRR</span>
+                </div>
+                <div class="text-right">
+                    <p class="text-2xl font-bold text-gray-900">${{ mrr|floatformat:0|intcomma }}</p>
+                    <p class="text-xs">
+                        {% if mrr_change >= 0 %}
+                        <span class="text-green-600 font-medium">
+                            <i class="fas fa-arrow-up text-xs"></i> {{ mrr_change|floatformat:1 }}%
+                        </span>
+                        {% else %}
+                        <span class="text-red-600 font-medium">
+                            <i class="fas fa-arrow-down text-xs"></i> {{ mrr_change|abs_value|floatformat:1 }}%
+                        </span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
         </div>
 
         <!-- Clientes Activos -->
-        <div class="glass-panel p-6">
-            <h3 class="text-forge-bright text-sm font-medium mb-2">Clientes Activos</h3>
-            <p class="text-white text-2xl font-bold">{{ active_clients }}</p>
-            <p class="text-forge-light text-sm mt-2">
-                {% if new_clients > 0 %}+{{ new_clients }}{% endif %} 
-                este mes
-            </p>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 hover:shadow-md transition-shadow">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-users text-white text-sm"></i>
+                    </div>
+                    <span class="text-xs font-medium text-gray-500">Clientes</span>
+                </div>
+                <div class="text-right">
+                    <p class="text-2xl font-bold text-gray-900">{{ active_clients }}</p>
+                    <p class="text-xs text-gray-500">
+                        {% if new_clients > 0 %}
+                            <span class="text-green-600 font-medium">+{{ new_clients }}</span>
+                        {% else %}
+                            {{ new_clients }}
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
         </div>
 
-        <!-- Valor Promedio por Cliente -->
-        <div class="glass-panel p-6">
-            <h3 class="text-forge-bright text-sm font-medium mb-2">Valor Promedio</h3>
-            <p class="text-white text-2xl font-bold">${{ avg_client_value|floatformat:0|intcomma }}</p>
-            <p class="text-forge-light text-sm mt-2">Por cliente</p>
+        <!-- Tasa de Retención -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 hover:shadow-md transition-shadow">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-chart-line text-white text-sm"></i>
+                    </div>
+                    <span class="text-xs font-medium text-gray-500">Retención</span>
+                </div>
+                <div class="text-right">
+                    <p class="text-2xl font-bold text-gray-900">{{ retention_rate|floatformat:1 }}%</p>
+                    <p class="text-xs text-gray-500">tasa</p>
+                </div>
+            </div>
         </div>
     </div>
 
     <!-- Gráficos -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Ingresos Mensuales -->
-        <div class="glass-panel p-6">
-            <h3 class="text-white font-medium mb-4">Ingresos Mensuales</h3>
-            <div style="height: 120px;">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center mr-3">
+                    <i class="fas fa-chart-area text-blue-600 text-sm"></i>
+                </div>
+                Ingresos Mensuales
+            </h3>
+            <div style="height: 280px;">
                 <canvas id="monthlyRevenueChart"></canvas>
             </div>
         </div>
 
         <!-- Distribución de Pagos -->
-        <div class="glass-panel p-6">
-            <h3 class="text-white font-medium mb-4">Distribución de Pagos</h3>
-            <div style="height: 120px;">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <div class="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center mr-3">
+                    <i class="fas fa-chart-pie text-purple-600 text-sm"></i>
+                </div>
+                Distribución de Suscripciones
+            </h3>
+            <div style="height: 280px;">
                 <canvas id="paymentDistributionChart"></canvas>
             </div>
         </div>
     </div>
 
-    <!-- Suscripciones sin Pago -->
-    <div class="glass-panel p-6">
-        <div class="flex justify-between items-center mb-4">
-            <h3 class="text-white font-medium">Suscripciones sin Pago del Mes</h3>
-            <span class="glass-btn px-3 py-1.5 text-sm text-forge-bright">
-                {{ pending_payments.count }} pendientes
-            </span>
+    <!-- Pagos Pendientes Vencidos -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
+        <div class="p-6 border-b border-gray-100">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                        <div class="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center mr-3">
+                            <i class="fas fa-exclamation-triangle text-red-600 text-sm"></i>
+                        </div>
+                        Pagos Pendientes Vencidos
+                    </h3>
+                    <p class="text-sm text-gray-500 mt-1">Eventos de pago que requieren atención</p>
+                </div>
+                <span class="px-3 py-1.5 bg-red-50 text-red-700 rounded-lg text-sm font-medium">
+                    {{ pending_payments.count }} pendientes
+                </span>
+            </div>
         </div>
-        
+
         <div class="overflow-x-auto">
             <table class="w-full">
-                <thead>
-                    <tr class="border-b border-forge-light border-opacity-10">
-                        <th class="p-4 text-left text-white font-medium">Cliente</th>
-                        <th class="p-4 text-left text-white font-medium">Aplicación</th>
-                        <th class="p-4 text-center text-white font-medium">Tipo</th>
-                        <th class="p-4 text-right text-white font-medium">Monto</th>
-                        <th class="p-4 text-center text-white font-medium">Acciones</th>
+                <thead class="bg-gray-50 border-b border-gray-100">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Cliente</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Aplicación</th>
+                        <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Fecha Esperada</th>
+                        <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Monto</th>
+                        <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Acciones</th>
                     </tr>
                 </thead>
-                <tbody>
-                    {% for subscription in pending_payments %}
-                    <tr class="border-b border-forge-light border-opacity-5">
-                        <td class="p-4">
-                            <a href="{% url 'forgeapp:client_detail' subscription.client.pk %}" 
-                               class="text-white hover:text-forge-bright">
-                                {{ subscription.client.name }}
+                <tbody class="divide-y divide-gray-100">
+                    {% for payment_event in pending_payments %}
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="px-6 py-4">
+                            {% if payment_event.subscription.client %}
+                            <a href="{% url 'forgeapp:client_detail' payment_event.subscription.client.pk %}"
+                               class="text-gray-900 hover:text-primary-600 font-medium">
+                                {{ payment_event.subscription.client.name }}
                             </a>
+                            {% else %}
+                            <span class="text-gray-400">Sin cliente</span>
+                            {% endif %}
                         </td>
-                        <td class="p-4 text-white">
-                            {{ subscription.application.name }}
+                        <td class="px-6 py-4 text-gray-700">
+                            {% if payment_event.subscription.application %}
+                                {{ payment_event.subscription.application.name }}
+                            {% else %}
+                                <span class="text-gray-400">Sin aplicación</span>
+                            {% endif %}
                         </td>
-                        <td class="p-4 text-center">
-                            <span class="glass-btn px-3 py-1 text-sm text-yellow-400">
-                                {{ subscription.get_payment_type_display }}
+                        <td class="px-6 py-4 text-center">
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-50 text-red-700">
+                                {{ payment_event.expected_date|date:"d/m/Y" }}
                             </span>
                         </td>
-                        <td class="p-4 text-right text-white">
-                            ${{ subscription.price|floatformat:0|intcomma }}
+                        <td class="px-6 py-4 text-right">
+                            <span class="text-gray-900 font-semibold">
+                                ${{ payment_event.amount|floatformat:0|intcomma }}
+                            </span>
                         </td>
-                        <td class="p-4 text-center">
-                            <a href="{% url 'forgeapp:subscription_detail' subscription.pk %}" 
-                               class="glass-btn px-4 py-1.5 text-white hover:text-forge-bright">
-                                Ver
+                        <td class="px-6 py-4 text-center">
+                            <a href="{% url 'forgeapp:subscription_detail' payment_event.subscription.pk %}"
+                               class="inline-flex items-center px-4 py-2 bg-primary-50 text-primary-700 rounded-lg hover:bg-primary-100 transition-colors text-sm font-medium">
+                                <i class="fas fa-eye mr-2 text-xs"></i>
+                                Ver Detalle
                             </a>
                         </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="5" class="p-4 text-white text-center opacity-60">
-                            No hay suscripciones pendientes de pago
+                        <td colspan="5" class="px-6 py-12 text-center">
+                            <div class="flex flex-col items-center justify-center">
+                                <div class="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center mb-4">
+                                    <i class="fas fa-check-circle text-green-600 text-2xl"></i>
+                                </div>
+                                <p class="text-gray-600 font-medium">No hay pagos pendientes vencidos</p>
+                                <p class="text-sm text-gray-400 mt-1">Todos los pagos están al día</p>
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}
@@ -148,36 +219,26 @@ const chartConfig = {
     responsive: true,
     plugins: {
         legend: {
+            display: true,
+            position: 'bottom',
             labels: {
-                color: 'white',
+                color: '#374151',
                 font: {
-                    size: 11
-                }
-            }
-        }
-    },
-    scales: {
-        y: {
-            ticks: {
-                color: 'white',
-                font: {
-                    size: 10
-                }
-            },
-            grid: {
-                color: 'rgba(255, 255, 255, 0.1)'
+                    size: 12,
+                    family: "'Inter', sans-serif"
+                },
+                padding: 15,
+                usePointStyle: true
             }
         },
-        x: {
-            ticks: {
-                color: 'white',
-                font: {
-                    size: 10
-                }
-            },
-            grid: {
-                color: 'rgba(255, 255, 255, 0.1)'
-            }
+        tooltip: {
+            backgroundColor: 'rgba(17, 24, 39, 0.95)',
+            titleColor: '#fff',
+            bodyColor: '#fff',
+            padding: 12,
+            cornerRadius: 8,
+            displayColors: true,
+            boxPadding: 6
         }
     }
 };
@@ -191,13 +252,50 @@ new Chart(monthlyRevenueCtx, {
         datasets: [{
             label: 'Ingresos',
             data: {{ monthly_data|safe }},
-            borderColor: '#64C5E8',
-            backgroundColor: 'rgba(100, 197, 232, 0.1)',
+            borderColor: '#3B82F6',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
             fill: true,
-            tension: 0.4
+            tension: 0.4,
+            borderWidth: 3,
+            pointBackgroundColor: '#3B82F6',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointRadius: 5,
+            pointHoverRadius: 7
         }]
     },
-    options: chartConfig
+    options: {
+        ...chartConfig,
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    color: '#6B7280',
+                    font: {
+                        size: 11
+                    },
+                    callback: function(value) {
+                        return '$' + value.toLocaleString();
+                    }
+                },
+                grid: {
+                    color: 'rgba(156, 163, 175, 0.1)',
+                    drawBorder: false
+                }
+            },
+            x: {
+                ticks: {
+                    color: '#6B7280',
+                    font: {
+                        size: 11
+                    }
+                },
+                grid: {
+                    display: false
+                }
+            }
+        }
+    }
 });
 
 // Gráfico de Distribución de Pagos
@@ -209,23 +307,21 @@ new Chart(paymentDistributionCtx, {
         datasets: [{
             data: {{ payment_distribution|safe }},
             backgroundColor: [
-                '#64C5E8',  // Azul claro
-                '#FF6B6B'   // Rojo coral
-            ]
+                '#3B82F6',  // Azul
+                '#8B5CF6'   // Púrpura
+            ],
+            borderWidth: 0,
+            hoverOffset: 4
         }]
     },
     options: {
-        maintainAspectRatio: false,
-        responsive: true,
+        ...chartConfig,
+        cutout: '65%',
         plugins: {
+            ...chartConfig.plugins,
             legend: {
-                position: 'right',
-                labels: {
-                    color: 'white',
-                    font: {
-                        size: 11
-                    }
-                }
+                ...chartConfig.plugins.legend,
+                position: 'right'
             }
         }
     }
