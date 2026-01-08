@@ -1,39 +1,46 @@
-APScheduler
-asgiref
-mysqlclient
-Brotli
-certifi
-cffi
-chardet
-charset-normalizer
-colorama
-crispy-tailwind
-cryptography
-cssselect2
-Django
-django-apscheduler
-django-crispy-forms
-django-environ
-django-tailwind
-fonttools
-idna
-mercadopago
-pillow
-psycopg2-binary
-pycparser
-pydyf
-pyphen
-python-dateutil
-python-dotenv
-qrcode
-reportlab
-requests
-sqlparse
-tinycss2
-tinyhtml5
-tzdata
-tzlocal
-urllib3
-weasyprint
-webencodings
-zopfli
+# =============================================================================
+# FORGEAPP - DEPENDENCIAS
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# FRAMEWORK PRINCIPAL
+# -----------------------------------------------------------------------------
+Django>=4.2,<5.0
+
+# -----------------------------------------------------------------------------
+# EXTENSIONES DE DJANGO
+# -----------------------------------------------------------------------------
+environ                 # Variables de entorno (base)
+django-environ          # Variables de entorno para Django
+django-crispy-forms     # Formularios con estilos
+crispy-tailwind         # Tema Tailwind para crispy-forms
+django-apscheduler      # Tareas programadas
+
+# -----------------------------------------------------------------------------
+# BASE DE DATOS (opcional - SQLite por defecto)
+# -----------------------------------------------------------------------------
+# psycopg2-binary       # PostgreSQL (descomentar si se usa)
+
+# -----------------------------------------------------------------------------
+# SEGURIDAD Y ENCRIPTACION
+# -----------------------------------------------------------------------------
+cryptography            # Encriptacion de datos sensibles
+
+# -----------------------------------------------------------------------------
+# GENERACION DE PDF
+# -----------------------------------------------------------------------------
+reportlab               # Generacion de PDFs (recibos, cotizaciones)
+xhtml2pdf               # Conversion HTML a PDF (contratos)
+pillow                  # Procesamiento de imagenes
+
+# -----------------------------------------------------------------------------
+# UTILIDADES
+# -----------------------------------------------------------------------------
+qrcode                  # Generacion de codigos QR
+requests                # Peticiones HTTP
+python-dateutil         # Utilidades de fechas
+
+# -----------------------------------------------------------------------------
+# SERVIDOR (produccion)
+# -----------------------------------------------------------------------------
+gunicorn                # Servidor WSGI para produccion
