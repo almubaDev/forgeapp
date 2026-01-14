@@ -1,0 +1,245 @@
+{% extends 'base.html' %}
+
+{% block title %}Test Payment - Flow{% endblock %}
+{% block page_title %}Test: Payment Service{% endblock %}
+{% block page_subtitle %}Crear y gestionar pagos unicos{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto space-y-6">
+
+    <!-- Breadcrumb -->
+    <div class="flex items-center space-x-2 text-sm">
+        <a href="{% url 'payments:test_index' %}" class="text-primary-500 hover:text-primary-600">
+            <i class="fas fa-arrow-left mr-1"></i> Test Suite
+        </a>
+        <span class="text-dark-400">/</span>
+        <span class="text-dark-600">Payment</span>
+    </div>
+
+    <!-- Indicador de entorno -->
+    <div class="card-premium p-4 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-full flex items-center justify-center {% if flow_env.is_sandbox %}bg-yellow-100 text-yellow-600{% else %}bg-green-100 text-green-600{% endif %}">
+                <i class="fas {% if flow_env.is_sandbox %}fa-flask{% else %}fa-check-circle{% endif %}"></i>
+            </div>
+            <div>
+                <p class="font-semibold text-dark-800">Entorno: {% if flow_env.is_sandbox %}Sandbox{% else %}Produccion{% endif %}</p>
+                <p class="text-sm text-dark-500">{{ flow_env.api_url }}</p>
+            </div>
+        </div>
+        {% if flow_env.is_sandbox %}
+        <span class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-sm font-medium">Modo Pruebas</span>
+        {% endif %}
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        <!-- Crear Pago -->
+        <div class="card-premium p-6">
+            <h3 class="text-lg font-semibold text-dark-800 mb-4 flex items-center">
+                <i class="fas fa-plus-circle text-primary-500 mr-2"></i>
+                Crear Pago
+            </h3>
+
+            <form method="post" class="space-y-4">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="create_payment">
+
+                <div>
+                    <label class="block text-sm font-medium text-dark-700 mb-1">Monto (CLP)</label>
+                    <input type="number" name="amount" value="1000" min="1"
+                           class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-transparent">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-dark-700 mb-1">Email del cliente</label>
+                    <input type="email" name="email" value="test@ejemplo.com"
+                           class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-transparent">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-dark-700 mb-1">Descripcion</label>
+                    <input type="text" name="subject" value="Pago de prueba"
+                           class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-transparent">
+                </div>
+
+                <button type="submit"
+                        class="w-full py-2 px-4 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-lg transition-colors">
+                    <i class="fas fa-plus mr-2"></i>Crear Pago
+                </button>
+            </form>
+        </div>
+
+        <!-- Verificar Estado -->
+        <div class="card-premium p-6">
+            <h3 class="text-lg font-semibold text-dark-800 mb-4 flex items-center">
+                <i class="fas fa-search text-primary-500 mr-2"></i>
+                Verificar Estado
+            </h3>
+
+            <form method="post" class="space-y-4">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="check_status">
+
+                <div>
+                    <label class="block text-sm font-medium text-dark-700 mb-1">Token del pago</label>
+                    <input type="text" name="token" id="check_token" placeholder="Ingresa el token..."
+                           class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-transparent">
+                </div>
+
+                <button type="submit"
+                        class="w-full py-2 px-4 bg-dark-700 hover:bg-dark-800 text-white font-medium rounded-lg transition-colors">
+                    <i class="fas fa-search mr-2"></i>Verificar Estado
+                </button>
+            </form>
+
+            <!-- Info de estados -->
+            <div class="mt-4 p-4 bg-gray-50 rounded-lg">
+                <p class="text-sm font-medium text-dark-700 mb-2">Estados posibles:</p>
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <div class="flex items-center space-x-2">
+                        <span class="w-6 h-6 rounded bg-yellow-100 text-yellow-600 flex items-center justify-center font-bold">1</span>
+                        <span class="text-dark-600">Pendiente</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="w-6 h-6 rounded bg-green-100 text-green-600 flex items-center justify-center font-bold">2</span>
+                        <span class="text-dark-600">Pagado</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="w-6 h-6 rounded bg-red-100 text-red-600 flex items-center justify-center font-bold">3</span>
+                        <span class="text-dark-600">Rechazado</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="w-6 h-6 rounded bg-gray-100 text-gray-600 flex items-center justify-center font-bold">4</span>
+                        <span class="text-dark-600">Cancelado</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Historial de pruebas -->
+    <div class="card-premium p-6">
+        <h3 class="text-lg font-semibold text-dark-800 mb-4 flex items-center">
+            <i class="fas fa-history text-primary-500 mr-2"></i>
+            Historial de Pruebas
+            <span class="ml-2 px-2 py-1 bg-gray-100 text-dark-500 text-xs rounded-full">{{ test_history|length }} registros</span>
+        </h3>
+
+        {% if test_history %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="border-b border-gray-200">
+                        <th class="text-left py-3 px-4 font-semibold text-dark-700">Orden</th>
+                        <th class="text-left py-3 px-4 font-semibold text-dark-700">Monto</th>
+                        <th class="text-left py-3 px-4 font-semibold text-dark-700">Email</th>
+                        <th class="text-left py-3 px-4 font-semibold text-dark-700">Estado</th>
+                        <th class="text-left py-3 px-4 font-semibold text-dark-700">Token</th>
+                        <th class="text-left py-3 px-4 font-semibold text-dark-700">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in test_history %}
+                    <tr class="border-b border-gray-100 hover:bg-gray-50">
+                        <td class="py-3 px-4 font-mono text-dark-800">{{ item.commerce_order }}</td>
+                        <td class="py-3 px-4 text-dark-800">${{ item.amount|default:"—" }}</td>
+                        <td class="py-3 px-4 text-dark-600">{{ item.email|default:"—" }}</td>
+                        <td class="py-3 px-4">
+                            {% if item.status == 2 %}
+                            <span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">Pagado</span>
+                            {% elif item.status == 1 %}
+                            <span class="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium">Pendiente</span>
+                            {% elif item.status == 3 %}
+                            <span class="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">Rechazado</span>
+                            {% elif item.status == 4 %}
+                            <span class="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">Cancelado</span>
+                            {% else %}
+                            <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">Creado</span>
+                            {% endif %}
+                        </td>
+                        <td class="py-3 px-4">
+                            <code class="text-xs bg-gray-100 px-2 py-1 rounded">{{ item.token|truncatechars:20 }}</code>
+                            <button onclick="navigator.clipboard.writeText('{{ item.token }}')"
+                                    class="ml-1 text-dark-400 hover:text-primary-500" title="Copiar token">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </td>
+                        <td class="py-3 px-4">
+                            <div class="flex items-center space-x-2">
+                                {% if item.status == 1 or item.status == None %}
+                                <a href="{{ item.url }}" target="_blank"
+                                   class="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded transition-colors">
+                                    <i class="fas fa-external-link-alt mr-1"></i>Pagar
+                                </a>
+                                {% endif %}
+                                <button onclick="document.getElementById('check_token').value='{{ item.token }}'"
+                                        class="px-3 py-1 bg-dark-200 hover:bg-dark-300 text-dark-700 text-xs font-medium rounded transition-colors">
+                                    <i class="fas fa-sync mr-1"></i>Verificar
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Boton limpiar historial -->
+        <div class="mt-4 pt-4 border-t border-gray-100">
+            <form method="post" class="inline">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="clear_history">
+                <button type="submit" class="text-sm text-red-500 hover:text-red-600">
+                    <i class="fas fa-trash mr-1"></i>Limpiar historial
+                </button>
+            </form>
+        </div>
+        {% else %}
+        <div class="text-center py-8 text-dark-400">
+            <i class="fas fa-inbox text-4xl mb-3"></i>
+            <p>No hay pruebas registradas</p>
+            <p class="text-sm">Crea un pago para comenzar</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Resultado de verificacion -->
+    {% if status_result %}
+    <div class="card-premium p-6 border-l-4 {% if status_result.is_paid %}border-green-500{% else %}border-yellow-500{% endif %}">
+        <h3 class="text-lg font-semibold text-dark-800 mb-4 flex items-center">
+            <i class="fas fa-info-circle {% if status_result.is_paid %}text-green-500{% else %}text-yellow-500{% endif %} mr-2"></i>
+            Resultado de Verificacion
+        </h3>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+            <div>
+                <p class="text-sm text-dark-500">Estado</p>
+                <p class="font-semibold {% if status_result.is_paid %}text-green-600{% else %}text-yellow-600{% endif %}">
+                    {{ status_result.status_label }}
+                </p>
+            </div>
+            <div>
+                <p class="text-sm text-dark-500">Codigo</p>
+                <p class="font-mono text-dark-800">{{ status_result.status_code }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-dark-500">Orden Commerce</p>
+                <p class="font-mono text-dark-800">{{ status_result.raw.commerceOrder|default:"—" }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-dark-500">Monto</p>
+                <p class="font-semibold text-dark-800">${{ status_result.raw.amount|default:"—" }}</p>
+            </div>
+        </div>
+
+        <details>
+            <summary class="text-sm text-primary-600 cursor-pointer hover:text-primary-700">Ver respuesta completa</summary>
+            <pre class="mt-2 p-3 bg-dark-900 text-green-400 rounded text-xs overflow-x-auto">{{ status_result.raw }}</pre>
+        </details>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'forgeapp',
     'finance',
     'pdf_generator',
+    'payments',
 ]
 
 MIDDLEWARE = [
@@ -217,3 +218,8 @@ SITE_URL = env('SITE_URL', default='http://localhost:8000')
 
 # Crear directorio de logs si no existe
 os.makedirs(os.path.join(BASE_DIR, 'logs'), exist_ok=True)
+
+# Flow payment settings
+FLOW_API_URL = env('FLOW_API_URL') 
+FLOW_API_KEY = env('FLOW_API_KEY')
+FLOW_SECRET_KEY = env('FLOW_SECRET_KEY')

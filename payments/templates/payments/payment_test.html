@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+
+{% block title %}Test de Pagos - Flow{% endblock %}
+{% block page_title %}Test de Pagos{% endblock %}
+{% block page_subtitle %}Pruebas de integración con Flow API{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto space-y-6">
+
+    <!-- Indicador de entorno -->
+    <div class="card-premium p-4 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-full flex items-center justify-center {% if flow_env.is_sandbox %}bg-yellow-100 text-yellow-600{% else %}bg-green-100 text-green-600{% endif %}">
+                <i class="fas {% if flow_env.is_sandbox %}fa-flask{% else %}fa-check-circle{% endif %}"></i>
+            </div>
+            <div>
+                <p class="font-semibold text-dark-800">Entorno: {% if flow_env.is_sandbox %}Sandbox{% else %}Producción{% endif %}</p>
+                <p class="text-sm text-dark-500">{{ flow_env.api_url }}</p>
+            </div>
+        </div>
+        {% if flow_env.is_sandbox %}
+        <span class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-sm font-medium">Modo Pruebas</span>
+        {% else %}
+        <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">Producción</span>
+        {% endif %}
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        <!-- Crear Pago -->
+        <div class="card-premium p-6">
+            <h3 class="text-lg font-semibold text-dark-800 mb-4 flex items-center">
+                <i class="fas fa-credit-card text-primary-500 mr-2"></i>
+                Crear Pago
+            </h3>
+
+            <form method="post" class="space-y-4">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="create_payment">
+
+                <div>
+                    <label class="block text-sm font-medium text-dark-700 mb-1">Monto (CLP)</label>
+                    <input type="number" name="amount" value="1000" min="1"
+                           class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-transparent">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-dark-700 mb-1">Email del cliente</label>
+                    <input type="email" name="email" value="test@ejemplo.com"
+                           class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-transparent">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-dark-700 mb-1">Descripción</label>
+                    <input type="text" name="subject" value="Pago de prueba"
+                           class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-transparent">
+                </div>
+
+                <button type="submit"
+                        class="w-full py-2 px-4 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-lg transition-colors">
+                    <i class="fas fa-plus mr-2"></i>Crear Pago
+                </button>
+            </form>
+        </div>
+
+        <!-- Verificar Estado -->
+        <div class="card-premium p-6">
+            <h3 class="text-lg font-semibold text-dark-800 mb-4 flex items-center">
+                <i class="fas fa-search text-primary-500 mr-2"></i>
+                Verificar Estado
+            </h3>
+
+            <form method="post" class="space-y-4">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="check_status">
+
+                <div>
+                    <label class="block text-sm font-medium text-dark-700 mb-1">Token del pago</label>
+                    <input type="text" name="token" placeholder="Ingresa el token..."
+                           class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-transparent">
+                </div>
+
+                <button type="submit"
+                        class="w-full py-2 px-4 bg-dark-700 hover:bg-dark-800 text-white font-medium rounded-lg transition-colors">
+                    <i class="fas fa-search mr-2"></i>Verificar Estado
+                </button>
+            </form>
+
+            {% if status_result %}
+            <div class="mt-4 p-4 bg-gray-50 rounded-lg">
+                <h4 class="font-medium text-dark-800 mb-2">Resultado:</h4>
+                <div class="space-y-2 text-sm">
+                    <p>
+                        <span class="text-dark-500">Estado:</span>
+                        <span class="font-medium {% if status_result.is_paid %}text-green-600{% else %}text-yellow-600{% endif %}">
+                            {{ status_result.status_label }}
+                        </span>
+                    </p>
+                    <p>
+                        <span class="text-dark-500">Código:</span>
+                        <span class="font-mono">{{ status_result.status_code }}</span>
+                    </p>
+                </div>
+                <details class="mt-3">
+                    <summary class="text-sm text-primary-600 cursor-pointer hover:text-primary-700">Ver respuesta completa</summary>
+                    <pre class="mt-2 p-3 bg-dark-900 text-green-400 rounded text-xs overflow-x-auto">{{ status_result.raw }}</pre>
+                </details>
+            </div>
+            {% endif %}
+        </div>
+
+    </div>
+
+    <!-- Resultado del pago creado -->
+    {% if payment_result %}
+    <div class="card-premium p-6 border-l-4 border-green-500">
+        <h3 class="text-lg font-semibold text-dark-800 mb-4 flex items-center">
+            <i class="fas fa-check-circle text-green-500 mr-2"></i>
+            Pago Creado
+        </h3>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+                <p class="text-sm text-dark-500">Orden Commerce</p>
+                <p class="font-mono font-medium text-dark-800">{{ payment_result.commerce_order }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-dark-500">Flow Order</p>
+                <p class="font-mono font-medium text-dark-800">{{ payment_result.flow_order }}</p>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <p class="text-sm text-dark-500 mb-1">Token</p>
+            <div class="flex items-center space-x-2">
+                <code class="flex-1 p-2 bg-gray-100 rounded text-sm font-mono break-all">{{ payment_result.token }}</code>
+                <button onclick="navigator.clipboard.writeText('{{ payment_result.token }}')"
+                        class="p-2 text-dark-400 hover:text-primary-500 transition-colors" title="Copiar">
+                    <i class="fas fa-copy"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <p class="text-sm text-dark-500 mb-1">URL de Pago</p>
+            <div class="flex items-center space-x-2">
+                <code class="flex-1 p-2 bg-gray-100 rounded text-sm font-mono break-all">{{ payment_result.url }}</code>
+                <button onclick="navigator.clipboard.writeText('{{ payment_result.url }}')"
+                        class="p-2 text-dark-400 hover:text-primary-500 transition-colors" title="Copiar">
+                    <i class="fas fa-copy"></i>
+                </button>
+            </div>
+        </div>
+
+        <a href="{{ payment_result.url }}" target="_blank"
+           class="inline-flex items-center px-4 py-2 bg-green-500 hover:bg-green-600 text-white font-medium rounded-lg transition-colors">
+            <i class="fas fa-external-link-alt mr-2"></i>
+            Ir a Pagar
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- Info de estados -->
+    <div class="card-premium p-6">
+        <h3 class="text-lg font-semibold text-dark-800 mb-4 flex items-center">
+            <i class="fas fa-info-circle text-primary-500 mr-2"></i>
+            Estados de Pago
+        </h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="p-3 bg-gray-50 rounded-lg text-center">
+                <span class="text-2xl font-bold text-yellow-500">1</span>
+                <p class="text-sm text-dark-600">Pendiente</p>
+            </div>
+            <div class="p-3 bg-gray-50 rounded-lg text-center">
+                <span class="text-2xl font-bold text-green-500">2</span>
+                <p class="text-sm text-dark-600">Pagado</p>
+            </div>
+            <div class="p-3 bg-gray-50 rounded-lg text-center">
+                <span class="text-2xl font-bold text-red-500">3</span>
+                <p class="text-sm text-dark-600">Rechazado</p>
+            </div>
+            <div class="p-3 bg-gray-50 rounded-lg text-center">
+                <span class="text-2xl font-bold text-gray-500">4</span>
+                <p class="text-sm text-dark-600">Cancelado</p>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

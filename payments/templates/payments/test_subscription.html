@@ -1,0 +1,230 @@
+{% extends 'base.html' %}
+
+{% block title %}Test Subscription - Flow{% endblock %}
+{% block page_title %}Test: Subscription Service{% endblock %}
+{% block page_subtitle %}Gestionar planes y suscripciones{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto space-y-6">
+
+    <!-- Breadcrumb -->
+    <div class="flex items-center space-x-2 text-sm">
+        <a href="{% url 'payments:test_index' %}" class="text-primary-500 hover:text-primary-600">
+            <i class="fas fa-arrow-left mr-1"></i> Test Suite
+        </a>
+        <span class="text-dark-400">/</span>
+        <span class="text-dark-600">Subscription</span>
+    </div>
+
+    <!-- Indicador de entorno -->
+    <div class="card-premium p-4 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-full flex items-center justify-center {% if flow_env.is_sandbox %}bg-yellow-100 text-yellow-600{% else %}bg-green-100 text-green-600{% endif %}">
+                <i class="fas {% if flow_env.is_sandbox %}fa-flask{% else %}fa-check-circle{% endif %}"></i>
+            </div>
+            <div>
+                <p class="font-semibold text-dark-800">Entorno: {% if flow_env.is_sandbox %}Sandbox{% else %}Produccion{% endif %}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        <!-- Crear Plan -->
+        <div class="card-premium p-6">
+            <h3 class="text-lg font-semibold text-dark-800 mb-4 flex items-center">
+                <i class="fas fa-clipboard-list text-purple-500 mr-2"></i>
+                1. Crear Plan
+            </h3>
+
+            <form method="post" class="space-y-4">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="create_plan">
+
+                <div>
+                    <label class="block text-sm font-medium text-dark-700 mb-1">Nombre del Plan</label>
+                    <input type="text" name="plan_name" value="Plan Basico"
+                           class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-transparent">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-dark-700 mb-1">Monto (CLP)</label>
+                    <input type="number" name="plan_amount" value="10000" min="1"
+                           class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-transparent">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-dark-700 mb-1">Intervalo</label>
+                    <select name="plan_interval"
+                            class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-transparent">
+                        <option value="1">Diario</option>
+                        <option value="2">Semanal</option>
+                        <option value="3" selected>Mensual</option>
+                        <option value="4">Anual</option>
+                    </select>
+                </div>
+
+                <button type="submit"
+                        class="w-full py-2 px-4 bg-purple-500 hover:bg-purple-600 text-white font-medium rounded-lg transition-colors">
+                    <i class="fas fa-plus mr-2"></i>Crear Plan
+                </button>
+            </form>
+        </div>
+
+        <!-- Crear Suscripcion -->
+        <div class="card-premium p-6">
+            <h3 class="text-lg font-semibold text-dark-800 mb-4 flex items-center">
+                <i class="fas fa-user-plus text-green-500 mr-2"></i>
+                2. Suscribir Cliente
+            </h3>
+
+            <form method="post" class="space-y-4">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="create_subscription">
+
+                <div>
+                    <label class="block text-sm font-medium text-dark-700 mb-1">Plan ID</label>
+                    <input type="text" name="sub_plan_id" id="sub_plan_id" placeholder="PLAN-XXXXXXXX"
+                           class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-transparent">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-dark-700 mb-1">Customer ID</label>
+                    <input type="text" name="sub_customer_id" placeholder="cus_xxxxxxxx"
+                           class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-transparent">
+                    <p class="text-xs text-dark-500 mt-1">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Crear cliente en <a href="{% url 'payments:test_customer' %}" class="text-primary-500 hover:underline">Customer Test</a>
+                    </p>
+                </div>
+
+                <button type="submit"
+                        class="w-full py-2 px-4 bg-green-500 hover:bg-green-600 text-white font-medium rounded-lg transition-colors">
+                    <i class="fas fa-link mr-2"></i>Crear Suscripcion
+                </button>
+            </form>
+
+            <p class="mt-3 text-xs text-dark-500">
+                <i class="fas fa-info-circle mr-1"></i>
+                El cliente debe completar el registro de tarjeta para activar la suscripcion
+            </p>
+        </div>
+
+    </div>
+
+    <!-- Planes creados -->
+    <div class="card-premium p-6">
+        <h3 class="text-lg font-semibold text-dark-800 mb-4 flex items-center">
+            <i class="fas fa-clipboard-list text-primary-500 mr-2"></i>
+            Planes Creados
+            <span class="ml-2 px-2 py-1 bg-gray-100 text-dark-500 text-xs rounded-full">{{ plans_history|length }}</span>
+        </h3>
+
+        {% if plans_history %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="border-b border-gray-200">
+                        <th class="text-left py-3 px-4 font-semibold text-dark-700">Plan ID</th>
+                        <th class="text-left py-3 px-4 font-semibold text-dark-700">Nombre</th>
+                        <th class="text-left py-3 px-4 font-semibold text-dark-700">Monto</th>
+                        <th class="text-left py-3 px-4 font-semibold text-dark-700">Intervalo</th>
+                        <th class="text-left py-3 px-4 font-semibold text-dark-700">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in plans_history %}
+                    <tr class="border-b border-gray-100 hover:bg-gray-50">
+                        <td class="py-3 px-4">
+                            <code class="text-xs bg-gray-100 px-2 py-1 rounded">{{ item.plan_id }}</code>
+                            <button onclick="navigator.clipboard.writeText('{{ item.plan_id }}')"
+                                    class="ml-1 text-dark-400 hover:text-primary-500" title="Copiar">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </td>
+                        <td class="py-3 px-4 text-dark-800">{{ item.name }}</td>
+                        <td class="py-3 px-4 text-dark-800">${{ item.amount }}</td>
+                        <td class="py-3 px-4">
+                            <span class="px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
+                                {{ item.interval_label }}
+                            </span>
+                        </td>
+                        <td class="py-3 px-4">
+                            <button onclick="document.getElementById('sub_plan_id').value='{{ item.plan_id }}'"
+                                    class="px-3 py-1 bg-dark-200 hover:bg-dark-300 text-dark-700 text-xs font-medium rounded transition-colors">
+                                <i class="fas fa-arrow-right mr-1"></i>Usar
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-8 text-dark-400">
+            <i class="fas fa-clipboard-list text-4xl mb-3"></i>
+            <p>No hay planes creados</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Suscripciones creadas -->
+    <div class="card-premium p-6">
+        <h3 class="text-lg font-semibold text-dark-800 mb-4 flex items-center">
+            <i class="fas fa-sync-alt text-primary-500 mr-2"></i>
+            Suscripciones Creadas
+            <span class="ml-2 px-2 py-1 bg-gray-100 text-dark-500 text-xs rounded-full">{{ subs_history|length }}</span>
+        </h3>
+
+        {% if subs_history %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="border-b border-gray-200">
+                        <th class="text-left py-3 px-4 font-semibold text-dark-700">Plan ID</th>
+                        <th class="text-left py-3 px-4 font-semibold text-dark-700">Customer ID</th>
+                        <th class="text-left py-3 px-4 font-semibold text-dark-700">Token</th>
+                        <th class="text-left py-3 px-4 font-semibold text-dark-700">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in subs_history %}
+                    <tr class="border-b border-gray-100 hover:bg-gray-50">
+                        <td class="py-3 px-4 font-mono text-dark-800">{{ item.plan_id }}</td>
+                        <td class="py-3 px-4 font-mono text-dark-600">{{ item.customer_id }}</td>
+                        <td class="py-3 px-4">
+                            <code class="text-xs bg-gray-100 px-2 py-1 rounded">{{ item.token|truncatechars:20 }}</code>
+                        </td>
+                        <td class="py-3 px-4">
+                            <a href="{{ item.url }}" target="_blank"
+                               class="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded transition-colors">
+                                <i class="fas fa-external-link-alt mr-1"></i>Completar
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-8 text-dark-400">
+            <i class="fas fa-sync-alt text-4xl mb-3"></i>
+            <p>No hay suscripciones creadas</p>
+        </div>
+        {% endif %}
+
+        {% if plans_history or subs_history %}
+        <div class="mt-4 pt-4 border-t border-gray-100">
+            <form method="post" class="inline">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="clear_history">
+                <button type="submit" class="text-sm text-red-500 hover:text-red-600">
+                    <i class="fas fa-trash mr-1"></i>Limpiar todo
+                </button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}
