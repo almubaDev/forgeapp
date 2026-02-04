@@ -30,7 +30,7 @@ class ApplicationForm(forms.ModelForm):
 class ClientForm(forms.ModelForm):
     class Meta:
         model = Client
-        fields = ['rut', 'first_name', 'last_name', 'email', 'phone', 'company', 'company_rut', 'position', 'nationality', 'status', 'notes']
+        fields = ['first_name', 'last_name', 'email', 'rut', 'phone', 'company', 'company_rut', 'position', 'nationality', 'status', 'notes']
         widgets = {
             'rut': forms.TextInput(attrs={'class': 'w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all', 'placeholder': 'Ej: 12345678-9'}),
             'first_name': forms.TextInput(attrs={'class': 'w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all', 'placeholder': 'Nombres'}),
@@ -45,10 +45,10 @@ class ClientForm(forms.ModelForm):
             'notes': forms.Textarea(attrs={'class': 'w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all', 'rows': 4}),
         }
         help_texts = {
-            'rut': 'Formato: 12345678-9 (obligatorio)',
-            'first_name': 'Nombres del cliente',
-            'last_name': 'Apellidos del cliente',
-            'email': 'Correo electrónico principal de contacto',
+            'first_name': 'Nombres del cliente (debe ingresar al menos nombre o apellido)',
+            'last_name': 'Apellidos del cliente (debe ingresar al menos nombre o apellido)',
+            'email': 'Correo electrónico principal de contacto (obligatorio)',
+            'rut': 'Formato: 12345678-9 (opcional)',
             'phone': 'Número de teléfono con código de país (opcional)',
             'company': 'Nombre de la empresa donde trabaja (opcional)',
             'company_rut': 'RUT de la empresa en formato 12345678-9 (opcional)',
@@ -57,6 +57,24 @@ class ClientForm(forms.ModelForm):
             'status': 'Estado actual del cliente en el sistema',
             'notes': 'Notas adicionales o comentarios sobre el cliente',
         }
+
+    def clean(self):
+        """Valida que al menos se proporcione nombre o apellido"""
+        cleaned_data = super().clean()
+        first_name = cleaned_data.get('first_name', '').strip()
+        last_name = cleaned_data.get('last_name', '').strip()
+
+        if not first_name and not last_name:
+            raise forms.ValidationError('Debe ingresar al menos el nombre o el apellido del cliente.')
+
+        return cleaned_data
+
+    def clean_rut(self):
+        """Valida el RUT solo si se proporciona"""
+        rut = self.cleaned_data.get('rut', '')
+        if rut:
+            rut = rut.strip()
+        return rut if rut else None
 
     def clean_company_rut(self):
         """Valida el RUT de la empresa solo si se proporciona"""

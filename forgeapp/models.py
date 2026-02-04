@@ -118,9 +118,9 @@ class Client(models.Model):
         ('none', 'Sin Contrato'),
     ]
 
-    rut = models.CharField('RUT', max_length=12, unique=True, validators=[validate_rut])
-    first_name = models.CharField('Nombres', max_length=100, default='')
-    last_name = models.CharField('Apellidos', max_length=100, default='')
+    rut = models.CharField('RUT', max_length=12, unique=True, blank=True, null=True, validators=[validate_rut])
+    first_name = models.CharField('Nombres', max_length=100, blank=True, default='')
+    last_name = models.CharField('Apellidos', max_length=100, blank=True, default='')
     name = models.CharField('Nombre Completo', max_length=200, editable=False)
     email = models.EmailField('Correo Electrónico')
     phone = models.CharField('Teléfono', max_length=20, blank=True)
