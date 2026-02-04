@@ -10,8 +10,10 @@
     <!-- Breadcrumb -->
     <div class="flex items-center space-x-2 text-sm">
         <a href="{% url 'payments:test_index' %}" class="text-primary-500 hover:text-primary-600">
-            <i class="fas fa-arrow-left mr-1"></i> Test Suite
+            <i class="fas fa-arrow-left mr-1"></i> Proveedores
         </a>
+        <span class="text-dark-400">/</span>
+        <a href="{% url 'payments:flow_test_index' %}" class="text-primary-500 hover:text-primary-600">Flow</a>
         <span class="text-dark-400">/</span>
         <span class="text-dark-600">Customer</span>
     </div>
@@ -29,7 +31,7 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
         <!-- Crear Cliente -->
         <div class="card-premium p-6">
@@ -59,34 +61,10 @@
                     <i class="fas fa-plus mr-2"></i>Crear Cliente
                 </button>
             </form>
-        </div>
-
-        <!-- Registrar Tarjeta -->
-        <div class="card-premium p-6">
-            <h3 class="text-lg font-semibold text-dark-800 mb-4 flex items-center">
-                <i class="fas fa-credit-card text-blue-500 mr-2"></i>
-                2. Registrar Tarjeta
-            </h3>
-
-            <form method="post" class="space-y-4">
-                {% csrf_token %}
-                <input type="hidden" name="action" value="register_card">
-
-                <div>
-                    <label class="block text-sm font-medium text-dark-700 mb-1">Customer ID</label>
-                    <input type="text" name="customer_id" id="register_customer_id" placeholder="cus_xxxxxxxx"
-                           class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-transparent">
-                </div>
-
-                <button type="submit"
-                        class="w-full py-2 px-4 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-lg transition-colors">
-                    <i class="fas fa-link mr-2"></i>Generar URL de Registro
-                </button>
-            </form>
 
             <p class="mt-3 text-xs text-dark-500">
                 <i class="fas fa-info-circle mr-1"></i>
-                El cliente debe visitar la URL para registrar su tarjeta
+                Crea el cliente, luego usa los botones en la tabla para registrar tarjeta y cobrar
             </p>
         </div>
 
@@ -94,7 +72,7 @@
         <div class="card-premium p-6">
             <h3 class="text-lg font-semibold text-dark-800 mb-4 flex items-center">
                 <i class="fas fa-dollar-sign text-purple-500 mr-2"></i>
-                3. Realizar Cargo
+                Realizar Cargo
             </h3>
 
             <form method="post" class="space-y-4">
@@ -127,11 +105,61 @@
 
             <p class="mt-3 text-xs text-dark-500">
                 <i class="fas fa-exclamation-triangle mr-1"></i>
-                Requiere tarjeta registrada
+                Requiere tarjeta registrada y contrato de cargo automático activo en Flow
             </p>
         </div>
 
     </div>
+
+    <!-- Resultado de registro de tarjeta (URL generada) -->
+    {% if register_result %}
+    <div class="card-premium p-6 border-l-4 border-blue-500">
+        <h3 class="text-lg font-semibold text-dark-800 mb-4 flex items-center">
+            <i class="fas fa-link text-blue-500 mr-2"></i>
+            URL de Registro Generada
+        </h3>
+        <p class="text-sm text-dark-600 mb-3">El cliente debe visitar esta URL para registrar su tarjeta:</p>
+        <div class="flex items-center space-x-2 mb-4">
+            <input type="text" readonly value="{{ register_result.url }}"
+                   class="flex-1 px-4 py-2 bg-gray-100 border border-gray-200 rounded-lg text-sm font-mono">
+            <button onclick="navigator.clipboard.writeText('{{ register_result.url }}')"
+                    class="px-4 py-2 bg-dark-200 hover:bg-dark-300 text-dark-700 rounded-lg transition-colors">
+                <i class="fas fa-copy"></i>
+            </button>
+            <a href="{{ register_result.url }}" target="_blank"
+               class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors">
+                <i class="fas fa-external-link-alt mr-1"></i>Abrir
+            </a>
+        </div>
+        <p class="text-xs text-dark-500">
+            <i class="fas fa-info-circle mr-1"></i>
+            Token: <code class="bg-gray-100 px-2 py-1 rounded">{{ register_result.token }}</code>
+        </p>
+    </div>
+    {% endif %}
+
+    <!-- Resultado de verificacion de registro -->
+    {% if register_status %}
+    <div class="card-premium p-6 border-l-4 {% if register_status.status == 1 %}border-green-500{% else %}border-yellow-500{% endif %}">
+        <h3 class="text-lg font-semibold text-dark-800 mb-4">Estado de Registro</h3>
+        <div class="grid grid-cols-2 gap-4 mb-4">
+            <div>
+                <p class="text-sm text-dark-500">Estado</p>
+                <p class="font-semibold {% if register_status.status == 1 %}text-green-600{% else %}text-yellow-600{% endif %}">
+                    {% if register_status.status == 1 %}Tarjeta Registrada{% else %}Pendiente{% endif %}
+                </p>
+            </div>
+            <div>
+                <p class="text-sm text-dark-500">Customer ID</p>
+                <p class="font-mono text-dark-800">{{ register_status.customerId|default:"—" }}</p>
+            </div>
+        </div>
+        <details>
+            <summary class="text-sm text-primary-600 cursor-pointer hover:text-primary-700">Ver respuesta completa</summary>
+            <pre class="mt-2 p-3 bg-dark-900 text-green-400 rounded text-xs overflow-x-auto">{{ register_status }}</pre>
+        </details>
+    </div>
+    {% endif %}
 
     <!-- Resultado de cargo -->
     {% if charge_result %}
@@ -186,16 +214,39 @@
                         </td>
                         <td class="py-3 px-4">
                             <div class="flex items-center space-x-2">
-                                {% if item.register_url and not item.has_card %}
+                                {% if item.has_card %}
+                                <!-- Ya tiene tarjeta: boton para cobrar -->
+                                <button onclick="document.getElementById('charge_customer_id').value='{{ item.customer_id }}'; document.getElementById('charge_customer_id').scrollIntoView({behavior: 'smooth'});"
+                                        class="px-3 py-1 bg-purple-500 hover:bg-purple-600 text-white text-xs font-medium rounded transition-colors">
+                                    <i class="fas fa-bolt mr-1"></i>Cobrar
+                                </button>
+                                {% elif item.register_url %}
+                                <!-- Tiene URL de registro: mostrar link y boton verificar -->
                                 <a href="{{ item.register_url }}" target="_blank"
                                    class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded transition-colors">
                                     <i class="fas fa-external-link-alt mr-1"></i>Registrar
                                 </a>
+                                <form method="post" class="inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="check_register">
+                                    <input type="hidden" name="register_token" value="{{ item.register_token }}">
+                                    <button type="submit"
+                                            class="px-3 py-1 bg-dark-200 hover:bg-dark-300 text-dark-700 text-xs font-medium rounded transition-colors">
+                                        <i class="fas fa-sync mr-1"></i>Verificar
+                                    </button>
+                                </form>
+                                {% else %}
+                                <!-- Sin URL: generar URL de registro -->
+                                <form method="post" class="inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="register_card">
+                                    <input type="hidden" name="customer_id" value="{{ item.customer_id }}">
+                                    <button type="submit"
+                                            class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded transition-colors">
+                                        <i class="fas fa-link mr-1"></i>Generar URL
+                                    </button>
+                                </form>
                                 {% endif %}
-                                <button onclick="document.getElementById('register_customer_id').value='{{ item.customer_id }}'; document.getElementById('charge_customer_id').value='{{ item.customer_id }}';"
-                                        class="px-3 py-1 bg-dark-200 hover:bg-dark-300 text-dark-700 text-xs font-medium rounded transition-colors">
-                                    <i class="fas fa-arrow-right mr-1"></i>Usar
-                                </button>
                             </div>
                         </td>
                     </tr>

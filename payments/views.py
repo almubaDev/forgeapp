@@ -1,5 +1,5 @@
 """
-Vistas de testing para la integracion de Flow.
+Vistas de testing para integraciones de pago.
 Solo accesibles para superusuarios.
 """
 
@@ -12,7 +12,7 @@ from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
-from .services import PaymentService, CustomerService, SubscriptionService, RefundService
+from .providers.flow import PaymentService, CustomerService, SubscriptionService, RefundService
 from .exceptions import FlowException
 
 
@@ -23,33 +23,56 @@ def is_superuser(user):
 
 def get_flow_env():
     """Retorna informacion del entorno de Flow."""
+    api_url = getattr(settings, 'FLOW_API_URL', '')
     return {
-        'api_url': settings.FLOW_API_URL,
-        'is_sandbox': 'sandbox' in settings.FLOW_API_URL,
+        'api_url': api_url,
+        'is_sandbox': 'sandbox' in api_url,
     }
 
 
+def is_flow_configured():
+    """Verifica si Flow esta configurado."""
+    return all([
+        getattr(settings, 'FLOW_API_URL', None),
+        getattr(settings, 'FLOW_API_KEY', None),
+        getattr(settings, 'FLOW_SECRET_KEY', None),
+    ])
+
+
 # =====================
-# TEST INDEX
+# TEST INDEX (PRINCIPAL - SELECTOR DE PROVEEDORES)
 # =====================
 
 @login_required
 @user_passes_test(is_superuser)
 def test_index(request):
-    """Pagina principal del test suite."""
+    """Pagina principal del test suite - selector de proveedores."""
     return render(request, 'payments/test_index.html', {
+        'flow_configured': is_flow_configured(),
+    })
+
+
+# =====================
+# FLOW TEST INDEX
+# =====================
+
+@login_required
+@user_passes_test(is_superuser)
+def flow_test_index(request):
+    """Pagina principal del test suite de Flow."""
+    return render(request, 'payments/flow/test_index.html', {
         'flow_env': get_flow_env(),
     })
 
 
 # =====================
-# PAYMENT TEST
+# FLOW: PAYMENT TEST
 # =====================
 
 @login_required
 @user_passes_test(is_superuser)
-def test_payment(request):
-    """Vista de testing para PaymentService."""
+def flow_test_payment(request):
+    """Vista de testing para PaymentService de Flow."""
     # Obtener historial de sesion
     test_history = request.session.get('payment_test_history', [])
 
@@ -131,17 +154,17 @@ def test_payment(request):
             messages.error(request, f'Error: {str(e)}')
 
     context['test_history'] = test_history
-    return render(request, 'payments/test_payment.html', context)
+    return render(request, 'payments/flow/test_payment.html', context)
 
 
 # =====================
-# CUSTOMER TEST
+# FLOW: CUSTOMER TEST
 # =====================
 
 @login_required
 @user_passes_test(is_superuser)
-def test_customer(request):
-    """Vista de testing para CustomerService."""
+def flow_test_customer(request):
+    """Vista de testing para CustomerService de Flow."""
     test_history = request.session.get('customer_test_history', [])
 
     context = {
@@ -189,6 +212,13 @@ def test_customer(request):
                         customer_id=customer_id,
                         url_return=f"{settings.SITE_URL}/payments/customer/register-return/",
                     )
+
+                    # Mostrar resultado inmediatamente
+                    context['register_result'] = {
+                        'url': result['url'],
+                        'token': result['token'],
+                        'customer_id': customer_id,
+                    }
 
                     # Actualizar historial
                     for item in test_history:
@@ -247,17 +277,17 @@ def test_customer(request):
             messages.error(request, f'Error: {str(e)}')
 
     context['test_history'] = test_history
-    return render(request, 'payments/test_customer.html', context)
+    return render(request, 'payments/flow/test_customer.html', context)
 
 
 # =====================
-# SUBSCRIPTION TEST
+# FLOW: SUBSCRIPTION TEST
 # =====================
 
 @login_required
 @user_passes_test(is_superuser)
-def test_subscription(request):
-    """Vista de testing para SubscriptionService."""
+def flow_test_subscription(request):
+    """Vista de testing para SubscriptionService de Flow."""
     plans_history = request.session.get('plans_test_history', [])
     subs_history = request.session.get('subs_test_history', [])
 
@@ -323,6 +353,28 @@ def test_subscription(request):
                 else:
                     messages.warning(request, 'Ingresa Plan ID y Customer ID')
 
+            elif action == 'check_subscription':
+                subscription_id = request.POST.get('subscription_id', '').strip()
+
+                if subscription_id:
+                    result = subscription_service.get(subscription_id)
+                    context['subscription_status'] = {
+                        'raw': result,
+                        'status': result.get('status'),
+                        'status_label': 'Activa' if result.get('status') == 1 else 'Cancelada' if result.get('status') == 2 else 'Suspendida',
+                        'plan_id': result.get('planId'),
+                        'next_invoice': result.get('next_invoice_date'),
+                    }
+
+                    # Actualizar estado en historial
+                    for item in subs_history:
+                        if item.get('subscription_id') == subscription_id:
+                            item['status'] = result.get('status')
+                            break
+                    request.session['subs_test_history'] = subs_history
+                else:
+                    messages.warning(request, 'Subscription ID no válido')
+
             elif action == 'clear_history':
                 request.session['plans_test_history'] = []
                 request.session['subs_test_history'] = []
@@ -337,17 +389,17 @@ def test_subscription(request):
 
     context['plans_history'] = plans_history
     context['subs_history'] = subs_history
-    return render(request, 'payments/test_subscription.html', context)
+    return render(request, 'payments/flow/test_subscription.html', context)
 
 
 # =====================
-# REFUND TEST
+# FLOW: REFUND TEST
 # =====================
 
 @login_required
 @user_passes_test(is_superuser)
-def test_refund(request):
-    """Vista de testing para RefundService."""
+def flow_test_refund(request):
+    """Vista de testing para RefundService de Flow."""
     test_history = request.session.get('refund_test_history', [])
 
     context = {
@@ -397,6 +449,13 @@ def test_refund(request):
                         'status_code': result.get('status'),
                         'status_label': RefundService.get_status_label(result.get('status', 0)),
                     }
+
+                    # Actualizar estado en historial
+                    for item in test_history:
+                        if item.get('token') == token:
+                            item['status'] = result.get('status')
+                            break
+                    request.session['refund_test_history'] = test_history
                 else:
                     messages.warning(request, 'Ingresa un token')
 
@@ -411,11 +470,11 @@ def test_refund(request):
             messages.error(request, f'Error: {str(e)}')
 
     context['test_history'] = test_history
-    return render(request, 'payments/test_refund.html', context)
+    return render(request, 'payments/flow/test_refund.html', context)
 
 
 # =====================
-# WEBHOOKS Y RETORNO
+# FLOW: WEBHOOKS Y RETORNO
 # =====================
 
 @csrf_exempt

@@ -3,7 +3,7 @@ Servicio de clientes y cargos automáticos de Flow.
 """
 
 from ..client import FlowClient
-from ..exceptions import FlowCustomerError, FlowValidationError
+from ....exceptions import FlowCustomerError, FlowValidationError
 
 
 class CustomerService:

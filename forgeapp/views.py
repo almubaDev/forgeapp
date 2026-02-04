@@ -1169,6 +1169,12 @@ def calculadora_create(request):
             calculadora = form.save()
             messages.success(request, 'Calculadora creada exitosamente.')
             return redirect('forgeapp:calculadora_detail', pk=calculadora.pk)
+        else:
+            # Mostrar errores de validación
+            for field, errors in form.errors.items():
+                for error in errors:
+                    field_name = form.fields[field].label if field in form.fields else field
+                    messages.error(request, f'{field_name}: {error}')
     else:
         form = CalculadoraForm()
     

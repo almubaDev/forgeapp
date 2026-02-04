@@ -10,8 +10,10 @@
     <!-- Breadcrumb -->
     <div class="flex items-center space-x-2 text-sm">
         <a href="{% url 'payments:test_index' %}" class="text-primary-500 hover:text-primary-600">
-            <i class="fas fa-arrow-left mr-1"></i> Test Suite
+            <i class="fas fa-arrow-left mr-1"></i> Proveedores
         </a>
+        <span class="text-dark-400">/</span>
+        <a href="{% url 'payments:flow_test_index' %}" class="text-primary-500 hover:text-primary-600">Flow</a>
         <span class="text-dark-400">/</span>
         <span class="text-dark-600">Subscription</span>
     </div>
@@ -94,7 +96,7 @@
                            class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-transparent">
                     <p class="text-xs text-dark-500 mt-1">
                         <i class="fas fa-info-circle mr-1"></i>
-                        Crear cliente en <a href="{% url 'payments:test_customer' %}" class="text-primary-500 hover:underline">Customer Test</a>
+                        Crear cliente en <a href="{% url 'payments:flow_test_customer' %}" class="text-primary-500 hover:underline">Customer Test</a>
                     </p>
                 </div>
 
@@ -111,6 +113,33 @@
         </div>
 
     </div>
+
+    <!-- Resultado de verificacion de suscripcion -->
+    {% if subscription_status %}
+    <div class="card-premium p-6 border-l-4 {% if subscription_status.status == 1 %}border-green-500{% elif subscription_status.status == 2 %}border-red-500{% else %}border-yellow-500{% endif %}">
+        <h3 class="text-lg font-semibold text-dark-800 mb-4">Estado de Suscripcion</h3>
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+            <div>
+                <p class="text-sm text-dark-500">Estado</p>
+                <p class="font-semibold {% if subscription_status.status == 1 %}text-green-600{% elif subscription_status.status == 2 %}text-red-600{% else %}text-yellow-600{% endif %}">
+                    {{ subscription_status.status_label }}
+                </p>
+            </div>
+            <div>
+                <p class="text-sm text-dark-500">Plan ID</p>
+                <p class="font-mono text-dark-800">{{ subscription_status.plan_id|default:"—" }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-dark-500">Proximo Cobro</p>
+                <p class="text-dark-800">{{ subscription_status.next_invoice|default:"—" }}</p>
+            </div>
+        </div>
+        <details>
+            <summary class="text-sm text-primary-600 cursor-pointer hover:text-primary-700">Ver respuesta completa</summary>
+            <pre class="mt-2 p-3 bg-dark-900 text-green-400 rounded text-xs overflow-x-auto">{{ subscription_status.raw }}</pre>
+        </details>
+    </div>
+    {% endif %}
 
     <!-- Planes creados -->
     <div class="card-premium p-6">
@@ -194,12 +223,27 @@
                         <td class="py-3 px-4 font-mono text-dark-600">{{ item.customer_id }}</td>
                         <td class="py-3 px-4">
                             <code class="text-xs bg-gray-100 px-2 py-1 rounded">{{ item.token|truncatechars:20 }}</code>
+                            <button onclick="navigator.clipboard.writeText('{{ item.token }}')"
+                                    class="ml-1 text-dark-400 hover:text-primary-500" title="Copiar">
+                                <i class="fas fa-copy"></i>
+                            </button>
                         </td>
                         <td class="py-3 px-4">
-                            <a href="{{ item.url }}" target="_blank"
-                               class="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded transition-colors">
-                                <i class="fas fa-external-link-alt mr-1"></i>Completar
-                            </a>
+                            <div class="flex items-center space-x-2">
+                                <a href="{{ item.url }}" target="_blank"
+                                   class="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded transition-colors">
+                                    <i class="fas fa-external-link-alt mr-1"></i>Completar
+                                </a>
+                                <form method="post" class="inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="check_subscription">
+                                    <input type="hidden" name="subscription_id" value="{{ item.subscription_id }}">
+                                    <button type="submit"
+                                            class="px-3 py-1 bg-dark-200 hover:bg-dark-300 text-dark-700 text-xs font-medium rounded transition-colors">
+                                        <i class="fas fa-sync mr-1"></i>Verificar
+                                    </button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}

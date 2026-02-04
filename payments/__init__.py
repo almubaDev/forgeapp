@@ -25,8 +25,13 @@ Uso básico:
     )
 """
 
-from .client import FlowClient
-from .services import PaymentService, CustomerService, SubscriptionService, RefundService
+from .providers.flow import (
+    FlowClient,
+    PaymentService,
+    CustomerService,
+    SubscriptionService,
+    RefundService,
+)
 from .exceptions import (
     FlowException,
     FlowAPIError,

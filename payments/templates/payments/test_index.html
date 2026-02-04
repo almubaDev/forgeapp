@@ -1,130 +1,136 @@
 {% extends 'base.html' %}
 
-{% block title %}Test de Pagos - Flow{% endblock %}
-{% block page_title %}Test Suite - Flow API{% endblock %}
-{% block page_subtitle %}Suite de pruebas para todos los servicios de Flow{% endblock %}
+{% block title %}Test de Pagos{% endblock %}
+{% block page_title %}Payment Test Suite{% endblock %}
+{% block page_subtitle %}Selecciona un proveedor de pagos para probar{% endblock %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto">
+<div class="max-w-4xl mx-auto">
 
-    <!-- Indicador de entorno -->
-    <div class="card-premium p-4 flex items-center justify-between mb-6">
-        <div class="flex items-center space-x-3">
-            <div class="w-10 h-10 rounded-full flex items-center justify-center {% if flow_env.is_sandbox %}bg-yellow-100 text-yellow-600{% else %}bg-green-100 text-green-600{% endif %}">
-                <i class="fas {% if flow_env.is_sandbox %}fa-flask{% else %}fa-check-circle{% endif %}"></i>
+    <!-- Grid de proveedores -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        <!-- Flow -->
+        <a href="{% url 'payments:flow_test_index' %}" class="card-premium p-8 hover:border-primary-400 transition-all group">
+            <div class="flex items-center space-x-4 mb-4">
+                <div class="w-16 h-16 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <i class="fas fa-water text-3xl"></i>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold text-dark-800">Flow</h3>
+                    <p class="text-sm text-dark-500">Chile</p>
+                </div>
             </div>
-            <div>
-                <p class="font-semibold text-dark-800">Entorno: {% if flow_env.is_sandbox %}Sandbox{% else %}Produccion{% endif %}</p>
-                <p class="text-sm text-dark-500">{{ flow_env.api_url }}</p>
+            <p class="text-dark-600 mb-4">
+                Pasarela de pagos chilena. Soporta WebPay, tarjetas de credito/debito, y transferencias.
+            </p>
+            <div class="flex flex-wrap gap-2 mb-4">
+                <span class="px-2 py-1 bg-blue-50 text-blue-600 rounded text-xs font-medium">Pagos unicos</span>
+                <span class="px-2 py-1 bg-green-50 text-green-600 rounded text-xs font-medium">Cargos automaticos</span>
+                <span class="px-2 py-1 bg-purple-50 text-purple-600 rounded text-xs font-medium">Suscripciones</span>
+                <span class="px-2 py-1 bg-orange-50 text-orange-600 rounded text-xs font-medium">Reembolsos</span>
+            </div>
+            {% if flow_configured %}
+            <div class="flex items-center justify-between">
+                <span class="flex items-center text-green-600 text-sm">
+                    <i class="fas fa-check-circle mr-1"></i> Configurado
+                </span>
+                <span class="flex items-center text-primary-500 font-medium group-hover:translate-x-1 transition-transform">
+                    Probar <i class="fas fa-arrow-right ml-2"></i>
+                </span>
+            </div>
+            {% else %}
+            <div class="flex items-center text-yellow-600 text-sm">
+                <i class="fas fa-exclamation-triangle mr-1"></i> Sin configurar
+            </div>
+            {% endif %}
+        </a>
+
+        <!-- PayPal (Coming Soon) -->
+        <div class="card-premium p-8 opacity-60 cursor-not-allowed">
+            <div class="flex items-center space-x-4 mb-4">
+                <div class="w-16 h-16 rounded-xl bg-indigo-100 text-indigo-400 flex items-center justify-center">
+                    <i class="fab fa-paypal text-3xl"></i>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold text-dark-400">PayPal</h3>
+                    <p class="text-sm text-dark-400">Internacional</p>
+                </div>
+            </div>
+            <p class="text-dark-400 mb-4">
+                Pasarela internacional. Pagos con cuenta PayPal y tarjetas internacionales.
+            </p>
+            <div class="flex flex-wrap gap-2 mb-4">
+                <span class="px-2 py-1 bg-gray-100 text-gray-400 rounded text-xs font-medium">Checkout</span>
+                <span class="px-2 py-1 bg-gray-100 text-gray-400 rounded text-xs font-medium">Suscripciones</span>
+                <span class="px-2 py-1 bg-gray-100 text-gray-400 rounded text-xs font-medium">Payouts</span>
+            </div>
+            <div class="flex items-center text-dark-400 text-sm">
+                <i class="fas fa-clock mr-1"></i> Proximamente
             </div>
         </div>
-        {% if flow_env.is_sandbox %}
-        <span class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-sm font-medium">Modo Pruebas</span>
-        {% else %}
-        <span class="px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm font-medium">Produccion</span>
-        {% endif %}
-    </div>
 
-    <!-- Grid de servicios -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Stripe (Coming Soon) -->
+        <div class="card-premium p-8 opacity-60 cursor-not-allowed">
+            <div class="flex items-center space-x-4 mb-4">
+                <div class="w-16 h-16 rounded-xl bg-violet-100 text-violet-400 flex items-center justify-center">
+                    <i class="fab fa-stripe-s text-3xl"></i>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold text-dark-400">Stripe</h3>
+                    <p class="text-sm text-dark-400">Internacional</p>
+                </div>
+            </div>
+            <p class="text-dark-400 mb-4">
+                Plataforma de pagos completa. Ideal para SaaS y marketplaces.
+            </p>
+            <div class="flex flex-wrap gap-2 mb-4">
+                <span class="px-2 py-1 bg-gray-100 text-gray-400 rounded text-xs font-medium">Payments</span>
+                <span class="px-2 py-1 bg-gray-100 text-gray-400 rounded text-xs font-medium">Subscriptions</span>
+                <span class="px-2 py-1 bg-gray-100 text-gray-400 rounded text-xs font-medium">Connect</span>
+            </div>
+            <div class="flex items-center text-dark-400 text-sm">
+                <i class="fas fa-clock mr-1"></i> Proximamente
+            </div>
+        </div>
 
-        <!-- Payment -->
-        <a href="{% url 'payments:test_payment' %}" class="card-premium p-6 hover:border-primary-400 transition-all group">
-            <div class="w-14 h-14 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <i class="fas fa-credit-card text-2xl"></i>
+        <!-- Mercado Pago (Coming Soon) -->
+        <div class="card-premium p-8 opacity-60 cursor-not-allowed">
+            <div class="flex items-center space-x-4 mb-4">
+                <div class="w-16 h-16 rounded-xl bg-sky-100 text-sky-400 flex items-center justify-center">
+                    <i class="fas fa-handshake text-3xl"></i>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold text-dark-400">Mercado Pago</h3>
+                    <p class="text-sm text-dark-400">Latinoamerica</p>
+                </div>
             </div>
-            <h3 class="text-lg font-semibold text-dark-800 mb-2">Payment</h3>
-            <p class="text-sm text-dark-500 mb-4">Pagos unicos. Genera links de pago para transacciones individuales.</p>
-            <div class="flex items-center text-primary-500 text-sm font-medium">
-                <span>Probar</span>
-                <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+            <p class="text-dark-400 mb-4">
+                Pagos en Latinoamerica. Integrado con Mercado Libre.
+            </p>
+            <div class="flex flex-wrap gap-2 mb-4">
+                <span class="px-2 py-1 bg-gray-100 text-gray-400 rounded text-xs font-medium">Checkout</span>
+                <span class="px-2 py-1 bg-gray-100 text-gray-400 rounded text-xs font-medium">Suscripciones</span>
+                <span class="px-2 py-1 bg-gray-100 text-gray-400 rounded text-xs font-medium">QR</span>
             </div>
-        </a>
-
-        <!-- Customer -->
-        <a href="{% url 'payments:test_customer' %}" class="card-premium p-6 hover:border-primary-400 transition-all group">
-            <div class="w-14 h-14 rounded-xl bg-green-100 text-green-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <i class="fas fa-users text-2xl"></i>
+            <div class="flex items-center text-dark-400 text-sm">
+                <i class="fas fa-clock mr-1"></i> Proximamente
             </div>
-            <h3 class="text-lg font-semibold text-dark-800 mb-2">Customer</h3>
-            <p class="text-sm text-dark-500 mb-4">Gestion de clientes y cargos automaticos a tarjetas registradas.</p>
-            <div class="flex items-center text-primary-500 text-sm font-medium">
-                <span>Probar</span>
-                <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
-            </div>
-        </a>
-
-        <!-- Subscription -->
-        <a href="{% url 'payments:test_subscription' %}" class="card-premium p-6 hover:border-primary-400 transition-all group">
-            <div class="w-14 h-14 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <i class="fas fa-sync-alt text-2xl"></i>
-            </div>
-            <h3 class="text-lg font-semibold text-dark-800 mb-2">Subscription</h3>
-            <p class="text-sm text-dark-500 mb-4">Planes y suscripciones con cobros periodicos automaticos.</p>
-            <div class="flex items-center text-primary-500 text-sm font-medium">
-                <span>Probar</span>
-                <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
-            </div>
-        </a>
-
-        <!-- Refund -->
-        <a href="{% url 'payments:test_refund' %}" class="card-premium p-6 hover:border-primary-400 transition-all group">
-            <div class="w-14 h-14 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <i class="fas fa-undo text-2xl"></i>
-            </div>
-            <h3 class="text-lg font-semibold text-dark-800 mb-2">Refund</h3>
-            <p class="text-sm text-dark-500 mb-4">Reembolsos para transacciones completadas.</p>
-            <div class="flex items-center text-primary-500 text-sm font-medium">
-                <span>Probar</span>
-                <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
-            </div>
-        </a>
+        </div>
 
     </div>
 
-    <!-- Resumen de servicios -->
-    <div class="card-premium p-6 mt-6">
-        <h3 class="text-lg font-semibold text-dark-800 mb-4 flex items-center">
-            <i class="fas fa-info-circle text-primary-500 mr-2"></i>
-            Resumen de Servicios
-        </h3>
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-                <thead>
-                    <tr class="border-b border-gray-200">
-                        <th class="text-left py-3 px-4 font-semibold text-dark-700">Servicio</th>
-                        <th class="text-left py-3 px-4 font-semibold text-dark-700">Uso</th>
-                        <th class="text-left py-3 px-4 font-semibold text-dark-700">Reutilizable</th>
-                        <th class="text-left py-3 px-4 font-semibold text-dark-700">Monto Variable</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr class="border-b border-gray-100">
-                        <td class="py-3 px-4 font-medium text-dark-800">Payment</td>
-                        <td class="py-3 px-4 text-dark-600">Ventas individuales, pagos unicos</td>
-                        <td class="py-3 px-4"><span class="text-red-500"><i class="fas fa-times"></i></span></td>
-                        <td class="py-3 px-4"><span class="text-green-500"><i class="fas fa-check"></i></span></td>
-                    </tr>
-                    <tr class="border-b border-gray-100">
-                        <td class="py-3 px-4 font-medium text-dark-800">Customer + Charge</td>
-                        <td class="py-3 px-4 text-dark-600">Cobros recurrentes con monto variable</td>
-                        <td class="py-3 px-4"><span class="text-green-500"><i class="fas fa-check"></i></span></td>
-                        <td class="py-3 px-4"><span class="text-green-500"><i class="fas fa-check"></i></span></td>
-                    </tr>
-                    <tr class="border-b border-gray-100">
-                        <td class="py-3 px-4 font-medium text-dark-800">Subscription</td>
-                        <td class="py-3 px-4 text-dark-600">Membresias, planes SaaS</td>
-                        <td class="py-3 px-4"><span class="text-green-500"><i class="fas fa-check"></i></span></td>
-                        <td class="py-3 px-4"><span class="text-red-500"><i class="fas fa-times"></i></span></td>
-                    </tr>
-                    <tr>
-                        <td class="py-3 px-4 font-medium text-dark-800">Refund</td>
-                        <td class="py-3 px-4 text-dark-600">Devolucion de dinero</td>
-                        <td class="py-3 px-4">-</td>
-                        <td class="py-3 px-4"><span class="text-green-500"><i class="fas fa-check"></i></span></td>
-                    </tr>
-                </tbody>
-            </table>
+    <!-- Nota -->
+    <div class="card-premium p-4 mt-6 bg-blue-50 border-blue-200">
+        <div class="flex items-start space-x-3">
+            <i class="fas fa-info-circle text-blue-500 mt-1"></i>
+            <div>
+                <p class="font-medium text-blue-800">Sobre el Test Suite</p>
+                <p class="text-sm text-blue-700">
+                    Esta suite de pruebas solo es accesible para superusuarios.
+                    Utiliza las credenciales de sandbox para hacer pruebas sin afectar datos reales.
+                </p>
+            </div>
         </div>
     </div>
 

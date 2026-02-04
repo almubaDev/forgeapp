@@ -3,7 +3,7 @@ Servicio de suscripciones de Flow.
 """
 
 from ..client import FlowClient
-from ..exceptions import FlowSubscriptionError, FlowValidationError
+from ....exceptions import FlowSubscriptionError, FlowValidationError
 
 
 class SubscriptionService:
